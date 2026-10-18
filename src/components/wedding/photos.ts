@@ -1,11 +1,11 @@
-import defaultBride from "@/assets/bride.jpg";
-import defaultG1 from "@/assets/g1.jpg";
-import defaultG2 from "@/assets/g2.jpg";
-import defaultG3 from "@/assets/g3.jpg";
-import defaultG4 from "@/assets/g4.jpg";
-import defaultG5 from "@/assets/g5.jpg";
-import defaultG6 from "@/assets/g6.jpg";
-import defaultGroom from "@/assets/groom.jpg";
+import defaultBride from "@/assets/bride.webp";
+import defaultG1 from "@/assets/g1.webp";
+import defaultG2 from "@/assets/g2.webp";
+import defaultG3 from "@/assets/g3.webp";
+import defaultG4 from "@/assets/g4.webp";
+import defaultG5 from "@/assets/g5.webp";
+import defaultG6 from "@/assets/g6.webp";
+import defaultGroom from "@/assets/groom.webp";
 
 /**
  * Bride & Groom Portrait Configuration

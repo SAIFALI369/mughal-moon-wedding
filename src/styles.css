@@ -227,12 +227,12 @@
 
 @media (max-width: 639px) {
   .wedding-header {
-    padding: max(10px, env(safe-area-inset-top)) 12px 0;
+    padding: max(6px, env(safe-area-inset-top)) 10px 0;
   }
   .wedding-nav {
-    min-height: 68px;
-    padding: 10px 12px;
-    border-radius: 22px;
+    min-height: 52px;
+    padding: 3px 8px 3px 14px;
+    border-radius: 18px;
     border-color: #c9a45d;
     background: linear-gradient(120deg, #fffaf0 0%, #fffdf8 60%, #f3e6cd 100%);
     box-shadow: 0 8px 28px #47202c20, inset 0 1px 0 #ffffff;
@@ -241,13 +241,13 @@
     display: flex;
     flex-shrink: 0;
     flex-direction: column;
-    gap: 4px;
+    gap: 0;
     color: #642637;
-    font-size: 28px;
+    font-size: 25px;
     line-height: 1;
   }
   .wedding-brand-date {
-    display: block;
+    display: none;
     font-family: var(--font-sans);
     font-size: 8px;
     font-weight: 600;
@@ -255,24 +255,16 @@
     color: #795f35;
   }
   .wedding-nav button:not(.nav-concierge) {
-    width: 40px;
+    width: 44px;
     height: 44px;
     border-color: #bd955a66;
     background: #ffffff80;
     color: #642637;
   }
   .wedding-nav .nav-concierge {
-    min-height: 44px;
-    padding: 10px;
-    gap: 5px;
-    font-size: 10px;
-    letter-spacing: 0.04em;
-    white-space: nowrap;
-    color: #fff4da;
-    background: linear-gradient(135deg, #81394c, #4c1c2b);
-    border: 1px solid #ba8d52;
-    box-shadow: 0 4px 12px #64263726;
+    display: none; /* Keep one clear chat entry point on phones, not two. */
   }
+
   .wedding-mobile-menu {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -400,4 +392,146 @@
 }
 @media (max-height: 650px) {
   .gate-welcome { justify-content: flex-start; }
+}
+
+/* Simran · a little invitation salon, in both chat surfaces. */
+.concierge-page {
+  background-image: radial-gradient(ellipse at 15% 5%, #bc91551a, transparent 50%), radial-gradient(ellipse at 95% 65%, #82364e12, transparent 50%);
+}
+.concierge-panel, .simran-chat {
+  box-shadow: 0 24px 80px #32131c24, 0 0 0 5px #c8a76b0a;
+}
+.concierge-header {
+  position: relative;
+  background: radial-gradient(ellipse at top right, #97614466, transparent 65%), linear-gradient(125deg, #512333, #29131e);
+  border-bottom: 1px solid #c9a25f80;
+}
+.concierge-avatar {
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 1px solid #e1bd7699;
+  border-radius: 17px;
+  color: #f5d79b;
+  background: linear-gradient(135deg, #e5bf7826, #e5bf7805);
+  box-shadow: inset 0 1px 0 #fff2d726, 0 5px 20px #0002;
+}
+.concierge-page .concierge-avatar { width: 64px; height: 64px; border-radius: 23px; }
+.concierge-messages { overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: #be995d66 transparent; }
+.concierge-messages > div:not(:last-child) { box-shadow: 0 3px 12px #32131c06; }
+.concierge-messages .self-end { border-bottom-right-radius: 5px; background: linear-gradient(135deg, #713047, #492032); color: #fff4e5; }
+.concierge-messages .self-start { border-bottom-left-radius: 5px; }
+.concierge-suggestions button { background: linear-gradient(120deg, #c49b5910, transparent); min-height: 36px; text-align: start; }
+.concierge-suggestions button:hover:not(:disabled) { border-color: var(--gold); transform: translateY(-2px); }
+.concierge-composer { padding: 6px; border: 1px solid #ba955d66; border-radius: 18px; background: var(--background); box-shadow: 0 4px 20px #32131c08; }
+.concierge-composer:focus-within { border-color: var(--gold); box-shadow: 0 0 0 3px #c49b5918; }
+.concierge-composer input { border-color: transparent; background: transparent; }
+.concierge-composer button { border-radius: 12px; }
+.concierge-thinking { display: inline-flex; align-items: center; gap: 10px; font-size: 11px; }
+.concierge-thinking > span { display: flex; gap: 3px; }
+.concierge-thinking i { width: 4px; height: 4px; border-radius: 50%; background: var(--gold); animation: concierge-dot 1s ease-in-out infinite; }
+.concierge-thinking i:nth-child(2) { animation-delay: .15s; }
+.concierge-thinking i:nth-child(3) { animation-delay: .3s; }
+.concierge-map-link { display: inline-block; margin-top: 8px; padding: 6px 10px; border: 1px solid #ba955d66; border-radius: 8px; color: var(--foreground); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.simran-chat { max-height: calc(100dvh - 130px); overflow-y: auto; }
+.simran-chat :focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+@keyframes concierge-dot { 50% { opacity: .3; transform: translateY(-3px); } }
+@media (prefers-reduced-motion: reduce) { .concierge-thinking i { animation: none; } .concierge-suggestions button:hover:not(:disabled) { transform: none; } }
+
+/* Emerald concierge actions: distinct from the invitation's gold details. */
+.simran-action,
+.simran-launcher {
+  color: #f0fff9;
+  background: linear-gradient(125deg, #087b6b, #075347 72%, #06463e);
+  border: 1px solid #4cd5b580;
+  box-shadow: 0 8px 24px #034b3b30, inset 0 1px 0 #ffffff24;
+  transition: transform .2s ease, box-shadow .2s ease, filter .2s ease;
+}
+.simran-launcher {
+  gap: 12px;
+  padding: 10px 20px 10px 10px;
+  border-radius: 22px;
+  text-align: left;
+  font-size: 13px;
+  letter-spacing: .02em;
+  text-transform: none;
+}
+.simran-launcher > svg {
+  width: 40px;
+  height: 40px;
+  padding: 10px;
+  border: 1px solid #90efd44d;
+  border-radius: 14px;
+  background: #b8ffe01a;
+  color: #bdffe6;
+}
+.simran-launcher .simran-launcher-caption {
+  display: block;
+  margin-top: 3px;
+  color: #b8e6d9;
+  font-size: 10px;
+  font-weight: 400;
+  letter-spacing: .03em;
+}
+.simran-action:hover:not(:disabled),
+.simran-launcher:hover {
+  filter: brightness(1.12);
+  transform: translateY(-2px);
+  box-shadow: 0 12px 30px #087b6b40, inset 0 1px 0 #ffffff30;
+}
+.simran-action:active:not(:disabled), .simran-launcher:active { transform: translateY(0); }
+.simran-action:focus-visible, .simran-launcher:focus-visible {
+  outline: 2px solid #34bd9e;
+  outline-offset: 4px;
+}
+.simran-action:disabled { cursor: not-allowed; }
+@media (prefers-reduced-motion: reduce) {
+  .simran-action, .simran-launcher { transition: none; }
+  .simran-action:hover:not(:disabled), .simran-launcher:hover { transform: none; }
+}
+
+/* Keep guest controls usable with a mobile keyboard and safe-area insets. */
+.music-widget { bottom: calc(18px + env(safe-area-inset-bottom)); }
+.music-widget button, .guest-gallery button, .guest-gallery label:has(input[type=file]) { min-height: 44px; }
+.guest-gallery label:focus-within { outline: 2px solid #34bd9e; outline-offset: 4px; }
+.simran-chat { overscroll-behavior: contain; }
+@media (max-width: 640px) {
+  .simran-chat { max-height: calc(100dvh - 120px - env(safe-area-inset-bottom)); }
+  .simran-chat .concierge-suggestions { max-height: 100px; overflow-y: auto; }
+  .concierge-page { padding-bottom: 110px; }
+  .concierge-page .concierge-composer input { font-size: 16px; }
+  .music-widget section { max-height: calc(100dvh - 110px); overflow-y: auto; }
+}
+
+/* Compact phone chrome: preserve accessible touch targets, reclaim reading space. */
+@media (max-width: 639px) {
+  .simran-launcher {
+    left: 12px;
+    bottom: calc(12px + env(safe-area-inset-bottom));
+    width: 48px;
+    height: 48px;
+    padding: 0;
+    gap: 0;
+    justify-content: center;
+    border-radius: 16px;
+  }
+  .simran-launcher > span { display: none; }
+  .simran-launcher > svg {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+  }
+  .music-widget { right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); }
+  .music-widget > button { width: 48px; height: 48px; padding: 0; justify-content: center; }
+  .simran-chat {
+    bottom: calc(72px + env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 140px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+  }
+  .wedding-mobile-menu { max-height: calc(100dvh - 90px); overflow-y: auto; }
 }

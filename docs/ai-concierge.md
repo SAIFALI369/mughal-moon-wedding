@@ -1,6 +1,6 @@
 # Mohsin & Simran — Simran AI Wedding Concierge
 
-The guest-facing AI assistant **Simran** at `/ai-concierge` supports English, Hindi, and Urdu. It answers only from the confirmed wedding details embedded in the Supabase Edge Function.
+The guest-facing AI assistant **Simran** at `/ai-concierge` supports English, Hindi, and Urdu. It answers wedding-specific questions from confirmed invitation facts and also supports general conversation, writing, explanations and light humour.
 
 ## Files
 
@@ -56,3 +56,15 @@ All times are India Standard Time (IST).
 - Walima: Monday, 23 November 2026, 8:00 PM — The Leela Palace, Chanakyapuri, New Delhi.
 
 The homepage hero, countdown, event cards, story milestone, and downloadable calendar use the same 2026 schedule. Verify venues, times, and dress codes with the couple before launch.
+
+## Shared gallery and music updates
+
+See [gallery-and-music.md](./gallery-and-music.md) for deployment of the shared five-photo gallery and visitor-local soundtrack. The model prompt now includes the six-track allowlist and supports playback control markers. Redeploy the Edge Function for free-form Gemini music requests; common music commands are handled instantly in the browser. Wedding event facts now come from `supabase/functions/_shared/wedding.ts` rather than duplicate backend strings.
+
+## General conversation and personality
+
+Simran is also a general-purpose AI companion, not a wedding-only FAQ. Both backends use `supabase/functions/_shared/concierge-personality.ts` for the same cheerful, witty voice. She can explain concepts, help with code/studying, translate, draft messages/captions/toasts, brainstorm and chat. She may use playful, mildly dark or self-deprecating humour when appropriate, but drops jokes when someone is distressed and does not mock faith, the couple, identities or real tragedies.
+
+Wedding-specific claims must still match the shared invitation facts. General advice must not be represented as confirmed wedding arrangements. Simran has no live search/weather/news feed, cannot submit RSVPs, and must not solicit private guest information. Common greetings, capability descriptions and humour previews are exact offline replies; open-ended questions require a working Gemini backend.
+
+On phones below 640px the header is 52px tall, the duplicate header chat shortcut is hidden, and the floating chat/music controls are 48px touch targets. Desktop styling is retained. Real-browser checks at 375px and 320px verified fit and the offline humour flow; live Gemini and production gallery behavior still require deployment.

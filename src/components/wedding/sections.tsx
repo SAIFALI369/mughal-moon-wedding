@@ -1,4 +1,13 @@
-import { requestConcierge } from "./concierge-client";
+import { getInstantSmallTalk } from "./concierge-smalltalk";
+import { GuestGallery } from "./guest-gallery";
+import { applyMusicReply, getInstantMusicReply } from "./music-control";
+import {
+  ConciergeAvatar,
+  ConciergeControls,
+  ConciergeThinking,
+  ConciergeMessage,
+} from "./concierge-ui";
+import { getInstantConciergeReply, requestConcierge } from "./concierge-client";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import confetti from "canvas-confetti";
@@ -9,7 +18,7 @@ import { Button } from "@/components/ui/button";
 import { askSimranServer } from "./concierge.functions";
 import { normalizeGuestName, rsvpSchema } from "./rsvp-schema";
 import { wishesQuery } from "./wishes-query";
-import eidSky from "@/assets/eid-sky.jpg";
+import eidSky from "@/assets/eid-sky.webp";
 import {
   CalendarHeart,
   CalendarPlus,
@@ -28,7 +37,6 @@ import {
   Menu,
   MessageCircle,
   Moon,
-  Music,
   Send,
   Share2,
   Sparkles as SparklesIcon,
@@ -47,8 +55,6 @@ import {
 } from "./ornaments";
 import {
   EVENTS,
-  MUSIC_TRACK,
-  MUSIC_URL,
   WEDDING_DATE,
   WEDDING_HASHTAG,
   buildGoogleCalendarUrl,
@@ -131,14 +137,14 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
             <button
               type="button"
               onClick={onOpenSimran}
-              className="nav-concierge bg-gold-gradient inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105 hover:shadow-gold"
+              className="nav-concierge simran-action inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105 hover:shadow-gold"
             >
               <SparklesIcon className="h-3.5 w-3.5" /> Ask Simran
             </button>
           ) : (
             <a
               href="/ai-concierge"
-              className="nav-concierge bg-gold-gradient inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105 hover:shadow-gold"
+              className="nav-concierge simran-action inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105 hover:shadow-gold"
             >
               <SparklesIcon className="h-3.5 w-3.5" /> Ask Simran
             </a>
@@ -194,13 +200,17 @@ export function Preloader({ onDone }: { onDone: () => void }) {
     const previous = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     enterButton.current?.focus();
-    return () => { document.body.style.overflow = previous; };
+    return () => {
+      document.body.style.overflow = previous;
+    };
   }, [show]);
 
   useEffect(() => {
     if (!opening) return;
-    const timer = setTimeout(() => setShow(false),
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 100 : 1900);
+    const timer = setTimeout(
+      () => setShow(false),
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 100 : 1900,
+    );
     return () => clearTimeout(timer);
   }, [opening]);
 
@@ -231,28 +241,54 @@ export function Preloader({ onDone }: { onDone: () => void }) {
             className="gate-sky absolute inset-0 h-full w-full object-cover object-right"
           />
           <div className="gate-radiance" aria-hidden="true" />
-          <div className="heavenly-gate gate-left" aria-hidden="true"><div className="gate-arch" /></div>
-          <div className="heavenly-gate gate-right" aria-hidden="true"><div className="gate-arch" /></div>
+          <div className="heavenly-gate gate-left" aria-hidden="true">
+            <div className="gate-arch" />
+          </div>
+          <div className="heavenly-gate gate-right" aria-hidden="true">
+            <div className="gate-arch" />
+          </div>
           <Sparkles count={45} />
           <div className="gate-welcome relative z-10 flex h-full flex-col items-center justify-center overflow-y-auto px-6 py-10 text-center text-foreground">
             <p dir="rtl" className="font-arabic text-2xl text-gold-light sm:text-3xl">
               بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
             </p>
-            <p className="mt-6 text-[10px] uppercase tracking-[0.3em] text-gold sm:tracking-[0.5em]">Together with their families</p>
-            <h1 id="gate-title" className="mt-6 flex flex-col items-center gap-2 font-serif text-6xl font-medium sm:flex-row sm:gap-6 sm:text-7xl lg:text-8xl">
+            <p className="mt-6 text-[10px] uppercase tracking-[0.3em] text-gold sm:tracking-[0.5em]">
+              Together with their families
+            </p>
+            <h1
+              id="gate-title"
+              className="mt-6 flex flex-col items-center gap-2 font-serif text-6xl font-medium sm:flex-row sm:gap-6 sm:text-7xl lg:text-8xl"
+            >
               <span>Mohsin</span>
-              <span className="text-gold-shimmer font-script text-5xl font-normal sm:text-6xl">weds</span>
+              <span className="text-gold-shimmer font-script text-5xl font-normal sm:text-6xl">
+                weds
+              </span>
               <span>Simran</span>
             </h1>
-            <p className="mt-6 font-serif text-xl italic text-foreground sm:text-2xl">Two hearts. One beautiful beginning.</p>
-            <p className="mt-4 text-[10px] uppercase tracking-[0.25em] text-gold">22–23 November 2026 · New Delhi</p>
-            <button ref={enterButton} type="button" disabled={opening} onClick={() => enter(true)}
-              className="btn-shimmer bg-gold-gradient mt-8 inline-flex min-h-12 items-center gap-3 rounded-full px-8 py-3 text-xs font-medium uppercase tracking-[0.2em] text-burgundy-deep shadow-gold transition hover:scale-105 disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold">
+            <p className="mt-6 font-serif text-xl italic text-foreground sm:text-2xl">
+              Two hearts. One beautiful beginning.
+            </p>
+            <p className="mt-4 text-[10px] uppercase tracking-[0.25em] text-gold">
+              22–23 November 2026 · New Delhi
+            </p>
+            <button
+              ref={enterButton}
+              type="button"
+              disabled={opening}
+              onClick={() => enter(true)}
+              className="btn-shimmer bg-gold-gradient mt-8 inline-flex min-h-12 items-center gap-3 rounded-full px-8 py-3 text-xs font-medium uppercase tracking-[0.2em] text-burgundy-deep shadow-gold transition hover:scale-105 disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
+            >
               <SparklesIcon className="h-4 w-4" /> {opening ? "Welcome inside" : "Open the gates"}
             </button>
             <p className="mt-4 text-xs text-muted-foreground">Enter with music · sound on</p>
-            <button type="button" disabled={opening} onClick={() => enter(false)}
-              className="mt-2 min-h-11 px-4 text-xs text-foreground underline decoration-gold/50 underline-offset-4 transition hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold">Enter quietly</button>
+            <button
+              type="button"
+              disabled={opening}
+              onClick={() => enter(false)}
+              className="mt-2 min-h-11 px-4 text-xs text-foreground underline decoration-gold/50 underline-offset-4 transition hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
+            >
+              Enter quietly
+            </button>
           </div>
         </motion.div>
       )}
@@ -632,6 +668,7 @@ export function Gallery() {
           </motion.button>
         ))}
       </div>
+      <GuestGallery />
       <Dialog open={activeIndex !== null} onOpenChange={(o) => !o && setActiveIndex(null)}>
         <DialogContent className="max-w-4xl border-gold bg-charcoal p-3 text-ivory sm:p-5">
           <DialogTitle className="sr-only">
@@ -1058,131 +1095,7 @@ export function Footer() {
   );
 }
 
-/* ───────── Floating Music Player ("Balagal Ula Bi Kamalihi") ───────── */
-export function MusicToggle() {
-  const audio = useRef<HTMLAudioElement | null>(null);
-  const [playing, setPlaying] = useState(false);
-  const [showVerses, setShowVerses] = useState(false);
-
-  useEffect(() => {
-    const player = new Audio(MUSIC_URL);
-    player.loop = true;
-    player.volume = 0.45;
-    audio.current = player;
-    const start = () => {
-      void player.play().then(() => setPlaying(true)).catch(() => {
-        setPlaying(false);
-        toast("Music couldn't start. Use the music button to try again.");
-      });
-    };
-    const silence = () => { player.pause(); setPlaying(false); };
-    window.addEventListener("wedding:enter", start);
-    window.addEventListener("wedding:enter-silent", silence);
-    // Browsers that allow autoplay can begin immediately; otherwise the gate tap starts it.
-    void player.play().then(() => setPlaying(true)).catch(() => {});
-    return () => {
-      window.removeEventListener("wedding:enter", start);
-      window.removeEventListener("wedding:enter-silent", silence);
-      player.pause();
-      audio.current = null;
-    };
-  }, []);
-
-  const toggle = () => {
-    if (!audio.current) {
-      audio.current = new Audio(MUSIC_URL);
-      audio.current.loop = true;
-      audio.current.volume = 0.45;
-    }
-    if (playing) {
-      audio.current.pause();
-      setPlaying(false);
-    } else {
-      audio.current
-        .play()
-        .then(() => {
-          setPlaying(true);
-          toast(`Playing "${MUSIC_TRACK.title}" ✨`);
-        })
-        .catch(() => toast("Tap again to play Balagal Ula Bi Kamalihi"));
-    }
-  };
-
-  return (
-    <div className="fixed bottom-6 right-6 z-40 flex flex-col items-end gap-2.5">
-      <AnimatePresence>
-        {showVerses && (
-          <motion.div
-            initial={{ opacity: 0, y: 12, scale: 0.96 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 12, scale: 0.96 }}
-            className="glass-card w-72 rounded-2xl p-4 text-right shadow-gold sm:w-80"
-          >
-            <div className="mb-2 flex items-center justify-between border-b border-gold/30 pb-2">
-              <button
-                type="button"
-                onClick={() => setShowVerses(false)}
-                aria-label="Close verses"
-                className="text-muted-foreground hover:text-gold"
-              >
-                <X className="h-3.5 w-3.5" />
-              </button>
-              <p className="text-[10px] font-semibold uppercase tracking-[0.25em] text-gold">
-                {MUSIC_TRACK.title}
-              </p>
-            </div>
-            <div className="space-y-2.5">
-              {MUSIC_TRACK.verses.map((v, idx) => (
-                <div key={idx} className="space-y-0.5">
-                  <p dir="rtl" className="font-arabic text-sm text-gold">
-                    {v.arabic}
-                  </p>
-                  <p className="font-serif text-xs italic text-foreground">{v.transliteration}</p>
-                  <p className="text-[10px] text-muted-foreground">{v.meaning}</p>
-                </div>
-              ))}
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="flex items-center gap-2.5">
-        <button
-          type="button"
-          onClick={() => setShowVerses((prev) => !prev)}
-          title="View Balagal Ula Bi Kamalihi verses"
-          className="glass-card hidden items-center gap-2.5 rounded-full px-4 py-2 text-right shadow-gold transition hover:border-gold sm:flex"
-        >
-          <div>
-            <p dir="rtl" className="font-arabic text-xs text-gold">
-              {MUSIC_TRACK.arabic}
-            </p>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-muted-foreground">
-              {MUSIC_TRACK.title}
-            </p>
-          </div>
-        </button>
-        <button
-          type="button"
-          onClick={toggle}
-          aria-label={
-            playing
-              ? `Pause ${MUSIC_TRACK.title}`
-              : `Play ${MUSIC_TRACK.title} (${MUSIC_TRACK.subtitle})`
-          }
-          title={`${MUSIC_TRACK.title} — ${MUSIC_TRACK.subtitle}`}
-          className="flex h-14 w-14 items-center justify-center rounded-full border-2 border-gold bg-charcoal text-gold shadow-gold transition hover:scale-110"
-        >
-          <span
-            className={`flex h-10 w-10 items-center justify-center rounded-full border border-gold/40 ${playing ? "animate-[spin_3s_linear_infinite]" : ""}`}
-          >
-            <Music className="h-5 w-5" />
-          </span>
-        </button>
-      </div>
-    </div>
-  );
-}
+export { MusicToggle } from "./music-player";
 
 /* ───────── Floating "Ask Simran" Quick-Chat Drawer ───────── */
 type QuickLanguage = "en" | "hi" | "ur";
@@ -1202,11 +1115,20 @@ const SIMRAN_QUICK_COPY: Record<
   en: {
     label: "English",
     greeting:
-      "Assalamu alaikum! I'm Simran. Ask me about the Nikah, Barat, Walima, dress code, or venues.",
+      "Assalamu alaikum! I’m Simran, your AI sidekick. Wedding plans, music, everyday questions—or a slightly dark joke? Ask away.",
     placeholder: "Ask Simran…",
     thinking: "Simran is checking the invitation…",
     error: "I couldn't reach Simran right now. Please try again or visit the full concierge page.",
-    quick: ["What time is the Nikah?", "What is the dress code?", "Where is the Walima?"],
+    quick: [
+      "What time is the Nikah?",
+      "What is the dress code?",
+      "Where is the Walima?",
+      "What is the schedule?",
+      "How do I RSVP?",
+      "Play softer music",
+      "Tell me a dark-ish joke",
+      "What can you do?",
+    ],
   },
   hi: {
     label: "हिन्दी",
@@ -1214,7 +1136,7 @@ const SIMRAN_QUICK_COPY: Record<
     placeholder: "सिमरन से पूछें…",
     thinking: "सिमरन जानकारी देख रही हैं…",
     error: "अभी सिमरन से संपर्क नहीं हो पाया। कृपया फिर कोशिश करें।",
-    quick: ["निकाह कितने बजे है?", "ड्रेस कोड क्या है?", "वलीमा कहाँ होगा?"],
+    quick: ["निकाह कितने बजे है?", "ड्रेस कोड क्या है?", "वलीमा कहाँ होगा?", "RSVP कैसे करें?"],
   },
   ur: {
     label: "اردو",
@@ -1222,7 +1144,7 @@ const SIMRAN_QUICK_COPY: Record<
     placeholder: "سمرن سے پوچھیں…",
     thinking: "سمرن تفصیلات دیکھ رہی ہیں…",
     error: "سمرن سے ابھی رابطہ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
-    quick: ["نکاح کتنے بجے ہے؟", "لباس کا ضابطہ کیا ہے؟", "ولیمہ کہاں ہوگا؟"],
+    quick: ["نکاح کتنے بجے ہے؟", "لباس کا ضابطہ کیا ہے؟", "ولیمہ کہاں ہوگا؟", "RSVP کیسے کریں؟"],
   },
 };
 
@@ -1237,14 +1159,29 @@ export function SimranFloatingWidget({
   const [messages, setMessages] = useState<QuickMessage[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const requestLock = useRef(false);
+  const [failedQuestion, setFailedQuestion] = useState<string | null>(null);
+  const chatEndRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLInputElement>(null);
+  useEffect(() => {
+    if (open) chatInputRef.current?.focus();
+  }, [open]);
+  useEffect(() => {
+    if (open) chatEndRef.current?.scrollIntoView({ block: "nearest" });
+  }, [messages, busy, open]);
   const copy = SIMRAN_QUICK_COPY[lang];
   const dir = lang === "ur" ? "rtl" : "ltr";
 
-  async function askSimran(question: string) {
+  async function askSimran(question: string, retry = false) {
     const clean = question.trim().slice(0, 800);
-    if (!clean || busy) return;
+    if (!clean || requestLock.current) return;
+    requestLock.current = true;
+    setFailedQuestion(null);
 
-    const next = [...messages, { role: "user" as const, text: clean }].slice(-10);
+    const next = [
+      ...(retry ? messages.slice(0, -2) : messages),
+      { role: "user" as const, text: clean },
+    ].slice(-10);
     setMessages(next);
     setDraft("");
     setBusy(true);
@@ -1255,18 +1192,26 @@ export function SimranFloatingWidget({
     };
 
     try {
-      const reply = await requestConcierge(
-        (signal) => supabase.functions.invoke("wedding-concierge", {
-          body: payload,
-          signal,
-        }),
-        () => askSimranServer({ data: payload }),
-      );
+      const reply =
+        getInstantMusicReply(clean, copy.label) ??
+        getInstantConciergeReply(clean, copy.label) ??
+        getInstantSmallTalk(clean, copy.label) ??
+        (await requestConcierge(
+          (signal) =>
+            supabase.functions.invoke("wedding-concierge", {
+              body: payload,
+              signal,
+            }),
+          () => askSimranServer({ data: payload }),
+        ));
 
-      setMessages((curr) => [...curr, { role: "assistant", text: reply }]);
+      const renderedReply = applyMusicReply(reply, clean);
+      setMessages((curr) => [...curr, { role: "assistant", text: renderedReply }]);
     } catch {
+      setFailedQuestion(clean);
       setMessages((curr) => [...curr, { role: "assistant", text: copy.error }]);
     } finally {
+      requestLock.current = false;
       setBusy(false);
     }
   }
@@ -1279,10 +1224,12 @@ export function SimranFloatingWidget({
         aria-label="Ask Simran AI Wedding Concierge"
         aria-expanded={open}
         aria-controls="simran-quick-chat"
-        className="simran-launcher bg-gold-gradient fixed bottom-6 left-6 z-40 inline-flex items-center gap-2 rounded-full border-2 border-gold-light px-5 py-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-burgundy-deep shadow-gold transition hover:scale-105"
+        className="simran-launcher fixed bottom-6 left-6 z-40 inline-flex items-center gap-2 rounded-full border-2 border-gold-light px-5 py-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-burgundy-deep shadow-gold transition hover:scale-105"
       >
-        <MessageCircle className="h-4 w-4" />
-        <span>Ask Simran<span className="simran-launcher-caption">Your wedding guide</span></span>
+        <SparklesIcon className="h-4 w-4" />
+        <span>
+          Ask Simran<span className="simran-launcher-caption">Your wedding guide</span>
+        </span>
       </button>
 
       <AnimatePresence>
@@ -1293,20 +1240,30 @@ export function SimranFloatingWidget({
             exit={{ opacity: 0, y: 24, scale: 0.96 }}
             id="simran-quick-chat"
             aria-label="Simran AI Wedding Concierge"
+            onKeyDown={(event) => {
+              if (event.key === "Escape") onOpenChange(false);
+            }}
             className="simran-chat fixed bottom-24 left-4 right-4 z-50 max-w-md overflow-hidden rounded-3xl border border-gold/50 bg-card shadow-gold sm:left-6 sm:right-auto sm:w-96"
           >
-            <div className="flex items-center justify-between bg-burgundy-deep px-5 py-4 text-ivory">
+            <div className="concierge-header flex items-center justify-between gap-3 bg-burgundy-deep px-5 py-5 text-ivory">
               <div>
                 <p className="text-[10px] uppercase tracking-[0.28em] text-gold-light">
                   AI Wedding Concierge
                 </p>
-                <h3 className="font-serif text-2xl">Simran</h3>
+                <h3 className="flex items-center gap-3 font-serif text-2xl">
+                  <ConciergeAvatar /> Simran
+                </h3>
               </div>
               <div className="flex items-center gap-2">
                 <select
                   aria-label="Simran language"
                   value={lang}
-                  onChange={(e) => setLang(e.target.value as QuickLanguage)}
+                  disabled={busy}
+                  onChange={(e) => {
+                    setLang(e.target.value as QuickLanguage);
+                    setMessages([]);
+                    setFailedQuestion(null);
+                  }}
                   className="rounded-full border border-gold/40 bg-charcoal px-2.5 py-1 text-xs text-ivory"
                 >
                   {Object.entries(SIMRAN_QUICK_COPY).map(([k, v]) => (
@@ -1334,7 +1291,12 @@ export function SimranFloatingWidget({
                 {copy.greeting}
               </div>
 
-              <div className="flex max-h-56 flex-col gap-2 overflow-y-auto py-1">
+              <div
+                role="log"
+                aria-live="polite"
+                aria-label="Conversation"
+                className="concierge-messages flex max-h-56 flex-col gap-3 overflow-y-auto py-1"
+              >
                 {messages.map((m, i) => (
                   <div
                     key={i}
@@ -1345,7 +1307,7 @@ export function SimranFloatingWidget({
                         : "self-start border border-gold/25 bg-background"
                     }`}
                   >
-                    {m.text}
+                    <ConciergeMessage text={m.text} />
                   </div>
                 ))}
                 {busy && (
@@ -1353,12 +1315,26 @@ export function SimranFloatingWidget({
                     dir={dir}
                     className="self-start rounded-2xl bg-muted px-3.5 py-2 text-xs text-muted-foreground"
                   >
-                    {copy.thinking}
+                    <ConciergeThinking label={copy.thinking} />
                   </div>
                 )}
+                <div ref={chatEndRef} />
               </div>
 
-              <div className="mt-3 flex flex-wrap gap-1.5">
+              <ConciergeControls
+                language={copy.label}
+                busy={busy}
+                hasMessages={messages.length > 0}
+                failed={!!failedQuestion}
+                onRetry={() => {
+                  if (failedQuestion) void askSimran(failedQuestion, true);
+                }}
+                onClear={() => {
+                  setMessages([]);
+                  setFailedQuestion(null);
+                }}
+              />
+              <div className="concierge-suggestions mt-3 flex flex-wrap gap-1.5">
                 {copy.quick.map((q) => (
                   <button
                     key={q}
@@ -1377,9 +1353,10 @@ export function SimranFloatingWidget({
                   e.preventDefault();
                   void askSimran(draft);
                 }}
-                className="mt-3 flex gap-2"
+                className="concierge-composer mt-3 flex gap-2"
               >
                 <input
+                  ref={chatInputRef}
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
                   maxLength={800}
@@ -1392,7 +1369,7 @@ export function SimranFloatingWidget({
                   type="submit"
                   disabled={busy || !draft.trim()}
                   aria-label="Send question to Simran"
-                  className="bg-gold-gradient flex items-center justify-center rounded-xl px-3.5 py-2 text-burgundy-deep disabled:opacity-50"
+                  className="simran-action flex items-center justify-center rounded-xl px-3.5 py-2 disabled:opacity-50"
                 >
                   <Send className="h-3.5 w-3.5" />
                 </button>

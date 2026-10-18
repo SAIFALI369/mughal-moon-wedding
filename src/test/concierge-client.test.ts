@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { requestConcierge } from "@/components/wedding/concierge-client";
+import { getInstantConciergeReply, requestConcierge } from "@/components/wedding/concierge-client";
 
 afterEach(() => vi.useRealTimers());
 
@@ -35,7 +35,7 @@ describe("concierge delivery", () => {
       },
       async () => ({ reply: "Fallback answer" }),
     );
-    await vi.advanceTimersByTimeAsync(18_000);
+    await vi.advanceTimersByTimeAsync(5_000);
     await expect(result).resolves.toBe("Fallback answer");
     expect(signal?.aborted).toBe(true);
     expect(vi.getTimerCount()).toBe(0);
@@ -60,5 +60,24 @@ describe("concierge delivery", () => {
     await vi.advanceTimersByTimeAsync(18_000);
     await assertion;
     expect(vi.getTimerCount()).toBe(0);
+  });
+});
+
+describe("instant confirmed answers", () => {
+  it.each([
+    ["English", "What time is the Nikah?", "4:00 PM"],
+    ["English", "Where is the Walima?", "The Leela Palace"],
+    ["English", "What is the dress code?", "Ivory, Gold & Pastels"],
+    ["हिन्दी", "निकाह कितने बजे है?", "4:00"],
+    ["اردو", "نکاح کتنے بجے ہے؟", "4:00"],
+  ])("answers %s suggestion %s without a network request", (language, question, expected) => {
+    expect(getInstantConciergeReply(question, language)).toContain(expected);
+  });
+  it("does not intercept compound questions or contextual follow-ups", () => {
+    expect(
+      getInstantConciergeReply("What time is the Nikah? And the Barat?", "English"),
+    ).toBeUndefined();
+    expect(getInstantConciergeReply("What about parking?", "English")).toBeUndefined();
+    expect(getInstantConciergeReply("What time is the Nikah?", "اردو")).toBeUndefined();
   });
 });

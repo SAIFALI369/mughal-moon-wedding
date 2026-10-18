@@ -1,6 +1,15 @@
-import { requestConcierge } from "@/components/wedding/concierge-client";
+import { getInstantSmallTalk } from "@/components/wedding/concierge-smalltalk";
+import { MusicToggle } from "@/components/wedding/music-player";
+import { applyMusicReply, getInstantMusicReply } from "@/components/wedding/music-control";
+import {
+  ConciergeAvatar,
+  ConciergeControls,
+  ConciergeThinking,
+  ConciergeMessage,
+} from "@/components/wedding/concierge-ui";
+import { getInstantConciergeReply, requestConcierge } from "@/components/wedding/concierge-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import { askSimranServer } from "@/components/wedding/concierge.functions";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -14,17 +23,26 @@ const copy = {
     language: "English",
     back: "← Back to invitation",
     title: "Simran",
-    subtitle: "Your AI wedding concierge for the celebration",
+    subtitle: "Your wedding guide, everyday sidekick & resident wit",
     welcome:
-      "Assalamu alaikum! I'm Simran. Ask me about the schedule, venues, dress code, directions, or RSVP.",
-    placeholder: "Ask Simran about the wedding…",
+      "Assalamu alaikum! I’m Simran, your AI wedding guide and cheerful sidekick. Ask about the celebration, music, or anything on your mind. I bring the answers—and occasional existential jokes.",
+    placeholder: "Ask about the wedding, life, or anything…",
     send: "Send",
     thinking: "Simran is finding the details…",
     error:
       "I couldn't reach Simran just now. Please try again, or use the RSVP section on the invitation.",
-    note: "Simran uses only confirmed invitation details. Don’t share private RSVP or dietary information in chat; confirm important details with the couple.",
+    note: "Wedding answers use confirmed invitation details; general answers can be mistaken. No live web access. Don’t share private RSVP or dietary details in chat.",
     rsvp: "Go to RSVP",
-    quick: ["What time is the Nikah?", "What is the dress code?", "Where is the Walima?"],
+    quick: [
+      "What time is the Nikah?",
+      "What is the dress code?",
+      "Where is the Walima?",
+      "What is the schedule?",
+      "How do I RSVP?",
+      "Play softer music",
+      "Tell me a dark-ish joke",
+      "What can you do?",
+    ],
   },
   hi: {
     language: "हिन्दी",
@@ -38,9 +56,9 @@ const copy = {
     thinking: "सिमरन जानकारी देख रही हैं…",
     error:
       "अभी सिमरन से संपर्क नहीं हो पाया। कृपया फिर कोशिश करें या निमंत्रण के RSVP अनुभाग का उपयोग करें।",
-    note: "सिमरन केवल निमंत्रण की जानकारी देती हैं। निजी RSVP या खान-पान की जानकारी चैट में न भेजें; ज़रूरी बातें परिवार से पुष्टि करें।",
+    note: "शादी के जवाब निमंत्रण पर आधारित हैं; सामान्य जवाब गलत हो सकते हैं। लाइव वेब एक्सेस नहीं है। निजी RSVP या खान-पान की जानकारी चैट में न भेजें।",
     rsvp: "RSVP पर जाएँ",
-    quick: ["निकाह कितने बजे है?", "ड्रेस कोड क्या है?", "वलीमा कहाँ होगा?"],
+    quick: ["निकाह कितने बजे है?", "ड्रेस कोड क्या है?", "वलीमा कहाँ होगा?", "RSVP कैसे करें?"],
   },
   ur: {
     language: "اردو",
@@ -54,9 +72,9 @@ const copy = {
     thinking: "سمرن تفصیلات دیکھ رہی ہیں…",
     error:
       "سمرن سے ابھی رابطہ نہیں ہو سکا۔ دوبارہ کوشش کریں یا دعوت نامے کا RSVP حصہ استعمال کریں۔",
-    note: "سمرن صرف دعوت نامے کی معلومات دیتی ہیں۔ نجی RSVP یا کھانے کی پابندیاں چیٹ میں نہ لکھیں؛ اہم بات خاندان سے پوچھیں۔",
+    note: "شادی کے جواب دعوت نامے پر مبنی ہیں؛ عمومی جواب غلط ہو سکتے ہیں۔ لائیو ویب رسائی نہیں ہے۔ نجی RSVP یا کھانے کی معلومات چیٹ میں نہ لکھیں۔",
     rsvp: "RSVP پر جائیں",
-    quick: ["نکاح کتنے بجے ہے؟", "لباس کا ضابطہ کیا ہے؟", "ولیمہ کہاں ہوگا؟"],
+    quick: ["نکاح کتنے بجے ہے؟", "لباس کا ضابطہ کیا ہے؟", "ولیمہ کہاں ہوگا؟", "RSVP کیسے کریں؟"],
   },
 } satisfies Record<Language, Record<string, string | string[]>>;
 
@@ -79,14 +97,25 @@ function AiConcierge() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [draft, setDraft] = useState("");
   const [busy, setBusy] = useState(false);
+  const requestLock = useRef(false);
+  const [failedQuestion, setFailedQuestion] = useState<string | null>(null);
+  const endRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    endRef.current?.scrollIntoView({ block: "nearest" });
+  }, [messages, busy]);
   const text = copy[language];
   const direction = language === "ur" ? "rtl" : "ltr";
 
-  async function ask(question: string) {
+  async function ask(question: string, retry = false) {
     const value = question.trim().slice(0, 800);
-    if (!value || busy) return;
+    if (!value || requestLock.current) return;
+    requestLock.current = true;
+    setFailedQuestion(null);
 
-    const nextMessages = [...messages, { role: "user" as const, text: value }].slice(-10);
+    const nextMessages = [
+      ...(retry ? messages.slice(0, -2) : messages),
+      { role: "user" as const, text: value },
+    ].slice(-10);
     setMessages(nextMessages);
     setDraft("");
     setBusy(true);
@@ -97,20 +126,27 @@ function AiConcierge() {
     };
 
     try {
-      const reply = await requestConcierge(
-        (signal) => supabase.functions.invoke("wedding-concierge", {
-          body: payload,
-          signal,
-        }),
-        () => askSimranServer({ data: payload }),
-      );
+      const reply =
+        getInstantMusicReply(value, text.language) ??
+        getInstantConciergeReply(value, text.language) ??
+        getInstantSmallTalk(value, text.language) ??
+        (await requestConcierge(
+          (signal) =>
+            supabase.functions.invoke("wedding-concierge", {
+              body: payload,
+              signal,
+            }),
+          () => askSimranServer({ data: payload }),
+        ));
 
-      const assistantMessage: Message = { role: "assistant", text: reply };
+      const assistantMessage: Message = { role: "assistant", text: applyMusicReply(reply, value) };
       setMessages((current) => [...current, assistantMessage].slice(-10));
     } catch {
+      setFailedQuestion(value);
       const errorMessage: Message = { role: "assistant", text: text.error };
       setMessages((current) => [...current, errorMessage].slice(-10));
     } finally {
+      requestLock.current = false;
       setBusy(false);
     }
   }
@@ -121,7 +157,7 @@ function AiConcierge() {
   }
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8 text-foreground sm:px-6">
+    <main className="concierge-page min-h-screen bg-background px-4 py-8 text-foreground sm:px-6">
       <div className="mx-auto max-w-3xl">
         <div className="flex items-center justify-between gap-3">
           <Link to="/" className="text-sm text-muted-foreground transition hover:text-gold">
@@ -133,7 +169,12 @@ function AiConcierge() {
           <select
             id="concierge-language"
             value={language}
-            onChange={(event) => setLanguage(event.target.value as Language)}
+            disabled={busy}
+            onChange={(event) => {
+              setLanguage(event.target.value as Language);
+              setMessages([]);
+              setFailedQuestion(null);
+            }}
             className="rounded-full border border-gold/40 bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-gold"
           >
             {Object.entries(copy).map(([key, value]) => (
@@ -144,14 +185,17 @@ function AiConcierge() {
           </select>
         </div>
 
-        <section className="mt-5 overflow-hidden rounded-3xl border border-gold/35 bg-card shadow-gold">
-          <header className="bg-burgundy-deep px-5 py-8 text-center text-ivory sm:px-8 sm:py-10">
+        <section className="concierge-panel mt-5 overflow-hidden rounded-3xl border border-gold/35 bg-card shadow-gold">
+          <header className="concierge-header bg-burgundy-deep px-5 py-8 text-center text-ivory sm:px-8 sm:py-10">
             <p dir="rtl" className="font-arabic text-xl text-gold-light">
               بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
             </p>
             <p className="mt-4 text-xs uppercase tracking-[0.28em] text-gold-light">
               Mohsin &amp; Simran
             </p>
+            <div className="mt-5 flex justify-center">
+              <ConciergeAvatar />
+            </div>
             <h1 className="mt-2 font-serif text-4xl sm:text-5xl">{text.title}</h1>
             <p className="mt-2 text-sm text-ivory/75">{text.subtitle}</p>
             <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs">
@@ -178,7 +222,8 @@ function AiConcierge() {
             <div
               aria-live="polite"
               aria-label="Conversation"
-              className="flex max-h-[48vh] min-h-24 flex-col gap-3 overflow-y-auto py-2"
+              role="log"
+              className="concierge-messages flex max-h-[48vh] min-h-24 flex-col gap-3 overflow-y-auto py-2"
             >
               {messages.map((message, index) => (
                 <div
@@ -195,7 +240,7 @@ function AiConcierge() {
                       {text.title}
                     </p>
                   )}
-                  {message.text}
+                  <ConciergeMessage text={message.text} />
                 </div>
               ))}
               {busy && (
@@ -203,12 +248,26 @@ function AiConcierge() {
                   className="self-start rounded-2xl bg-muted px-4 py-3 text-sm text-muted-foreground"
                   dir={direction}
                 >
-                  {text.thinking}
+                  <ConciergeThinking label={text.thinking} />
                 </div>
               )}
+              <div ref={endRef} />
             </div>
 
-            <div className="mt-4 flex flex-wrap gap-2">
+            <ConciergeControls
+              language={text.language}
+              busy={busy}
+              hasMessages={messages.length > 0}
+              failed={!!failedQuestion}
+              onRetry={() => {
+                if (failedQuestion) void ask(failedQuestion, true);
+              }}
+              onClear={() => {
+                setMessages([]);
+                setFailedQuestion(null);
+              }}
+            />
+            <div className="concierge-suggestions mt-4 flex flex-wrap gap-2">
               {(text.quick as string[]).map((question) => (
                 <button
                   key={question}
@@ -222,7 +281,7 @@ function AiConcierge() {
               ))}
             </div>
 
-            <form onSubmit={submit} className="mt-4 flex gap-2">
+            <form onSubmit={submit} className="concierge-composer mt-4 flex gap-2">
               <input
                 value={draft}
                 onChange={(event) => setDraft(event.target.value)}
@@ -235,7 +294,7 @@ function AiConcierge() {
               <button
                 type="submit"
                 disabled={busy || !draft.trim()}
-                className="rounded-xl bg-gold-gradient px-5 py-3 text-sm font-semibold text-burgundy-deep transition hover:shadow-gold focus:outline-none focus:ring-2 focus:ring-gold disabled:opacity-50"
+                className="simran-action rounded-xl px-5 py-3 text-sm font-semibold transition focus:outline-none focus:ring-2 focus:ring-emerald-400 disabled:opacity-50"
               >
                 {text.send}
               </button>
@@ -254,6 +313,7 @@ function AiConcierge() {
           </div>
         </section>
       </div>
+      <MusicToggle />
     </main>
   );
 }
