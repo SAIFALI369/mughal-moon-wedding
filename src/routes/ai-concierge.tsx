@@ -1,54 +1,59 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
+import { askSimranServer } from "@/components/wedding/concierge.functions";
 import { supabase } from "@/integrations/supabase/client";
 
 type Language = "en" | "hi" | "ur";
 type Message = { role: "user" | "assistant"; text: string };
 
+export const AI_NAME = "Simran";
+
 const copy = {
   en: {
     language: "English",
     back: "← Back to invitation",
-    title: "Wedding Concierge",
-    subtitle: "A little help for your celebration",
+    title: "Simran",
+    subtitle: "Your AI wedding concierge for the celebration",
     welcome:
-      "Assalamu alaikum! Ask me about the schedule, venues, dress code, directions, or RSVP.",
-    placeholder: "Ask about the wedding…",
+      "Assalamu alaikum! I'm Simran. Ask me about the schedule, venues, dress code, directions, or RSVP.",
+    placeholder: "Ask Simran about the wedding…",
     send: "Send",
-    thinking: "Finding the details…",
+    thinking: "Simran is finding the details…",
     error:
-      "I couldn't reach the concierge just now. Please try again, or use the RSVP section on the invitation.",
-    note: "Only invitation details are used. Don’t share private RSVP or dietary information in chat; confirm important details with the couple.",
+      "I couldn't reach Simran just now. Please try again, or use the RSVP section on the invitation.",
+    note: "Simran uses only confirmed invitation details. Don’t share private RSVP or dietary information in chat; confirm important details with the couple.",
     rsvp: "Go to RSVP",
     quick: ["What time is the Nikah?", "What is the dress code?", "Where is the Walima?"],
   },
   hi: {
     language: "हिन्दी",
     back: "← निमंत्रण पर वापस जाएँ",
-    title: "शादी सहायक",
-    subtitle: "आपके जश्न के लिए थोड़ी मदद",
-    welcome: "अस्सलामु अलैकुम! कार्यक्रम, स्थान, ड्रेस कोड, रास्ते या RSVP के बारे में पूछें।",
-    placeholder: "शादी के बारे में पूछें…",
+    title: "सिमरन",
+    subtitle: "आपके जश्न के लिए एआई शादी सहायक",
+    welcome:
+      "अस्सलामु अलैकुम! मैं सिमरन हूँ। कार्यक्रम, स्थान, ड्रेस कोड, रास्ते या RSVP के बारे में पूछें।",
+    placeholder: "सिमरन से शादी के बारे में पूछें…",
     send: "भेजें",
-    thinking: "जानकारी देख रहे हैं…",
+    thinking: "सिमरन जानकारी देख रही हैं…",
     error:
-      "अभी सहायक से संपर्क नहीं हो पाया। कृपया फिर कोशिश करें या निमंत्रण के RSVP अनुभाग का उपयोग करें।",
-    note: "सहायक केवल निमंत्रण की जानकारी देता है। निजी RSVP या खान-पान की जानकारी चैट में न भेजें; ज़रूरी बातें परिवार से पुष्टि करें।",
+      "अभी सिमरन से संपर्क नहीं हो पाया। कृपया फिर कोशिश करें या निमंत्रण के RSVP अनुभाग का उपयोग करें।",
+    note: "सिमरन केवल निमंत्रण की जानकारी देती हैं। निजी RSVP या खान-पान की जानकारी चैट में न भेजें; ज़रूरी बातें परिवार से पुष्टि करें।",
     rsvp: "RSVP पर जाएँ",
     quick: ["निकाह कितने बजे है?", "ड्रेस कोड क्या है?", "वलीमा कहाँ होगा?"],
   },
   ur: {
     language: "اردو",
     back: "← دعوت نامے پر واپس جائیں",
-    title: "شادی کا معاون",
-    subtitle: "آپ کی تقریب کے لیے تھوڑی مدد",
-    welcome: "السلام علیکم! تقریبات، مقامات، لباس، راستوں یا RSVP کے بارے میں پوچھیں۔",
-    placeholder: "شادی کے بارے میں پوچھیں…",
+    title: "سمرن",
+    subtitle: "آپ کی تقریب کے لیے اے آئی شادی معاون",
+    welcome:
+      "السلام علیکم! میں سمرن ہوں۔ تقریبات، مقامات، لباس، راستوں یا RSVP کے بارے میں پوچھیں۔",
+    placeholder: "سمرن سے شادی کے بارے میں پوچھیں…",
     send: "بھیجیں",
-    thinking: "تفصیلات دیکھ رہا ہوں…",
+    thinking: "سمرن تفصیلات دیکھ رہی ہیں…",
     error:
-      "معاون سے ابھی رابطہ نہیں ہو سکا۔ دوبارہ کوشش کریں یا دعوت نامے کا RSVP حصہ استعمال کریں۔",
-    note: "معاون صرف دعوت نامے کی معلومات دیتا ہے۔ نجی RSVP یا کھانے کی پابندیاں چیٹ میں نہ لکھیں؛ اہم بات خاندان سے پوچھیں۔",
+      "سمرن سے ابھی رابطہ نہیں ہو سکا۔ دوبارہ کوشش کریں یا دعوت نامے کا RSVP حصہ استعمال کریں۔",
+    note: "سمرن صرف دعوت نامے کی معلومات دیتی ہیں۔ نجی RSVP یا کھانے کی پابندیاں چیٹ میں نہ لکھیں؛ اہم بات خاندان سے پوچھیں۔",
     rsvp: "RSVP پر جائیں",
     quick: ["نکاح کتنے بجے ہے؟", "لباس کا ضابطہ کیا ہے؟", "ولیمہ کہاں ہوگا؟"],
   },
@@ -57,11 +62,11 @@ const copy = {
 export const Route = createFileRoute("/ai-concierge")({
   head: () => ({
     meta: [
-      { title: "Wedding Concierge — Mohsin & Simran" },
+      { title: "Simran — AI Wedding Concierge | Mohsin & Simran" },
       {
         name: "description",
         content:
-          "Ask Mohsin and Simran’s wedding concierge about the 2026 schedule, venues, dress code, directions, and RSVP.",
+          "Ask Simran, Mohsin and Simran’s AI wedding concierge, about the 2026 schedule, venues, dress code, directions, and RSVP.",
       },
     ],
   }),
@@ -85,15 +90,34 @@ function AiConcierge() {
     setDraft("");
     setBusy(true);
 
+    const payload = {
+      language: text.language,
+      messages: nextMessages.map(({ role, text: content }) => ({ role, content })),
+    };
+
     try {
-      const { data, error } = await supabase.functions.invoke("wedding-concierge", {
-        body: {
-          language: text.language,
-          messages: nextMessages.map(({ role, text: content }) => ({ role, content })),
-        },
-      });
-      if (error || typeof data?.reply !== "string") throw error ?? new Error("No reply");
-      const assistantMessage: Message = { role: "assistant", text: data.reply };
+      let reply: string | undefined;
+      try {
+        const { data, error } = await supabase.functions.invoke("wedding-concierge", {
+          body: payload,
+        });
+        if (!error && typeof data?.reply === "string") {
+          reply = data.reply;
+        }
+      } catch {
+        // Fall back to server function if Edge Function is not yet deployed or reachable
+      }
+
+      if (!reply) {
+        const fallback = await askSimranServer({ data: payload });
+        reply = fallback.reply;
+      }
+
+      if (typeof reply !== "string" || !reply.trim()) {
+        throw new Error("No reply");
+      }
+
+      const assistantMessage: Message = { role: "assistant", text: reply };
       setMessages((current) => [...current, assistantMessage].slice(-10));
     } catch {
       const errorMessage: Message = { role: "assistant", text: text.error };
@@ -157,6 +181,9 @@ function AiConcierge() {
               className="mb-4 rounded-2xl border border-gold/25 bg-background/80 p-4 text-sm leading-relaxed"
               dir={direction}
             >
+              <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gold">
+                {text.title}
+              </p>
               {text.welcome}
             </div>
 
@@ -175,6 +202,11 @@ function AiConcierge() {
                       : "self-start border border-gold/25 bg-background"
                   }`}
                 >
+                  {message.role === "assistant" && (
+                    <p className="mb-1 text-xs font-semibold uppercase tracking-widest text-gold">
+                      {text.title}
+                    </p>
+                  )}
                   {message.text}
                 </div>
               ))}

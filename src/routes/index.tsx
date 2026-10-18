@@ -3,6 +3,7 @@ import { useState } from "react";
 import { wishesQuery } from "@/components/wedding/wishes-query";
 import { Wishes } from "@/components/wedding/wishes";
 import { Divider } from "@/components/wedding/ornaments";
+import { useInvitedGuestName } from "@/hooks/use-invited-guest";
 import {
   Countdown,
   DressCode,
@@ -11,8 +12,10 @@ import {
   Gallery,
   Hero,
   MusicToggle,
+  Navbar,
   Preloader,
   Rsvp,
+  SimranFloatingWidget,
   Story,
   VenueMap,
 } from "@/components/wedding/sections";
@@ -41,20 +44,25 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const [, setReady] = useState(false);
+  const [simranOpen, setSimranOpen] = useState(false);
+  const guestName = useInvitedGuestName();
+
   return (
     <main className="overflow-x-hidden">
       <Preloader onDone={() => setReady(true)} />
-      <Hero />
+      <Navbar onOpenSimran={() => setSimranOpen(true)} />
+      <Hero guestName={guestName} />
       <Countdown />
       <Story />
       <Events />
       <Divider className="bg-muted" />
       <Gallery />
       <DressCode />
-      <Rsvp />
+      <Rsvp defaultGuestName={guestName} />
       <VenueMap />
-      <Footer />
       <Wishes />
+      <Footer />
+      <SimranFloatingWidget open={simranOpen} onOpenChange={setSimranOpen} />
       <MusicToggle />
     </main>
   );

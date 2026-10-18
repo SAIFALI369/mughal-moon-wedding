@@ -80,6 +80,50 @@
   --shadow-gold: 0 20px 50px -20px oklch(0.73 0.11 85 / 0.55);
 }
 
+.dark {
+  --burgundy: oklch(0.8 0.1 80);
+  --burgundy-deep: oklch(0.18 0.06 15);
+  --gold: oklch(0.76 0.11 82);
+  --gold-light: oklch(0.85 0.11 85);
+  --emerald: oklch(0.7 0.11 155);
+  --navy: oklch(0.35 0.08 260);
+  --ivory: oklch(0.96 0.015 85);
+  --charcoal: oklch(0.15 0.03 280);
+  --brown: oklch(0.92 0.02 80);
+
+  --background: oklch(0.16 0.035 18);
+  --foreground: oklch(0.95 0.015 85);
+  --card: oklch(0.21 0.045 18 / 0.72);
+  --card-foreground: oklch(0.95 0.015 85);
+  --popover: oklch(0.2 0.04 18);
+  --popover-foreground: oklch(0.95 0.015 85);
+  --primary: oklch(0.76 0.11 82);
+  --primary-foreground: oklch(0.18 0.06 15);
+  --secondary: oklch(0.28 0.07 18);
+  --secondary-foreground: oklch(0.95 0.015 85);
+  --muted: oklch(0.2 0.04 18);
+  --muted-foreground: oklch(0.76 0.03 80);
+  --accent: oklch(0.42 0.09 155);
+  --accent-foreground: oklch(0.96 0.015 85);
+  --border: oklch(0.76 0.11 82 / 0.35);
+  --input: oklch(0.76 0.11 82 / 0.4);
+  --ring: var(--gold);
+
+  --gradient-gold: linear-gradient(110deg, oklch(0.72 0.12 75), var(--gold) 30%, var(--gold-light) 50%, var(--gold) 70%, oklch(0.72 0.12 75));
+  --gradient-hero: linear-gradient(oklch(0.15 0.04 18), oklch(0.2 0.045 18));
+  --shadow-gold: 0 20px 55px -18px oklch(0.76 0.11 82 / 0.38);
+}
+
+.dark .glass-card {
+  background: oklch(0.22 0.045 18 / 0.68);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid oklch(0.76 0.11 82 / 0.4);
+}
+
+.dark .eid-hero img {
+  filter: brightness(0.42) contrast(1.1) saturate(1.15);
+}
+
 @layer base {
   * { border-color: var(--color-border); }
   html { scroll-behavior: smooth; }
