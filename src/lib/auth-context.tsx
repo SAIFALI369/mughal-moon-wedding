@@ -28,33 +28,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setSession(data.session);
       setUser(data.session?.user ?? null);
       setLoading(false);
-      if (data.session?.user) void ensureProfile(data.session.user);
     });
     const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setLoading(false);
-      if (nextSession?.user) void ensureProfile(nextSession.user);
     });
     return () => {
       mounted = false;
       sub.subscription.unsubscribe();
     };
   }, []);
-
-  async function ensureProfile(u: User) {
-    try {
-      const username = (u.user_metadata as Record<string, unknown>)?.username as string | undefined;
-      const email = u.email;
-      if (!username || !email || !u.id) return;
-      const { data } = await supabase.from("profiles").select("id").eq("id", u.id).maybeSingle();
-      if (!data) {
-        await supabase.from("profiles").insert({ id: u.id, username, email });
-      }
-    } catch {
-      // non-critical
-    }
-  }
 
   async function signOut() {
     await supabase.auth.signOut();

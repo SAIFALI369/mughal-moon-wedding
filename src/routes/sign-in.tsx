@@ -13,7 +13,7 @@ export const Route = createFileRoute("/sign-in")({
 
 function SignIn() {
   const navigate = useNavigate();
-  const [emailOrUsername, setEmailOrUsername] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -21,9 +21,9 @@ function SignIn() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
-    const raw = emailOrUsername.trim();
+    const raw = username.trim();
     if (!raw) {
-      setError("Enter your email or username");
+      setError("Enter your username");
       return;
     }
     if (!password) {
@@ -32,31 +32,17 @@ function SignIn() {
     }
     setBusy(true);
     try {
-      let email = raw;
-      // If input doesn't look like email, treat as username and resolve email via profiles
-      if (!raw.includes("@")) {
-        const { data: profile, error: profileError } = await supabase
-          .from("profiles")
-          .select("email")
-          .ilike("username", raw)
-          .limit(1)
-          .maybeSingle();
-        if (profileError) {
-          console.error(profileError);
-        }
-        if (profile?.email) {
-          email = profile.email;
-        } else {
-          setError("Username not found. Try your email instead.");
-          return;
-        }
+      const { data: email, error: lookupError } = await supabase.rpc("username_login_address", { requested_username: raw, requested_password: password });
+      if (lookupError || !email) {
+        setError("Invalid username or password");
+        return;
       }
       const { error } = await supabase.auth.signInWithPassword({
         email: email.toLowerCase(),
         password,
       });
       if (error) {
-        setError(error.message);
+        setError("Invalid username or password");
         return;
       }
       toast.success("Welcome back!");
@@ -74,17 +60,17 @@ function SignIn() {
         <CardHeader className="text-center">
           <p className="font-arabic text-lg text-gold">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
           <CardTitle className="font-serif text-3xl">Sign in</CardTitle>
-          <CardDescription>Use your email (or username) and password to manage your wedding invitations.</CardDescription>
+          <CardDescription>Use your username and password to manage your wedding invitations.</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="emailOrUsername">Email or Username</Label>
+              <Label htmlFor="username">Username</Label>
               <Input
-                id="emailOrUsername"
-                value={emailOrUsername}
-                onChange={(e) => setEmailOrUsername(e.target.value)}
-                placeholder="you@example.com or your username"
+                id="username"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
+                placeholder="Your username"
                 required
                 autoComplete="username"
               />
@@ -107,9 +93,7 @@ function SignIn() {
             </Button>
           </form>
           <div className="mt-4 text-center text-sm">
-            <Link to="/recover" className="text-burgundy underline">
-              Forgot your password? Recover via email
-            </Link>
+            Forgot your password? There is no password recovery. Create a new account with a different username.
           </div>
           <div className="mt-4 text-center text-sm">
             No account yet?{" "}

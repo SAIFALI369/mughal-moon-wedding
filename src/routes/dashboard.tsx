@@ -249,7 +249,6 @@ function Dashboard() {
   }
 
   const username = getUsernameFromUser(user);
-  const email = user.email || "";
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 sm:px-6">
@@ -258,7 +257,7 @@ function Dashboard() {
           <div>
             <h1 className="font-serif text-4xl">Your invitations</h1>
             <p className="mt-1 text-sm text-muted-foreground">
-              Signed in as <span className="font-medium text-foreground">{username || email}</span> {username && email ? `(${email})` : ""} ·{" "}
+              Signed in as <span className="font-medium text-foreground">{username || "your account"}</span> ·{" "}
               <span className={cards.length >= 3 ? "text-destructive font-medium" : "text-emerald-700"}>{cards.length} / 3 active cards</span>
               <span className="ml-2 text-xs text-muted-foreground">Limit enforced in database, not just UI</span>
             </p>
@@ -425,7 +424,7 @@ function Dashboard() {
             <li>Up to <strong>3 active cards</strong> per account — enforced by <code>enforce_invitation_card_limit()</code> trigger + advisory lock, not just UI.</li>
             <li><strong>Publish</strong> to make shareable via <code>/invite/:slug</code>. Published cards are publicly readable (anon SELECT allowed where status=published).</li>
             <li><strong>Delete</strong> frees a slot. Ownership immutable.</li>
-            <li>Email supports <strong>sign-in and password recovery</strong> via Supabase Auth email link.</li>
+            <li>Use your <strong>username and password</strong> to sign in. No password reset is available; if forgotten, create a new account.</li>
           </ul>
         </div>
       </div>

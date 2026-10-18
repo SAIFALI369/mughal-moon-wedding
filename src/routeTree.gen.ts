@@ -12,8 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiConciergeRouteImport } from './routes/ai-concierge'
 import { Route as DashboardRouteImport } from './routes/dashboard'
-import { Route as RecoverRouteImport } from './routes/recover'
-import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as CardsIdRouteImport } from './routes/cards.$id'
@@ -32,16 +30,6 @@ const AiConciergeRoute = AiConciergeRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const RecoverRoute = RecoverRouteImport.update({
-  id: '/recover',
-  path: '/recover',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ResetPasswordRoute = ResetPasswordRouteImport.update({
-  id: '/reset-password',
-  path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInRoute = SignInRouteImport.update({
@@ -69,8 +57,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
-  '/recover': typeof RecoverRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/cards/$id': typeof CardsIdRoute
@@ -80,8 +66,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
-  '/recover': typeof RecoverRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/cards/$id': typeof CardsIdRoute
@@ -92,8 +76,6 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
-  '/recover': typeof RecoverRoute
-  '/reset-password': typeof ResetPasswordRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/cards/$id': typeof CardsIdRoute
@@ -105,8 +87,6 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-concierge'
     | '/dashboard'
-    | '/recover'
-    | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/cards/$id'
@@ -116,8 +96,6 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-concierge'
     | '/dashboard'
-    | '/recover'
-    | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/cards/$id'
@@ -127,8 +105,6 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-concierge'
     | '/dashboard'
-    | '/recover'
-    | '/reset-password'
     | '/sign-in'
     | '/sign-up'
     | '/cards/$id'
@@ -139,8 +115,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiConciergeRoute: typeof AiConciergeRoute
   DashboardRoute: typeof DashboardRoute
-  RecoverRoute: typeof RecoverRoute
-  ResetPasswordRoute: typeof ResetPasswordRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   CardsIdRoute: typeof CardsIdRoute
@@ -168,20 +142,6 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/recover': {
-      id: '/recover'
-      path: '/recover'
-      fullPath: '/recover'
-      preLoaderRoute: typeof RecoverRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/reset-password': {
-      id: '/reset-password'
-      path: '/reset-password'
-      fullPath: '/reset-password'
-      preLoaderRoute: typeof ResetPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-in': {
@@ -219,8 +179,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiConciergeRoute: AiConciergeRoute,
   DashboardRoute: DashboardRoute,
-  RecoverRoute: RecoverRoute,
-  ResetPasswordRoute: ResetPasswordRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   CardsIdRoute: CardsIdRoute,
