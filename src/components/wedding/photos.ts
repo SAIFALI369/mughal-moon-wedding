@@ -45,26 +45,21 @@ export const COUPLE_PROFILES = [
 
 /**
  * Optional custom URLs/paths for the "Moments of Us" gallery.
+ * Five curated spots — two are bride & groom at their fixed places (2 & 4).
  * Leave an entry empty ("") to keep its default image.
  */
 export const CUSTOM_GALLERY_URLS: string[] = [
-  "", // Moment 1 (e.g. "/photos/g1.jpg")
-  "", // Moment 2 (e.g. "/photos/g2.jpg")
-  "", // Moment 3 (e.g. "/photos/g3.jpg")
-  "", // Moment 4 (defaults to Groom portrait)
-  "", // Moment 5 (e.g. "/photos/g4.jpg")
-  "", // Moment 6 (e.g. "/photos/g5.jpg")
-  "", // Moment 7 (defaults to Bride portrait)
-  "", // Moment 8 (e.g. "/photos/g6.jpg")
+  "", // 1 — Under the Mughal Arches
+  "", // 2 — Groom portrait (fixed)
+  "", // 3 — Golden Hour Du’as
+  "", // 4 — Bride portrait (fixed)
+  "", // 5 — Beginning of Forever
 ];
 
 const DEFAULT_GALLERY_META = [
   { src: defaultG1, caption: "Under the Mughal Arches", tag: "Together" },
-  { src: defaultG2, caption: "Golden Hour Du’as", tag: "Celebration" },
-  { src: defaultG3, caption: "A Promise Written in Stars", tag: "Engagement" },
   { src: GROOM_PHOTO, caption: "Mohsin — Groom Portrait", tag: "The Groom" },
-  { src: defaultG4, caption: "Laughter & Lanterns", tag: "Moments" },
-  { src: defaultG5, caption: "Royal Heritage & Grace", tag: "Tradition" },
+  { src: defaultG3, caption: "A Promise Written in Stars", tag: "Engagement" },
   { src: BRIDE_PHOTO, caption: "Simran — Bride Portrait", tag: "The Bride" },
   { src: defaultG6, caption: "Beginning of Forever", tag: "Nikah 2026" },
 ];

@@ -76,18 +76,21 @@ export type Database = {
           caption: string
           created_at: string
           image_data: string
+          owner_id: string | null
           slot: number
         }
         Insert: {
           caption: string
           created_at?: string
           image_data: string
+          owner_id?: string | null
           slot: number
         }
         Update: {
           caption?: string
           created_at?: string
           image_data?: string
+          owner_id?: string | null
           slot?: number
         }
         Relationships: []

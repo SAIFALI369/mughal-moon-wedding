@@ -71,7 +71,10 @@ describe("2026 wedding schedule", () => {
     expect(COUPLE_PROFILES.map((p) => p.name)).toEqual(["Mohsin", "Simran"]);
     expect(GROOM_PHOTO).toBeTruthy();
     expect(BRIDE_PHOTO).toBeTruthy();
-    expect(GALLERY_PHOTOS).toHaveLength(8);
-    expect(GALLERY_ITEMS).toHaveLength(8);
+    expect(GALLERY_PHOTOS).toHaveLength(5);
+    expect(GALLERY_ITEMS).toHaveLength(5);
+    // Two of five are bride & groom at their fixed places (2 & 4)
+    expect(GALLERY_ITEMS[1].caption).toContain("Groom");
+    expect(GALLERY_ITEMS[3].caption).toContain("Bride");
   });
 });
