@@ -154,7 +154,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      register_username: {
+        Args: { requested_username: string; requested_password: string }
+        Returns: undefined
+      }
+      username_login_address: {
+        Args: { requested_username: string; requested_password: string }
+        Returns: string | null
+      }
+
+      add_wedding_photo: {
+        Args: { photo_data: string; photo_caption: string }
+        Returns: number
+      }
+      delete_wedding_photo: {
+        Args: { target_slot: number }
+        Returns: undefined
+      }
+      replace_wedding_photo: {
+        Args: { target_slot: number; photo_data: string; photo_caption: string }
+        Returns: undefined
+      }
+      delete_expired_invitations: {
+        Args: Record<string, never>
+        Returns: number
+      }
     }
     Enums: {
       [_ in never]: never

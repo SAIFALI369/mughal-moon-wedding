@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { useAuth } from "@/lib/auth-context";
 
 export const Route = createFileRoute("/sign-up")({
   component: SignUp,
@@ -14,23 +13,15 @@ export const Route = createFileRoute("/sign-up")({
 
 function SignUp() {
   const navigate = useNavigate();
-  const { user } = useAuth();
   const [username, setUsername] = useState("");
-  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
-
-  if (user) {
-    // already signed in
-    // keep form but also offer dashboard
-  }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     const u = username.trim();
-    const em = email.trim().toLowerCase();
     if (u.length < 3 || u.length > 30) {
       setError("Username must be 3–30 characters.");
       return;
@@ -39,49 +30,21 @@ function SignUp() {
       setError("Username may contain letters, numbers, dot, hyphen and underscore.");
       return;
     }
-    if (!em || !em.includes("@")) {
-      setError("Please enter a valid email.");
-      return;
-    }
     if (password.length < 6) {
       setError("Password must be at least 6 characters.");
       return;
     }
     setBusy(true);
     try {
-      const { data, error: signError } = await supabase.auth.signUp({
-        email: em,
-        password,
-        options: { data: { username: u } },
+      const { error: signError } = await supabase.rpc("register_username", {
+        requested_username: u,
+        requested_password: password,
       });
       if (signError) {
-        setError(signError.message);
+        setError(signError.code === "23505" ? "Username already taken. Please choose another." : signError.message);
         return;
       }
-      // Create profile row (if session present)
-      const newUser = data.user;
-      if (newUser) {
-        // Try to insert profile - requires authenticated session; after signUp user is often auto-logged in
-        // Use small delay to ensure session is set
-        try {
-          const { error: profileError } = await supabase.from("profiles").insert({
-            id: newUser.id,
-            username: u,
-            email: em,
-          });
-          if (profileError && !profileError.message.includes("duplicate")) {
-            // If duplicate username/email, surface error but account exists
-            console.error(profileError);
-            if (profileError.code === "23505") {
-              setError("Username or email already taken. Please choose another.");
-              return;
-            }
-          }
-        } catch (e) {
-          console.error(e);
-        }
-      }
-      toast.success("Account created! Check your email to confirm, then sign in.");
+      toast.success("Account created! Sign in with your username and password.");
       navigate({ to: "/sign-in" });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Sign up failed");
@@ -97,10 +60,11 @@ function SignUp() {
           <p className="font-arabic text-lg text-gold">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
           <CardTitle className="font-serif text-3xl">Create your invitation account</CardTitle>
           <CardDescription>
-            Username, email and password to manage your personal wedding cards. Up to 3 active cards, stored privately.
+            Username and password to manage your personal wedding cards. Up to 3 active cards, stored privately.
           </CardDescription>
         </CardHeader>
         <CardContent>
+          <p className="mb-4 text-sm text-muted-foreground">Save your password. There is no password reset or recovery. If you forget it, create a new account with a different username; your old cards cannot be transferred.</p>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Username</Label>
@@ -114,19 +78,6 @@ function SignUp() {
                 autoComplete="username"
               />
               <p className="text-xs text-muted-foreground">3–30 chars, letters/numbers/._- (unique)</p>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder="you@example.com"
-                required
-                autoComplete="email"
-              />
-              <p className="text-xs text-muted-foreground">Used for sign-in and password recovery.</p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>

@@ -2,30 +2,25 @@ name: Migrate Lovable Supabase
 
 on:
   push:
-    branches: [main, arena/055bec28-mughal-moon-wedding]
-    paths:
-      - "drizzle/migrations/**"
-      - "supabase/migrations/**"
-      - "scripts/migrate.mjs"
-      - "scripts/cleanup-expired.mjs"
-      - ".github/workflows/migrate.yml"
-      - "package.json"
-      - "package-lock.json"
-  pull_request:
     branches: [main]
-    paths:
-      - "drizzle/migrations/**"
-      - "supabase/migrations/**"
-      - "scripts/migrate.mjs"
-      - "scripts/cleanup-expired.mjs"
   schedule:
-    - cron: "17 3 * * *" # daily at 03:17 UTC — migrate + cleanup expired cards after marriage day
+    - cron: "17 */6 * * *" # retry pending migrations every six hours
   workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-database-migrations
+  cancel-in-progress: false
 
 jobs:
   migrate:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
+    env:
+      LOVABLE_DB_MIGRATION_URL: ${{ secrets.LOVABLE_DB_MIGRATION_URL || secrets.DATABASE_URL || secrets.SUPABASE_DB_URL }}
+      REQUIRE_DB_MIGRATIONS: "1"
     steps:
       - uses: actions/checkout@v4
 
@@ -34,38 +29,25 @@ jobs:
           node-version: 20
 
       - name: Install migrate deps
-        run: |
-          if [ -f package-lock.json ]; then
-            npm ci --ignore-scripts || npm install --ignore-scripts
-          else
-            npm install --ignore-scripts
-          fi
+        run: npm ci --ignore-scripts
 
       - name: Run drizzle migrations (Lovable)
-        env:
-          LOVABLE_DB_MIGRATION_URL: ${{ secrets.LOVABLE_DB_MIGRATION_URL }}
-        run: |
-          if [ -z "$LOVABLE_DB_MIGRATION_URL" ]; then
-            echo "LOVABLE_DB_MIGRATION_URL not set — skipping GitHub migrate (Lovable Cloud will run postbuild 'npm run build' → node scripts/migrate.mjs)."
-            exit 0
-          fi
-          node scripts/migrate.mjs
+        run: node scripts/migrate.mjs
 
       - name: Verify tables
-        env:
-          LOVABLE_DB_MIGRATION_URL: ${{ secrets.LOVABLE_DB_MIGRATION_URL }}
         run: |
-          if [ -z "$LOVABLE_DB_MIGRATION_URL" ]; then echo "no DB URL, skip verify"; exit 0; fi
           node -e "
           import postgres from 'postgres';
           const sql = postgres(process.env.LOVABLE_DB_MIGRATION_URL, {max:1});
           const checks = [
-            \"select to_regclass('public.profiles') as t\",
-            \"select to_regclass('public.invitation_cards') as t\",
+            \"select 1 where to_regclass('public.profiles') is not null\",
+            \"select 1 where to_regclass('public.invitation_cards') is not null\",
             \"select proname from pg_proc where proname='enforce_invitation_card_limit'\",
             \"select * from pg_policies where tablename='invitation_cards' and policyname='Anyone can view published invitations'\",
             \"select column_name from information_schema.columns where table_name='invitation_cards' and column_name='expires_at'\",
             \"select proname from pg_proc where proname='delete_expired_invitations'\",
+            \"select 1 where to_regprocedure('public.register_username(text,text)') is not null\",
+            \"select 1 where to_regprocedure('public.username_login_address(text,text)') is not null\",
           ];
           for (const q of checks){
             const r = await sql.unsafe(q);
@@ -77,8 +59,16 @@ jobs:
           "
 
       - name: Cleanup expired invitations (auto-delete after wedding)
-        env:
-          LOVABLE_DB_MIGRATION_URL: ${{ secrets.LOVABLE_DB_MIGRATION_URL }}
         run: |
-          if [ -z "$LOVABLE_DB_MIGRATION_URL" ]; then echo "no DB URL, skip cleanup"; exit 0; fi
-          node scripts/cleanup-expired.mjs || true
+          node scripts/cleanup-expired.mjs
+
+      - name: Report migration status
+        if: always()
+        env:
+          MIGRATION_STATUS: ${{ job.status }}
+        run: |
+          echo "## Database migration: $MIGRATION_STATUS" >> "$GITHUB_STEP_SUMMARY"
+          echo "Runs after every push/merge to main and retries every six hours." >> "$GITHUB_STEP_SUMMARY"
+          if [ -z "$LOVABLE_DB_MIGRATION_URL" ]; then
+            echo "Blocked: no database connection secret is configured. SQL cannot execute without authorized database access." >> "$GITHUB_STEP_SUMMARY"
+          fi

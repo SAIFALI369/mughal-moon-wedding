@@ -142,20 +142,16 @@ describe("personal invitation cards — database enforcement", () => {
   });
 });
 
-describe("email auth supports sign-in and password recovery (code checks)", () => {
-  it("frontend implements username+email+password sign-up, email sign-in, and recovery", async () => {
+describe("username-only authentication UI", () => {
+  it("uses username RPC registration/login without email or recovery forms", () => {
     const signUp = readFileSync(new URL("../routes/sign-up.tsx", import.meta.url), "utf8");
     const signIn = readFileSync(new URL("../routes/sign-in.tsx", import.meta.url), "utf8");
-    const recover = readFileSync(new URL("../routes/recover.tsx", import.meta.url), "utf8");
-    const reset = readFileSync(new URL("../routes/reset-password.tsx", import.meta.url), "utf8");
-    expect(signUp).toContain("username");
-    expect(signUp).toContain("email");
-    expect(signUp).toContain("password");
-    expect(signUp).toContain("supabase.auth.signUp");
+    expect(signUp).toContain('rpc("register_username"');
+    expect(signUp).not.toContain('type="email"');
+    expect(signUp).not.toContain('auth.signUp');
+    expect(signIn).toContain('rpc("username_login_address"');
     expect(signIn).toContain("signInWithPassword");
-    expect(signIn).toContain("email");
-    expect(recover).toContain("resetPasswordForEmail");
-    expect(reset).toContain("updateUser");
-    expect(recover.toLowerCase()).toContain("email");
+    expect(signIn).not.toContain('to="/recover"');
+    expect(signUp).toContain("no password reset or recovery");
   });
 });
