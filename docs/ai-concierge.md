@@ -1,28 +1,29 @@
-# Mohsin & Simran — AI Wedding Concierge
+# Mohsin & Simran — Simran AI Wedding Concierge
 
-The guest-facing concierge at `/ai-concierge` supports English, Hindi, and Urdu. It answers only from the confirmed wedding details embedded in the Supabase Edge Function.
+The guest-facing AI assistant **Simran** at `/ai-concierge` supports English, Hindi, and Urdu. It answers only from the confirmed wedding details embedded in the Supabase Edge Function.
 
 ## Files
 
-- `src/routes/ai-concierge.tsx` — TanStack Start page and `/ai-concierge` route.
-- `supabase/functions/wedding-concierge/index.ts` — server-side Gemini proxy. The Gemini key never enters the browser bundle.
+- `src/routes/ai-concierge.tsx` — TanStack Start page and `/ai-concierge` route for chatting with Simran.
+- `supabase/functions/wedding-concierge/gemini-key.ts` — Supabase Edge Function configuration file where you can paste your `GEMINI_API_KEY` and `GEMINI_MODEL`.
+- `supabase/.env` — Supabase environment file for setting `GEMINI_API_KEY` locally or pushing via `supabase secrets set --env-file supabase/.env`.
+- `supabase/functions/wedding-concierge/index.ts` — server-side Gemini proxy for Simran.
 
-The invitation homepage links to the concierge. The page calls the function with:
+The invitation homepage links to Simran (`Ask Simran`). The page calls the function with:
 
 ```ts
 supabase.functions.invoke("wedding-concierge", { body: { language, messages } });
 ```
 
-## Configure and deploy
+## Where to add your Gemini API key
 
-1. Rotate any Gemini key that has previously been pasted into chat or otherwise exposed.
-2. In **Supabase Dashboard → Edge Functions → Secrets**, add the replacement key as `GEMINI_API_KEY`. Do not put it in `.env`, a `VITE_*` variable, the React route, or Git.
-3. Optionally add `GEMINI_MODEL` as a server-side secret. If it is omitted, the function uses `gemini-2.5-flash`.
-4. Optionally set `ALLOWED_ORIGIN` to the production invitation origin, such as `https://mughal-moon-wedding.lovable.app`. Leave it unset while using changing preview URLs.
-5. Deploy the `wedding-concierge` Edge Function through Lovable Cloud or Supabase.
-6. Before sharing the public invitation widely, configure a Gemini usage quota. The function includes a best-effort per-instance limit of 12 requests per IP per minute; high-traffic production use should add distributed rate limiting or bot protection as well.
+You can configure your Gemini API key in any of these places:
 
-The concierge is intentionally available to anonymous wedding guests, so `supabase/config.toml` disables legacy JWT verification for this function. The handler still accepts only `POST` requests, rejects request bodies over 12 KB, caps the conversation at 10 messages and each message at 800 characters, times out slow upstream requests, and refuses to claim that it submitted an RSVP. Guests must use the invitation form for RSVP details.
+1. **Direct Supabase config file**: Open `supabase/functions/wedding-concierge/gemini-key.ts` and paste your key into `GEMINI_API_KEY = "your-gemini-api-key"`.
+2. **Supabase `.env` file**: Open `supabase/.env` and set `GEMINI_API_KEY="your-gemini-api-key"`.
+3. **Supabase Dashboard Secrets**: In **Supabase Dashboard → Edge Functions → Secrets**, add `GEMINI_API_KEY`.
+
+Optionally set `GEMINI_MODEL` (defaults to `gemini-2.5-flash`) and `ALLOWED_ORIGIN` (for production origin restriction).
 
 ## Confirmed schedule
 
