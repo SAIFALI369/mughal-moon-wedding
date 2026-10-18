@@ -1,5 +1,7 @@
 # Mughal Moon Wedding
 
+> AI concierge setup and deployment: [`docs/ai-concierge.md`](docs/ai-concierge.md)
+
 ---
 
 ## ✅ Copy-Paste This Entire Prompt Into Lovable:
@@ -46,7 +48,7 @@ Overall Vibe:
      - "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ" in elegant calligraphy style at the top
      - "Together with their families" in small caps, gold
      - "Mohsin" in large serif on the left, an ornamental "&" or "weds" in the center, "Simran" in large serif on the right
-     - Wedding date below: "Saturday, the Twenty-First of June, Two Thousand Twenty-Five" in elegant spaced text
+     - Wedding date below: "Sunday, the Twenty-Second of November, Two Thousand Twenty-Six" in elegant spaced text
      - A subtle "Scroll Down" animated chevron at the bottom
    - Add a soft vignette overlay.
 
@@ -149,14 +151,14 @@ Make the entire site feel like a premium, cinematic wedding experience. Every de
 
 ## 💡 Tips After Generating:
 
-| Step | What to Do |
-|------|-----------|
-| **1** | Paste the prompt into Lovable and hit generate |
-| **2** | Replace placeholder images with real couple photos |
-| **3** | Update dates, times, and venue addresses |
+| Step  | What to Do                                                |
+| ----- | --------------------------------------------------------- |
+| **1** | Paste the prompt into Lovable and hit generate            |
+| **2** | Replace placeholder images with real couple photos        |
+| **3** | Update dates, times, and venue addresses                  |
 | **4** | Swap the placeholder Google Maps link with the real venue |
-| **5** | Add a real audio file URL for the music toggle |
-| **6** | Tweak colors if needed using Lovable's follow-up chat |
+| **5** | Add a real audio file URL for the music toggle            |
+| **6** | Tweak colors if needed using Lovable's follow-up chat     |
 
 This prompt will produce a **far more polished, animated, and feature-rich** card than a basic template — with cinematic intro, countdown, glassmorphism cards, masonry gallery, RSVP with confetti, and a cohesive luxury design system. 🎉
 

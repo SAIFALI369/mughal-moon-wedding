@@ -1,1 +1,6 @@
 project_id = "zcqlvyzlbfhdkomexihd"
+
+[functions.wedding-concierge]
+# Wedding guests are anonymous and the project uses a modern opaque publishable key.
+# The function applies its own input validation, origin restriction, and rate limiting.
+verify_jwt = false
