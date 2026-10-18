@@ -1,0 +1,37 @@
+name: Gemini key check
+on:
+  push:
+    branches: [arena/bd4b4523-mughal-moon-wedding]
+    paths: [".github/workflows/gemini-check.yml"]
+  workflow_dispatch:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Read key from repo history and probe Gemini
+        run: |
+          set -uo pipefail
+          KEY=$(git show 411d569:key | grep -oE 'AQ\.[A-Za-z0-9_.-]+' | head -1)
+          if [ -z "$KEY" ]; then echo "no key found in history"; exit 1; fi
+          echo "::add-mask::$KEY"
+          echo "key length: ${#KEY}"
+          code=$(curl -s -o /tmp/list.json -w "%{http_code}" \
+            -H "x-goog-api-key: $KEY" \
+            "https://generativelanguage.googleapis.com/v1beta/models")
+          echo "listModels HTTP $code"
+          if [ "$code" != "200" ]; then head -c 400 /tmp/list.json; echo; fi
+          if [ "$code" = "200" ]; then
+            echo "has gemini-2.5-flash: $(grep -c 'gemini-2.5-flash' /tmp/list.json)"
+          fi
+          for model in gemini-2.5-flash gemini-2.0-flash; do
+            gcode=$(curl -s -o /tmp/gen.json -w "%{http_code}" -X POST \
+              -H "Content-Type: application/json" -H "x-goog-api-key: $KEY" \
+              --data '{"contents":[{"role":"user","parts":[{"text":"Reply with exactly: OK"}]}],"generationConfig":{"maxOutputTokens":20}}' \
+              "https://generativelanguage.googleapis.com/v1beta/models/$model:generateContent")
+            echo "--- $model HTTP $gcode"
+            head -c 500 /tmp/gen.json; echo
+          done
