@@ -9,6 +9,7 @@ import { askSimranServer } from "@/components/wedding/concierge.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { MessageCircle, Plus, History, Trash2, Menu, X, Send, Mic, Sparkles, ChevronDown, Brain, ShieldAlert } from "lucide-react";
 import { getAllSimranMemories, buildMemoryPrompt, cleanupExpiredMemories } from "@/lib/simran-memory";
+import { VISITOR_MESSAGE_LIMIT, canSendMessage, incrementVisitorCount, remainingMessages, resetIfExpired } from "@/lib/visitor-limit";
 
 type Language = "en" | "hi" | "ur";
 type Message = { role: "user" | "assistant"; text: string };
@@ -94,6 +95,7 @@ function AiConcierge() {
   const text = copy[language];
   const direction = language === "ur" ? "rtl" : "ltr";
   const [personalMemories, setPersonalMemories] = useState(() => getAllSimranMemories());
+  const [visitorLeft, setVisitorLeft] = useState(() => remainingMessages());
 
   useEffect(() => {
     cleanupExpiredMemories();
@@ -104,6 +106,7 @@ function AiConcierge() {
     const id = setInterval(() => {
       const expired = cleanupExpiredMemories();
       if (expired.length) setPersonalMemories(getAllSimranMemories());
+      setVisitorLeft(remainingMessages());
     }, 60_000);
     return () => {
       window.removeEventListener("storage", onStorage);
@@ -131,17 +134,24 @@ function AiConcierge() {
   }
 
   async function ask(question: string, retry = false) {
-    const value = question.trim().slice(0, 800);
+    const value = question.trim().slice(0, 400); // token-save
     if (!value || requestLock.current) return;
+    resetIfExpired();
+    if (!canSendMessage()) {
+      setFailedQuestion(null);
+      const limitMsg: Message = { role: "assistant", text: `You have used all ${VISITOR_MESSAGE_LIMIT} messages for today (token-saving limit). Please come back tomorrow or contact the couple directly.` };
+      setMessages((cur) => [...cur, limitMsg].slice(-5));
+      return;
+    }
     requestLock.current = true;
     setFailedQuestion(null);
-    const nextMessages = [...(retry ? messages.slice(0, -2) : messages), { role: "user" as const, text: value }].slice(-10);
+    const nextMessages = [...(retry ? messages.slice(0, -2) : messages), { role: "user" as const, text: value }].slice(-5); // token-save: keep last 5
     setMessages(nextMessages);
     setDraft("");
     setBusy(true);
     // build local-only memory prompt from SimranMemoryBar (per-card, expires after wedding)
-    const memoryPrompt = buildMemoryPrompt(personalMemories);
-    const payload = { language: text.language, messages: nextMessages.map(({ role, text: content }) => ({ role, content })), memory: memoryPrompt };
+    const memoryPrompt = buildMemoryPrompt(personalMemories).slice(0, 1000); // token-save
+    const payload = { language: text.language, messages: nextMessages.map(({ role, text: content }) => ({ role, content: content.slice(0,400) })), memory: memoryPrompt };
     try {
       const reply =
         getInstantMusicReply(value, text.language) ??
@@ -151,16 +161,24 @@ function AiConcierge() {
           (signal) => supabase.functions.invoke("wedding-concierge", { body: payload, signal }),
           () => askSimranServer({ data: payload }),
         ));
+      incrementVisitorCount();
+      setVisitorLeft(remainingMessages());
       const assistantMessage: Message = { role: "assistant", text: applyMusicReply(reply, value) };
       setMessages((cur) => {
-        const nxt = [...cur, assistantMessage].slice(-10);
+        const nxt = [...cur, assistantMessage].slice(-5);
         persistCurrent(nxt);
         return nxt;
       });
-    } catch {
-      setFailedQuestion(value);
-      const errMsg: Message = { role: "assistant", text: text.error };
-      setMessages((cur) => [...cur, errMsg].slice(-10));
+    } catch (e: unknown) {
+      const m = (e as Error)?.message || "";
+      if (/used all|5 messages/i.test(m)) {
+        setMessages((cur) => [...cur, { role: "assistant", text: m } as Message].slice(-5));
+        setFailedQuestion(null);
+      } else {
+        setFailedQuestion(value);
+        const errMsg: Message = { role: "assistant", text: text.error };
+        setMessages((cur) => [...cur, errMsg].slice(-5));
+        }
     } finally {
       requestLock.current = false;
       setBusy(false);
@@ -388,6 +406,10 @@ function AiConcierge() {
         {/* Composer — floating input, ChatGPT-style but gold/burgundy */}
         <div className="border-t border-gold/10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="mx-auto max-w-3xl px-3 py-3 sm:px-6">
+            <div className="mb-2 flex items-center justify-between text-xs">
+              <span className={`rounded-full px-2 py-1 ${visitorLeft <= 1 ? "bg-amber-100 text-amber-800" : "bg-muted text-muted-foreground"}`}>{visitorLeft} / {VISITOR_MESSAGE_LIMIT} messages left today</span>
+              <span className="text-muted-foreground">Token-saving mode: last 5 msgs, 400 chars, 250 tokens out</span>
+            </div>
             <ConciergeControls
               language={text.language}
               busy={busy}
@@ -411,10 +433,11 @@ function AiConcierge() {
                 ref={inputRef as any}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                maxLength={800}
+                maxLength={400}
+                disabled={visitorLeft === 0}
                 rows={1}
                 dir={direction}
-                placeholder={text.placeholder as string}
+                placeholder={visitorLeft === 0 ? "Limit reached — 5/5 messages used today" : text.placeholder as string}
                 aria-label={text.placeholder as string}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -430,7 +453,7 @@ function AiConcierge() {
                 </button>
                 <button
                   type="submit"
-                  disabled={busy || !draft.trim()}
+                  disabled={busy || !draft.trim() || visitorLeft === 0}
                   aria-label={text.send as string}
                   className="flex h-10 w-10 items-center justify-center rounded-full bg-burgundy text-ivory shadow hover:bg-burgundy/90 disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >

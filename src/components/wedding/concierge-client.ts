@@ -29,13 +29,16 @@ async function withTimeout<T>(
 export async function requestConcierge(
   edge: (signal: AbortSignal) => Promise<{ data: Reply | null; error: unknown }>,
   server: () => Promise<Reply>,
-): Promise<string> {
-  try {
+): Promise<string> {  try {
     const { data, error } = await withTimeout(edge, 5_000);
     if (!error && typeof data?.reply === "string" && data.reply.trim()) {
       return data.reply.trim();
     }
-  } catch {
+    const msg = (error as any)?.message || (error as any)?.toString?.() || "";
+    if (typeof msg === "string" && /used all|message limit|5 messages/i.test(msg)) throw new Error(msg);
+  } catch (e) {
+    const m = (e as any)?.message || "";
+    if (typeof m === "string" && /used all|message limit|5 messages/i.test(m)) throw e;
     // Unavailable, undeployed, or slow Edge Functions must not block the fallback.
   }
 

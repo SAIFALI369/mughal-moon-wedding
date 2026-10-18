@@ -22,6 +22,32 @@ function parseDotEnvValue(raw: string, key: string): string {
 export const askSimranServer = createServerFn({ method: "POST" })
   .inputValidator((input: ConciergeRequest) => input)
   .handler(async ({ data }): Promise<{ reply: string }> => {
+    // Token-saving + 5-message limit (server fallback)
+    // Simple in-memory per-IP visitor limit (mirrors edge)
+    const getReq = () => {
+      try {
+        // @ts-ignore
+        const { getRequest } = require("@tanstack/react-start/server");
+        return getRequest();
+      } catch { return null; }
+    };
+    const req: any = getReq();
+    const ip = req?.headers?.get?.("x-forwarded-for")?.split(",")[0]?.trim() || req?.headers?.get?.("cf-connecting-ip") || "unknown-server";
+    const g = globalThis as any;
+    if (!g.__simranVisitor) g.__simranVisitor = new Map();
+    const map: Map<string, { c: number; reset: number }> = g.__simranVisitor;
+    const now = Date.now();
+    const VISITOR_LIMIT = 5;
+    const VISITOR_WINDOW = 86400000;
+    const v = map.get(ip);
+    if (!v || now > v.reset) map.set(ip, { c: 1, reset: now + VISITOR_WINDOW });
+    else {
+      if (v.c >= VISITOR_LIMIT) throw new Error(`You have used all ${VISITOR_LIMIT} messages for today. Please come back tomorrow.`);
+      v.c += 1;
+    }
+    for (const [k, b] of map) { if (now > b.reset) map.delete(k); }
+    if (map.size > 2000) { for (const [kk, bb] of map) { if (now > bb.reset) map.delete(kk); } }
+
     const { AI_NAME, GEMINI_API_KEY, GEMINI_MODEL } =
       await import("../../../supabase/functions/wedding-concierge/gemini-key");
 
@@ -47,7 +73,7 @@ export const askSimranServer = createServerFn({ method: "POST" })
         ? data.language
         : "English";
 
-    const incoming = Array.isArray(data.messages) ? data.messages.slice(-10) : [];
+    const incoming = Array.isArray(data.messages) ? data.messages.slice(-5) : [];
     const messages = incoming
       .filter(
         (m): m is ChatMessage =>
@@ -55,7 +81,7 @@ export const askSimranServer = createServerFn({ method: "POST" })
           typeof m.content === "string" &&
           m.content.trim().length > 0,
       )
-      .map((m) => ({ role: m.role, content: m.content.trim().slice(0, 800) }));
+      .map((m) => ({ role: m.role, content: m.content.trim().slice(0, 400) }));
 
     if (messages.length === 0 || messages[messages.length - 1]?.role !== "user") {
       throw new Error("Please send a question");
@@ -71,7 +97,7 @@ export const askSimranServer = createServerFn({ method: "POST" })
       ? configuredModel
       : "gemini-2.5-flash";
 
-    const memory = typeof (data as any).memory === "string" ? ((data as any).memory as string).slice(0, 4000) : "";
+    const memory = typeof (data as any).memory === "string" ? ((data as any).memory as string).slice(0, 1000) : "";
     const systemInstruction = buildConciergeInstruction(AI_NAME, language, memory);
 
     const upstream = await fetch(
@@ -87,8 +113,8 @@ export const askSimranServer = createServerFn({ method: "POST" })
             parts: [{ text: content }],
           })),
           generationConfig: {
-            temperature: 0.6,
-            maxOutputTokens: 600,
+            temperature: 0.5,
+            maxOutputTokens: 250, // trimmed
             ...(model.startsWith("gemini-2.5-flash")
               ? { thinkingConfig: { thinkingBudget: 0 } }
               : {}),
