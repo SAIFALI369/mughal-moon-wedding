@@ -9,6 +9,8 @@ on:
       - "scripts/migrate.mjs"
       - "scripts/cleanup-expired.mjs"
       - ".github/workflows/migrate.yml"
+      - "package.json"
+      - "package-lock.json"
   pull_request:
     branches: [main]
     paths:
@@ -17,14 +19,13 @@ on:
       - "scripts/migrate.mjs"
       - "scripts/cleanup-expired.mjs"
   schedule:
-    - cron: "17 3 * * *" # daily cleanup of expired cards after marriage day
+    - cron: "17 3 * * *" # daily at 03:17 UTC — migrate + cleanup expired cards after marriage day
   workflow_dispatch:
 
 jobs:
   migrate:
     runs-on: ubuntu-latest
     timeout-minutes: 5
-    # Only run if secret is configured; otherwise Lovable Cloud will run via postbuild
     steps:
       - uses: actions/checkout@v4
 
@@ -33,23 +34,28 @@ jobs:
           node-version: 20
 
       - name: Install migrate deps
-        run: npm i --package-lock-only 2>/dev/null; npm ci --ignore-scripts || npm i postgres --no-save
+        run: |
+          if [ -f package-lock.json ]; then
+            npm ci --ignore-scripts || npm install --ignore-scripts
+          else
+            npm install --ignore-scripts
+          fi
 
       - name: Run drizzle migrations (Lovable)
         env:
           LOVABLE_DB_MIGRATION_URL: ${{ secrets.LOVABLE_DB_MIGRATION_URL }}
         run: |
           if [ -z "$LOVABLE_DB_MIGRATION_URL" ]; then
-            echo "LOVABLE_DB_MIGRATION_URL not set — skipping GitHub migrate (Lovable Cloud will run postbuild)."
+            echo "LOVABLE_DB_MIGRATION_URL not set — skipping GitHub migrate (Lovable Cloud will run postbuild 'npm run build' → node scripts/migrate.mjs)."
             exit 0
           fi
           node scripts/migrate.mjs
 
       - name: Verify tables
-        if: env.LOVABLE_DB_MIGRATION_URL != ''
         env:
           LOVABLE_DB_MIGRATION_URL: ${{ secrets.LOVABLE_DB_MIGRATION_URL }}
         run: |
+          if [ -z "$LOVABLE_DB_MIGRATION_URL" ]; then echo "no DB URL, skip verify"; exit 0; fi
           node -e "
           import postgres from 'postgres';
           const sql = postgres(process.env.LOVABLE_DB_MIGRATION_URL, {max:1});
@@ -58,6 +64,8 @@ jobs:
             \"select to_regclass('public.invitation_cards') as t\",
             \"select proname from pg_proc where proname='enforce_invitation_card_limit'\",
             \"select * from pg_policies where tablename='invitation_cards' and policyname='Anyone can view published invitations'\",
+            \"select column_name from information_schema.columns where table_name='invitation_cards' and column_name='expires_at'\",
+            \"select proname from pg_proc where proname='delete_expired_invitations'\",
           ];
           for (const q of checks){
             const r = await sql.unsafe(q);
