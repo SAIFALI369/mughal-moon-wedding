@@ -308,7 +308,10 @@ export function Rsvp() {
   const submit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const f = new FormData(e.currentTarget);
-    if (!String(f.get("name") || "").trim()) return toast.error("Please share your name");
+    if (!String(f.get("name") || "").trim()) {
+      toast.error("Please share your name");
+      return;
+    }
     const gold = ["#C9A84C", "#F2DFA0", "#6B1D2A", "#FDF8F0"];
     confetti({ particleCount: 160, spread: 90, origin: { y: 0.7 }, colors: gold });
     setTimeout(() => confetti({ particleCount: 90, angle: 60, spread: 70, origin: { x: 0 }, colors: gold }), 250);
