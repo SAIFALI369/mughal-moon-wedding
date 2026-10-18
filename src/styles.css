@@ -120,7 +120,8 @@
   border: 1px solid oklch(0.76 0.11 82 / 0.4);
 }
 
-.dark .eid-hero img {
+.dark .eid-hero img,
+.dark .gate-sky {
   filter: brightness(0.42) contrast(1.1) saturate(1.15);
 }
 
@@ -346,22 +347,22 @@
 
 /* A pair of gilded celestial doors, built without heavyweight image assets. */
 .heavenly-entrance {
-  background: #fff5dc;
+  background: var(--background);
   perspective: 1200px;
 }
 .gate-radiance {
   position: absolute;
   inset: -30%;
-  background: radial-gradient(ellipse, #fffef5 12%, #f9df9e88 42%, #d8b77533 65%, transparent 75%);
+  background: radial-gradient(ellipse, color-mix(in oklch, var(--background) 70%, transparent), transparent 75%);
 }
 .heavenly-gate {
   position: absolute;
   top: 0;
   bottom: 0;
   width: 50.1%;
-  background: repeating-linear-gradient(90deg, transparent 0 36px, #e7c78922 37px 39px, transparent 40px 76px), linear-gradient(145deg, #273d4b, #172631 65%, #364958);
-  border: 2px solid #c5a168;
-  box-shadow: inset 0 0 70px #0008, 0 0 35px #fce8aa80;
+  background: repeating-linear-gradient(90deg, transparent 0 36px, color-mix(in oklch, var(--gold) 10%, transparent) 37px 39px, transparent 40px 76px);
+  border: 1px solid var(--border);
+  box-shadow: inset 0 0 70px color-mix(in oklch, var(--background) 55%, transparent);
   transition: transform 1.8s cubic-bezier(.4, 0, .2, 1), opacity 1.8s;
 }
 .gate-left { left: 0; transform-origin: left center; }
@@ -369,9 +370,9 @@
 .gate-arch {
   position: absolute;
   inset: 6% 8% 5%;
-  border: 2px solid #dfbf7e;
+  border: 1px solid var(--border);
   border-radius: 50% 50% 8px 8px / 26% 26% 8px 8px;
-  box-shadow: inset 0 0 0 7px #22333e, inset 0 0 0 8px #b99150, 0 0 22px #f5d49420;
+  box-shadow: inset 0 0 0 7px color-mix(in oklch, var(--background) 35%, transparent), inset 0 0 0 8px var(--border);
 }
 .gate-arch::after {
   content: "✧";
@@ -379,11 +380,11 @@
   bottom: 12%;
   left: 50%;
   transform: translateX(-50%);
-  color: #e9cd91;
+  color: var(--gold);
   font-size: 56px;
 }
 .gate-welcome {
-  background: radial-gradient(ellipse at center, #172631dd, #17263170 45%, transparent 75%);
+  background: radial-gradient(ellipse at center, color-mix(in oklch, var(--background) 90%, transparent), color-mix(in oklch, var(--background) 55%, transparent) 45%, transparent 80%);
   transition: opacity .65s, transform .9s;
 }
 .is-opening .gate-left { transform: rotateY(-105deg); opacity: 0; }
@@ -391,4 +392,12 @@
 .is-opening .gate-welcome { opacity: 0; transform: scale(1.08); pointer-events: none; }
 @media (prefers-reduced-motion: reduce) {
   .heavenly-gate, .gate-welcome { transition-duration: .01ms; }
+}
+
+@media (max-width: 640px) {
+  .gate-sky { object-position: 72% center; }
+  .gate-arch { inset: 3% 6%; }
+}
+@media (max-height: 650px) {
+  .gate-welcome { justify-content: flex-start; }
 }

@@ -64,7 +64,7 @@ describe("2026 wedding schedule", () => {
     expect(AI_NAME).toBe("Simran");
     expect(ROUTE_AI_NAME).toBe("Simran");
     expect(typeof GEMINI_API_KEY).toBe("string");
-    expect(GEMINI_MODEL).toBe("gemini-3.5-flash");
+    expect(GEMINI_MODEL).toBe("gemini-2.5-flash");
   });
 
   it("exposes configurable bride, groom, and gallery photos", () => {

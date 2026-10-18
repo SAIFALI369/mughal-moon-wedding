@@ -156,11 +156,11 @@ Deno.serve(async (request: Request) => {
     const configuredModel = (
       Deno.env.get("GEMINI_MODEL") ||
       GEMINI_MODEL ||
-      "gemini-3.5-flash"
+      "gemini-2.5-flash"
     ).trim();
     const model = /^[a-zA-Z0-9._-]{1,80}$/.test(configuredModel)
       ? configuredModel
-      : "gemini-3.5-flash";
+      : "gemini-2.5-flash";
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15_000);
 
