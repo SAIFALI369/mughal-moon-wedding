@@ -2,6 +2,12 @@ import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion"
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
+import { useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { Button } from "@/components/ui/button";
+import { normalizeGuestName, rsvpSchema } from "./rsvp-schema";
+import { wishesQuery } from "./wishes-query";
+import eidSky from "@/assets/eid-sky.jpg";
 import { CalendarHeart, ChevronDown, Diamond, Gem, Heart, Instagram, Landmark, MapPin, MessageCircle, Music, UtensilsCrossed } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { Divider, Mandala, SectionTitle, Sparkles, fadeUp } from "./ornaments";
@@ -59,12 +65,10 @@ export function Hero() {
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
   const fade = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
   return (
-    <section ref={ref} className="grain relative flex min-h-screen items-center justify-center overflow-hidden text-ivory">
-      <motion.div style={{ y }} className="bg-hero absolute inset-0">
-        <Mandala className="absolute left-1/2 top-1/2 h-[140vmin] w-[140vmin] -translate-x-1/2 -translate-y-1/2 text-gold opacity-10" />
+    <section ref={ref} className="eid-hero relative flex min-h-[88svh] items-center justify-center overflow-hidden text-foreground">
+      <motion.div style={{ y }} className="absolute inset-0">
+        <img src={eidSky} alt="Golden crescent moon and stars above luminous Eid clouds" width={1536} height={1024} fetchPriority="high" className="h-full w-full object-cover object-right" />
       </motion.div>
-      <Sparkles />
-      <div className="vignette pointer-events-none absolute inset-0" />
       <motion.div style={{ opacity: fade }} className="relative z-10 px-6 text-center">
         <motion.p initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 3.2, duration: 1 }} dir="rtl" className="font-arabic text-2xl text-gold-light md:text-4xl">
           بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
@@ -77,7 +81,7 @@ export function Hero() {
           <motion.span initial={{ opacity: 0, scale: 0.4 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 4.3, duration: 1 }} className="text-gold-shimmer font-script text-6xl md:text-8xl">weds</motion.span>
           <motion.h1 initial={{ opacity: 0, x: 60 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 3.8, duration: 1.2 }} className="font-serif text-6xl font-medium sm:text-7xl md:text-9xl">Simran</motion.h1>
         </div>
-        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.8, duration: 1 }} className="mx-auto mt-10 max-w-xl font-serif text-lg italic tracking-[0.15em] text-ivory/85 md:text-2xl">
+        <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 4.8, duration: 1 }} className="mx-auto mt-10 max-w-xl font-serif text-lg italic text-foreground md:text-2xl">
           Saturday, the Twenty-First of June, Two Thousand Twenty-Five
         </motion.p>
         <motion.button
@@ -100,7 +104,7 @@ function FlipCard({ value, label }: { value: number; label: string }) {
   const v = String(value).padStart(2, "0");
   return (
     <div className="text-center">
-      <div className="relative h-28 overflow-hidden rounded-xl border border-gold/70 bg-charcoal shadow-gold [perspective:600px] md:h-36">
+      <div className="relative h-28 overflow-hidden rounded-lg border border-gold/70 bg-card shadow-gold [perspective:600px] md:h-36">
         <span className="absolute inset-x-0 top-1/2 z-10 h-px bg-gold/30" />
         <AnimatePresence mode="popLayout" initial={false}>
           <motion.span
@@ -109,7 +113,7 @@ function FlipCard({ value, label }: { value: number; label: string }) {
             animate={{ rotateX: 0, opacity: 1 }}
             exit={{ rotateX: 90, opacity: 0 }}
             transition={{ duration: 0.45 }}
-            className="absolute inset-0 flex items-center justify-center font-serif text-5xl text-ivory md:text-7xl"
+            className="absolute inset-0 flex items-center justify-center font-serif text-5xl text-foreground md:text-7xl"
           >
             {v}
           </motion.span>
@@ -137,8 +141,8 @@ export function Countdown() {
   ];
   const passed = now !== null && diff === 0;
   return (
-    <section id="countdown" className="grain relative overflow-hidden bg-burgundy-deep px-6 py-24 text-ivory">
-      <SectionTitle eyebrow="The countdown" light>Counting Every Moment</SectionTitle>
+    <section id="countdown" className="relative overflow-hidden bg-muted px-6 py-24 text-foreground">
+      <SectionTitle eyebrow="The countdown">Counting Every Moment</SectionTitle>
       <motion.div {...fadeUp} className="mx-auto grid max-w-3xl grid-cols-2 gap-5 md:grid-cols-4 md:gap-8">
         {parts.map((p) => <FlipCard key={p.l} value={p.v} label={p.l} />)}
       </motion.div>
@@ -305,29 +309,53 @@ export function DressCode() {
 /* ───────── RSVP ───────── */
 export function Rsvp() {
   const [sent, setSent] = useState(false);
-  const submit = (e: FormEvent<HTMLFormElement>) => {
+  const [sending, setSending] = useState(false);
+  const [error, setError] = useState("");
+  const queryClient = useQueryClient();
+  const submit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const f = new FormData(e.currentTarget);
-    if (!String(f.get("name") || "").trim()) {
-      toast.error("Please share your name");
+    if (sending) return;
+    const form = e.currentTarget;
+    const f = new FormData(form);
+    const parsed = rsvpSchema.safeParse({ name: String(f.get("name") || ""), guests: Number(f.get("guests")), events: f.getAll("events"), diet: String(f.get("diet") || ""), message: String(f.get("msg") || "") });
+    setError("");
+    if (!parsed.success) {
+      setError(parsed.error.issues[0]?.message || "Please check your reply");
       return;
     }
-    const gold = ["#C9A84C", "#F2DFA0", "#6B1D2A", "#FDF8F0"];
+    const existing = queryClient.getQueryData(wishesQuery.queryKey) || [];
+    if (existing.some((wish) => normalizeGuestName(wish.name) === normalizeGuestName(parsed.data.name))) {
+      setError("A reply from this name has already been received.");
+      return;
+    }
+    setSending(true);
+    try {
+      const { error: saveError } = await supabase.from("wedding_rsvps").insert(parsed.data);
+      if (saveError) {
+        setError(saveError.code === "23505" ? "A reply from this name has already been received." : "Your reply could not be saved. Please try again.");
+        return;
+      }
+      await queryClient.invalidateQueries({ queryKey: wishesQuery.queryKey });
+    const palette = getComputedStyle(document.documentElement);
+    const gold = [palette.getPropertyValue("--gold").trim(), palette.getPropertyValue("--gold-light").trim()];
     confetti({ particleCount: 160, spread: 90, origin: { y: 0.7 }, colors: gold });
     setTimeout(() => confetti({ particleCount: 90, angle: 60, spread: 70, origin: { x: 0 }, colors: gold }), 250);
     setTimeout(() => confetti({ particleCount: 90, angle: 120, spread: 70, origin: { x: 1 }, colors: gold }), 400);
     toast.success("Thank You! We can't wait to celebrate with you 💛");
     setSent(true);
-    e.currentTarget.reset();
+    form.reset();
+    } catch {
+      setError("Your reply could not be saved. Please try again.");
+    } finally { setSending(false); }
   };
-  const field = "w-full rounded-lg border border-gold/50 bg-burgundy-deep/60 px-4 py-3 text-ivory placeholder:text-ivory/40 outline-none transition focus:border-gold focus:ring-2 focus:ring-gold/30";
+  const field = "w-full rounded-lg border border-gold/50 bg-card px-4 py-3 text-foreground placeholder:text-muted-foreground outline-none transition focus:border-gold focus:ring-2 focus:ring-gold/30";
   return (
-    <section id="rsvp" className="grain relative overflow-hidden bg-burgundy px-6 py-24 text-ivory">
-      <SectionTitle eyebrow="Kindly reply" light>RSVP</SectionTitle>
-      <motion.form {...fadeUp} onSubmit={submit} className="gold-corners mx-auto max-w-2xl space-y-6 rounded-2xl border border-gold/40 bg-burgundy-deep/40 p-8 md:p-12">
+    <section id="rsvp" className="relative overflow-hidden bg-muted px-6 py-24 text-foreground">
+      <SectionTitle eyebrow="Kindly reply">RSVP</SectionTitle>
+      <motion.form {...fadeUp} onSubmit={submit} className="mx-auto max-w-2xl space-y-6">
         <label className="block">
           <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-gold">Full Name</span>
-          <input name="name" className={field} placeholder="Your name" />
+          <input name="name" required maxLength={100} className={field} placeholder="Your name" />
         </label>
         <label className="block">
           <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-gold">Number of Guests</span>
@@ -348,15 +376,17 @@ export function Rsvp() {
         </fieldset>
         <label className="block">
           <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-gold">Dietary Restrictions</span>
-          <input name="diet" className={field} placeholder="Vegetarian, allergies…" />
+          <input name="diet" maxLength={500} className={field} placeholder="Vegetarian, allergies…" />
         </label>
         <label className="block">
           <span className="mb-2 block text-xs uppercase tracking-[0.3em] text-gold">A Message for the Couple</span>
-          <textarea name="msg" rows={4} className={field} placeholder="Your du'as and wishes…" />
+          <textarea name="msg" rows={4} maxLength={2000} className={field} placeholder="Your du'as and wishes…" />
         </label>
-        <button type="submit" className="bg-gold-gradient btn-shimmer w-full rounded-full py-4 text-sm font-medium uppercase tracking-[0.3em] text-burgundy-deep transition hover:scale-[1.02] hover:shadow-gold">
-          Send Your Wishes
-        </button>
+        <p className="text-sm text-muted-foreground">Your name and wishes will be shared below. Guest and dietary details stay private.</p>
+        <Button type="submit" disabled={sending} className="btn-shimmer h-14 w-full whitespace-normal text-sm font-medium uppercase text-primary-foreground">
+          {sending ? "Sending…" : "Send Your Wishes"}
+        </Button>
+        {error && <p role="alert" className="text-center text-destructive">{error}</p>}
         {sent && <p className="text-center font-script text-3xl text-gold-light">JazakAllah Khair 💛</p>}
       </motion.form>
     </section>
@@ -389,9 +419,9 @@ export function VenueMap() {
 /* ───────── Footer ───────── */
 export function Footer() {
   return (
-    <footer className="grain relative overflow-hidden bg-charcoal px-6 pb-10 pt-20 text-center text-ivory">
+    <footer className="relative overflow-hidden bg-muted px-6 pb-10 pt-20 text-center text-foreground">
       <Divider className="pt-0" />
-      <p className="mx-auto max-w-xl font-serif text-xl italic text-ivory/80 md:text-2xl">
+      <p className="mx-auto max-w-xl font-serif text-xl italic text-foreground md:text-2xl">
         We look forward to celebrating this beautiful beginning with you.
       </p>
       <h2 className="text-gold-shimmer mt-8 font-script text-6xl md:text-8xl">Mohsin &amp; Simran</h2>
@@ -403,7 +433,7 @@ export function Footer() {
           </a>
         ))}
       </div>
-      <p className="mt-14 flex items-center justify-center gap-1 text-xs text-ivory/50">
+      <p className="mt-14 flex items-center justify-center gap-1 text-xs text-muted-foreground">
         Made with <Heart className="h-3 w-3 fill-burgundy text-burgundy" />
       </p>
     </footer>
