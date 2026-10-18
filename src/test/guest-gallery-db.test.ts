@@ -12,9 +12,17 @@ beforeAll(async () => {
   await db.exec(
     "CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role; CREATE PUBLICATION supabase_realtime;",
   );
+  await db.exec("CREATE SCHEMA IF NOT EXISTS auth; CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT NULL::uuid $$;");
   await db.exec(
     readFileSync(
       new URL("../../drizzle/migrations/0001_shared_guest_gallery.sql", import.meta.url),
+      "utf8",
+    ),
+  );
+  // Apply owner + 2MB tightening
+  await db.exec(
+    readFileSync(
+      new URL("../../drizzle/migrations/0003_wedding_photos_owner_and_2mb.sql", import.meta.url),
       "utf8",
     ),
   );
@@ -27,18 +35,19 @@ describe("shared photo database rules", () => {
     await expect(insert("data:image/jpeg;base64,YWJjZA==")).rejects.toThrow("Invalid JPEG");
     await expect(insert(jpeg, " ")).rejects.toThrow("Invalid photo");
     await expect(insert(jpeg, "a".repeat(101))).rejects.toThrow("Invalid photo");
-    await expect(insert("data:image/jpeg;base64," + "a".repeat(1100001))).rejects.toThrow(
+    await expect(insert("data:image/jpeg;base64," + "a".repeat(2800001))).rejects.toThrow(
       "Invalid photo",
     );
   });
   it("allows anonymous guests to add and read but not directly insert, replace or delete", async () => {
+    await db.exec("TRUNCATE public.wedding_photos;");
     await db.exec("SET ROLE anon;");
     try {
       await insert();
       const rows = await db.query("select slot from public.wedding_photos");
       expect(rows.rows).toHaveLength(1);
       await expect(
-        db.exec("insert into public.wedding_photos values (2, 'bad', 'bad', now())"),
+        db.exec("insert into public.wedding_photos values (2, 'bad', 'bad', now(), NULL)"),
       ).rejects.toThrow("permission denied");
       await expect(db.exec("delete from public.wedding_photos")).rejects.toThrow(
         "permission denied",
@@ -61,7 +70,26 @@ describe("shared photo database rules", () => {
     expect(rows.rows.map((row) => row.slot)).toEqual([1, 2, 3, 4, 5]);
     await expect(insert()).rejects.toThrow("Gallery is full");
     await expect(
-      db.exec("insert into public.wedding_photos values (6, 'bad', 'bad', now())"),
+      db.exec("insert into public.wedding_photos values (6, 'bad', 'bad', now(), NULL)"),
     ).rejects.toThrow("check constraint");
+  });
+  it("enforces strict 2 MB limit and lets owner remove/replace", async () => {
+    await db.exec("TRUNCATE public.wedding_photos;");
+    // Anon can still add under 2 MB
+    await insert();
+    // Owner (authenticated) can delete
+    // Mock auth.uid to return a fixed uuid for owner checks
+    await db.exec("CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT '11111111-1111-1111-1111-111111111111'::uuid $$;");
+    await db.query("select public.delete_wedding_photo(1::smallint)");
+    const after = await db.query("select slot from public.wedding_photos");
+    expect(after.rows).toHaveLength(0);
+    // Owner can replace into empty slot
+    await db.query("select public.replace_wedding_photo(2::smallint, $1, $2)", [jpeg, "Owner update"]);
+    const rows = await db.query<{ slot: number; caption: string }>("select slot, caption from public.wedding_photos order by slot");
+    expect(rows.rows[0].slot).toBe(2);
+    expect(rows.rows[0].caption).toBe("Owner update");
+    // Reset auth
+    await db.exec("CREATE OR REPLACE FUNCTION auth.uid() RETURNS uuid LANGUAGE sql AS $$ SELECT NULL::uuid $$;");
+    await expect(db.query("select public.delete_wedding_photo(2::smallint)")).rejects.toThrow("Not authorized");
   });
 });

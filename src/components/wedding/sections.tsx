@@ -78,6 +78,7 @@ const NAV_LINKS = [
 
 export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
   const [dark, setDark] = useState(false);
+  // Auth nav is rendered via lightweight check to avoid circular import; see separate AuthNav component if needed
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
@@ -123,6 +124,12 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
         </div>
 
         <div className="flex items-center gap-2">
+          <a href="/dashboard" className="hidden items-center gap-1 rounded-full border border-gold/40 px-3 py-2 text-[11px] uppercase tracking-[0.15em] text-foreground hover:bg-gold/10 sm:inline-flex" title="Create & manage your private invitations (up to 3)">
+            My Invites
+          </a>
+          <a href="/sign-in" className="hidden items-center gap-1 rounded-full bg-burgundy px-3 py-2 text-[11px] uppercase tracking-[0.15em] text-ivory hover:bg-burgundy/90 sm:inline-flex">
+            Sign in
+          </a>
           <button
             type="button"
             onClick={toggleTheme}
@@ -182,6 +189,8 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
                 {item.label}
               </a>
             ))}
+            <a href="/dashboard" onClick={() => setMobileOpen(false)} className="rounded-full border border-burgundy/30 bg-burgundy/10 px-3 py-1.5 text-xs uppercase tracking-[0.18em] text-burgundy">My Invites (≤3)</a>
+            <a href="/sign-in" onClick={() => setMobileOpen(false)} className="rounded-full border border-gold/30 px-3 py-1.5 text-xs uppercase tracking-[0.18em]">Sign in</a>
           </motion.div>
         )}
       </AnimatePresence>

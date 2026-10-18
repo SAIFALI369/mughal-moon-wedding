@@ -14,6 +14,90 @@ export type Database = {
   }
   public: {
     Tables: {
+      invitation_cards: {
+        Row: {
+          content: Json
+          created_at: string
+          expires_at: string | null
+          id: string
+          owner_id: string
+          published_at: string | null
+          slug: string
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          content?: Json
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          owner_id: string
+          published_at?: string | null
+          slug: string
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          content?: Json
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          owner_id?: string
+          published_at?: string | null
+          slug?: string
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          email: string
+          id: string
+          username: string
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          id: string
+          username: string
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          id?: string
+          username?: string
+        }
+        Relationships: []
+      }
+      wedding_photos: {
+        Row: {
+          caption: string
+          created_at: string
+          image_data: string
+          owner_id: string | null
+          slot: number
+        }
+        Insert: {
+          caption: string
+          created_at?: string
+          image_data: string
+          owner_id?: string | null
+          slot: number
+        }
+        Update: {
+          caption?: string
+          created_at?: string
+          image_data?: string
+          owner_id?: string | null
+          slot?: number
+        }
+        Relationships: []
+      }
       wedding_rsvps: {
         Row: {
           created_at: string

@@ -15,6 +15,27 @@
       "when": 1792327086996,
       "tag": "0001_shared_guest_gallery",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1792333000000,
+      "tag": "0002_personal_invitation_cards",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1792334000000,
+      "tag": "0003_wedding_photos_owner_and_2mb",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1792335000000,
+      "tag": "0004_invitation_expiry_and_memory",
+      "breakpoints": true
     }
   ]
 }

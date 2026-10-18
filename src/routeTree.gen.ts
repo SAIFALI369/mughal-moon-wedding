@@ -11,6 +11,13 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiConciergeRouteImport } from './routes/ai-concierge'
+import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as RecoverRouteImport } from './routes/recover'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as SignInRouteImport } from './routes/sign-in'
+import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as CardsIdRouteImport } from './routes/cards.$id'
+import { Route as InviteSlugRouteImport } from './routes/invite.$slug'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -22,31 +29,122 @@ const AiConciergeRoute = AiConciergeRouteImport.update({
   path: '/ai-concierge',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RecoverRoute = RecoverRouteImport.update({
+  id: '/recover',
+  path: '/recover',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignInRoute = SignInRouteImport.update({
+  id: '/sign-in',
+  path: '/sign-in',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignUpRoute = SignUpRouteImport.update({
+  id: '/sign-up',
+  path: '/sign-up',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CardsIdRoute = CardsIdRouteImport.update({
+  id: '/cards/$id',
+  path: '/cards/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const InviteSlugRoute = InviteSlugRouteImport.update({
+  id: '/invite/$slug',
+  path: '/invite/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
+  '/dashboard': typeof DashboardRoute
+  '/recover': typeof RecoverRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/cards/$id': typeof CardsIdRoute
+  '/invite/$slug': typeof InviteSlugRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
+  '/dashboard': typeof DashboardRoute
+  '/recover': typeof RecoverRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/cards/$id': typeof CardsIdRoute
+  '/invite/$slug': typeof InviteSlugRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
+  '/dashboard': typeof DashboardRoute
+  '/recover': typeof RecoverRoute
+  '/reset-password': typeof ResetPasswordRoute
+  '/sign-in': typeof SignInRoute
+  '/sign-up': typeof SignUpRoute
+  '/cards/$id': typeof CardsIdRoute
+  '/invite/$slug': typeof InviteSlugRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/ai-concierge'
+  fullPaths:
+    | '/'
+    | '/ai-concierge'
+    | '/dashboard'
+    | '/recover'
+    | '/reset-password'
+    | '/sign-in'
+    | '/sign-up'
+    | '/cards/$id'
+    | '/invite/$slug'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/ai-concierge'
-  id: '__root__' | '/' | '/ai-concierge'
+  to:
+    | '/'
+    | '/ai-concierge'
+    | '/dashboard'
+    | '/recover'
+    | '/reset-password'
+    | '/sign-in'
+    | '/sign-up'
+    | '/cards/$id'
+    | '/invite/$slug'
+  id:
+    | '__root__'
+    | '/'
+    | '/ai-concierge'
+    | '/dashboard'
+    | '/recover'
+    | '/reset-password'
+    | '/sign-in'
+    | '/sign-up'
+    | '/cards/$id'
+    | '/invite/$slug'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiConciergeRoute: typeof AiConciergeRoute
+  DashboardRoute: typeof DashboardRoute
+  RecoverRoute: typeof RecoverRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
+  SignInRoute: typeof SignInRoute
+  SignUpRoute: typeof SignUpRoute
+  CardsIdRoute: typeof CardsIdRoute
+  InviteSlugRoute: typeof InviteSlugRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -65,12 +163,68 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AiConciergeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recover': {
+      id: '/recover'
+      path: '/recover'
+      fullPath: '/recover'
+      preLoaderRoute: typeof RecoverRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-in': {
+      id: '/sign-in'
+      path: '/sign-in'
+      fullPath: '/sign-in'
+      preLoaderRoute: typeof SignInRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/sign-up': {
+      id: '/sign-up'
+      path: '/sign-up'
+      fullPath: '/sign-up'
+      preLoaderRoute: typeof SignUpRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/cards/$id': {
+      id: '/cards/$id'
+      path: '/cards/$id'
+      fullPath: '/cards/$id'
+      preLoaderRoute: typeof CardsIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/invite/$slug': {
+      id: '/invite/$slug'
+      path: '/invite/$slug'
+      fullPath: '/invite/$slug'
+      preLoaderRoute: typeof InviteSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiConciergeRoute: AiConciergeRoute,
+  DashboardRoute: DashboardRoute,
+  RecoverRoute: RecoverRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
+  SignInRoute: SignInRoute,
+  SignUpRoute: SignUpRoute,
+  CardsIdRoute: CardsIdRoute,
+  InviteSlugRoute: InviteSlugRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

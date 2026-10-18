@@ -67,7 +67,7 @@ describe("chat and photo accessibility", () => {
   );
   it("rejects empty, oversized and active-content uploads", () => {
     expect(() => validatePhoto({ type: "image/jpeg", size: 0 })).toThrow("empty");
-    expect(() => validatePhoto({ type: "image/jpeg", size: 11 * 1024 * 1024 })).toThrow("10 MB");
+    expect(() => validatePhoto({ type: "image/jpeg", size: 3 * 1024 * 1024 })).toThrow("2 MB");
     expect(() => validatePhoto({ type: "image/svg+xml", size: 1000 })).toThrow("JPG, PNG or WebP");
   });
 });
