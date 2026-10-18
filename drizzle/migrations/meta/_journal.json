@@ -1,5 +1,13 @@
 {
   "version": "7",
   "dialect": "postgresql",
-  "entries": []
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1792310404713,
+      "tag": "0000_wedding_rsvp_and_live_wishes",
+      "breakpoints": true
+    }
+  ]
 }
