@@ -112,11 +112,12 @@ Deno.serve(async (request: Request) => {
       return json(request, { error: "Request is too large" }, 413);
     }
 
-    const body = JSON.parse(rawBody) as { language?: unknown; messages?: unknown };
+    const body = JSON.parse(rawBody) as { language?: unknown; messages?: unknown; memory?: unknown };
     const language =
       typeof body.language === "string" && ["English", "हिन्दी", "اردو"].includes(body.language)
         ? body.language
         : "English";
+    const memory = typeof body.memory === "string" ? body.memory.slice(0, 4000) : "";
     const incoming = body.messages;
     if (!Array.isArray(incoming) || incoming.length === 0) {
       return json(request, { error: "A message is required" }, 400);
@@ -139,7 +140,7 @@ Deno.serve(async (request: Request) => {
       return json(request, { error: "Please send a question" }, 400);
     }
 
-    const systemInstruction = buildConciergeInstruction(AI_NAME, language);
+    const systemInstruction = buildConciergeInstruction(AI_NAME, language, memory);
 
     const configuredModel = (
       Deno.env.get("GEMINI_MODEL") ||

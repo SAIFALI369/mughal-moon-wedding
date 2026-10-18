@@ -7,7 +7,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { askSimranServer } from "@/components/wedding/concierge.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageCircle, Plus, History, Trash2, Menu, X, Send, Mic, Sparkles, ChevronDown } from "lucide-react";
+import { MessageCircle, Plus, History, Trash2, Menu, X, Send, Mic, Sparkles, ChevronDown, Brain, ShieldAlert } from "lucide-react";
+import { getAllSimranMemories, buildMemoryPrompt, cleanupExpiredMemories } from "@/lib/simran-memory";
 
 type Language = "en" | "hi" | "ur";
 type Message = { role: "user" | "assistant"; text: string };
@@ -92,6 +93,23 @@ function AiConcierge() {
 
   const text = copy[language];
   const direction = language === "ur" ? "rtl" : "ltr";
+  const [personalMemories, setPersonalMemories] = useState(() => getAllSimranMemories());
+
+  useEffect(() => {
+    cleanupExpiredMemories();
+    setPersonalMemories(getAllSimranMemories());
+    // also listen for storage changes from dashboard
+    const onStorage = () => setPersonalMemories(getAllSimranMemories());
+    window.addEventListener("storage", onStorage);
+    const id = setInterval(() => {
+      const expired = cleanupExpiredMemories();
+      if (expired.length) setPersonalMemories(getAllSimranMemories());
+    }, 60_000);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      clearInterval(id);
+    };
+  }, []);
 
   useEffect(() => {
     listRef.current?.scrollTo({ top: listRef.current.scrollHeight, behavior: "smooth" });
@@ -121,7 +139,9 @@ function AiConcierge() {
     setMessages(nextMessages);
     setDraft("");
     setBusy(true);
-    const payload = { language: text.language, messages: nextMessages.map(({ role, text: content }) => ({ role, content })) };
+    // build local-only memory prompt from SimranMemoryBar (per-card, expires after wedding)
+    const memoryPrompt = buildMemoryPrompt(personalMemories);
+    const payload = { language: text.language, messages: nextMessages.map(({ role, text: content }) => ({ role, content })), memory: memoryPrompt };
     try {
       const reply =
         getInstantMusicReply(value, text.language) ??
@@ -215,6 +235,26 @@ function AiConcierge() {
               </button>
             ))}
           </div>
+        </div>
+
+        {/* Personal card memories — local only, auto-expire */}
+        <div className="mx-3 rounded-xl border border-gold/20 bg-ivory text-burgundy-deep p-3">
+          <p className="flex items-center gap-2 text-xs font-semibold"><Brain size={14} className="text-burgundy"/> Your card memories for Simran</p>
+          {personalMemories.length === 0 ? (
+            <p className="mt-1 text-xs text-muted-foreground">No local memories yet. Add details in Dashboard — “What Simran should know” per card (stored locally, never on server).</p>
+          ) : (
+            <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+              {personalMemories.map((m) => (
+                <div key={m.cardId} className="rounded-lg border border-gold/20 bg-amber-50 p-2">
+                  <p className="text-xs font-medium truncate">{m.cardTitle}</p>
+                  <p className="text-[11px] text-muted-foreground truncate">{m.groomName} & {m.brideName} — {m.date}</p>
+                  <p className="text-[11px] line-clamp-2 text-muted-foreground">{m.customDetails || "(no custom notes)"}</p>
+                  <p className="text-[10px] text-emerald-700">Local only — expires {new Date(m.expiresAt).toLocaleDateString()} — auto-deletes</p>
+                </div>
+              ))}
+            </div>
+          )}
+          <p className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground"><ShieldAlert size={10}/> Local browser only — never saved — auto-deleted after wedding</p>
         </div>
 
         <div className="border-t border-ivory/10 p-3 space-y-3">

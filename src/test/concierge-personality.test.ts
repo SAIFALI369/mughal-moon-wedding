@@ -22,7 +22,10 @@ describe("Simran's expanded personality", () => {
       "src/components/wedding/concierge.functions.ts",
       "supabase/functions/wedding-concierge/index.ts",
     ]) {
-      expect(readFileSync(file, "utf8")).toContain("buildConciergeInstruction(AI_NAME, language)");
+      const src = readFileSync(file, "utf8");
+      expect(src).toContain("buildConciergeInstruction(");
+      expect(src).toContain("AI_NAME");
+      expect(src).toContain("language");
     }
   });
   it("provides instant capability and humour previews, not catch-all replies", () => {

@@ -2,7 +2,7 @@ import { buildConciergeInstruction } from "../../../supabase/functions/_shared/c
 import { createServerFn } from "@tanstack/react-start";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
-type ConciergeRequest = { language?: string; messages?: ChatMessage[] };
+type ConciergeRequest = { language?: string; messages?: ChatMessage[]; memory?: string };
 type GeminiResponse = {
   candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
 };
@@ -71,7 +71,8 @@ export const askSimranServer = createServerFn({ method: "POST" })
       ? configuredModel
       : "gemini-2.5-flash";
 
-    const systemInstruction = buildConciergeInstruction(AI_NAME, language);
+    const memory = typeof (data as any).memory === "string" ? ((data as any).memory as string).slice(0, 4000) : "";
+    const systemInstruction = buildConciergeInstruction(AI_NAME, language, memory);
 
     const upstream = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,

@@ -7,6 +7,7 @@ on:
       - "drizzle/migrations/**"
       - "supabase/migrations/**"
       - "scripts/migrate.mjs"
+      - "scripts/cleanup-expired.mjs"
       - ".github/workflows/migrate.yml"
   pull_request:
     branches: [main]
@@ -14,6 +15,9 @@ on:
       - "drizzle/migrations/**"
       - "supabase/migrations/**"
       - "scripts/migrate.mjs"
+      - "scripts/cleanup-expired.mjs"
+  schedule:
+    - cron: "17 3 * * *" # daily cleanup of expired cards after marriage day
   workflow_dispatch:
 
 jobs:
@@ -63,3 +67,10 @@ jobs:
           await sql.end();
           console.log('All migration checks passed ✓');
           "
+
+      - name: Cleanup expired invitations (auto-delete after wedding)
+        env:
+          LOVABLE_DB_MIGRATION_URL: ${{ secrets.LOVABLE_DB_MIGRATION_URL }}
+        run: |
+          if [ -z "$LOVABLE_DB_MIGRATION_URL" ]; then echo "no DB URL, skip cleanup"; exit 0; fi
+          node scripts/cleanup-expired.mjs || true

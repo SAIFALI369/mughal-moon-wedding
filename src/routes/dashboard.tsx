@@ -10,7 +10,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useAuth, getUsernameFromUser } from "@/lib/auth-context";
 import { toast } from "sonner";
 import { generateSlug } from "@/components/wedding/invitation-schema";
-import { Copy, ExternalLink, Trash2, Edit3, Share2, Eye, LogOut } from "lucide-react";
+import { Copy, ExternalLink, Trash2, Edit3, Share2, Eye, LogOut, Brain } from "lucide-react";
+import { SimranMemoryBar } from "@/components/wedding/simran-memory-bar";
+import { cleanupExpiredMemories, deleteSimranMemory } from "@/lib/simran-memory";
 
 type InvitationCard = {
   id: string;
@@ -22,6 +24,7 @@ type InvitationCard = {
   created_at: string;
   updated_at: string;
   published_at: string | null;
+  expires_at?: string | null;
 };
 
 export const Route = createFileRoute("/dashboard")({
@@ -56,6 +59,12 @@ function Dashboard() {
 
   async function load() {
     setFetching(true);
+    // cleanup expired local memories first (never saved on server)
+    cleanupExpiredMemories();
+    // auto-delete expired cards (client-side, server also has RPC)
+    try {
+      await supabase.rpc("delete_expired_invitations");
+    } catch {}
     const { data, error } = await supabase
       .from("invitation_cards")
       .select("*")
@@ -64,7 +73,15 @@ function Dashboard() {
       console.error(error);
       setError(error.message);
     } else {
-      setCards(data as InvitationCard[]);
+      const filtered = (data as InvitationCard[]).filter((c) => {
+        if (c.expires_at && new Date(c.expires_at).getTime() < Date.now()) {
+          // card expired -> will be deleted by RPC next load, hide for now and clear local memory
+          deleteSimranMemory(c.id);
+          return false;
+        }
+        return true;
+      });
+      setCards(filtered);
     }
     setFetching(false);
   }
@@ -100,6 +117,17 @@ function Dashboard() {
         message: form.message,
         theme: form.theme,
       };
+      // expiry: wedding date +1 day 23:59; local memory also expires then
+      let expires_at: string | undefined;
+      try {
+        const parsed = new Date(form.date);
+        if (!isNaN(parsed.getTime())) {
+          const exp = new Date(parsed);
+          exp.setDate(exp.getDate() + 1);
+          exp.setHours(23, 59, 59, 999);
+          expires_at = exp.toISOString();
+        }
+      } catch {}
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
       const { data, error } = await supabase
@@ -110,6 +138,7 @@ function Dashboard() {
           slug,
           status: "draft",
           content,
+          ...(expires_at ? { expires_at } : {}),
         })
         .select()
         .single();
@@ -377,6 +406,16 @@ function Dashboard() {
               </Card>
             )}
           </div>
+          {cards.map((card) => (
+            <div key={`mem-${card.id}`} className="mt-6">
+              <SimranMemoryBar cardId={card.id} cardTitle={card.title} initialContent={card.content} expiresAt={card.expires_at} />
+            </div>
+          ))}
+        </div>
+
+        <div className="mt-8 rounded-xl border border-gold/20 bg-card p-4 text-xs">
+          <p className="flex items-center gap-2 font-medium"><Brain className="h-4 w-4 text-gold" /> What Simran should know — per card, local only</p>
+          <p className="mt-1 text-muted-foreground">Each card above has its own “What Simran should know” bar. Fill groom/bride/date/venue/custom notes → Save to Simran (local). It loads into Simran’s memory to answer specific questions about <em>that</em> card. Memory is stored in your browser only (localStorage), never on server, and auto-deleted when the card expires (after marriage day).</p>
         </div>
 
         <div className="mt-10 rounded-xl border border-gold/30 bg-muted/50 p-4 text-xs leading-relaxed">

@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           content: Json
           created_at: string
+          expires_at: string | null
           id: string
           owner_id: string
           published_at: string | null
@@ -29,6 +30,7 @@ export type Database = {
         Insert: {
           content?: Json
           created_at?: string
+          expires_at?: string | null
           id?: string
           owner_id: string
           published_at?: string | null
@@ -40,6 +42,7 @@ export type Database = {
         Update: {
           content?: Json
           created_at?: string
+          expires_at?: string | null
           id?: string
           owner_id?: string
           published_at?: string | null
