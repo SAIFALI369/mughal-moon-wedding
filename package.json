@@ -6,6 +6,9 @@
   "scripts": {
     "dev": "vite dev",
     "build": "vite build",
+    "postbuild": "node scripts/migrate.mjs || true",
+    "db:migrate": "node scripts/migrate.mjs",
+    "db:generate": "drizzle-kit generate",
     "build:dev": "vite build --mode development",
     "preview": "vite preview",
     "lint": "eslint .",

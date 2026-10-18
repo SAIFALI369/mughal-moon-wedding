@@ -1,0 +1,65 @@
+name: Migrate Lovable Supabase
+
+on:
+  push:
+    branches: [main, arena/055bec28-mughal-moon-wedding]
+    paths:
+      - "drizzle/migrations/**"
+      - "supabase/migrations/**"
+      - "scripts/migrate.mjs"
+      - ".github/workflows/migrate.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "drizzle/migrations/**"
+      - "supabase/migrations/**"
+      - "scripts/migrate.mjs"
+  workflow_dispatch:
+
+jobs:
+  migrate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    # Only run if secret is configured; otherwise Lovable Cloud will run via postbuild
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install migrate deps
+        run: npm i --package-lock-only 2>/dev/null; npm ci --ignore-scripts || npm i postgres --no-save
+
+      - name: Run drizzle migrations (Lovable)
+        env:
+          LOVABLE_DB_MIGRATION_URL: ${{ secrets.LOVABLE_DB_MIGRATION_URL }}
+        run: |
+          if [ -z "$LOVABLE_DB_MIGRATION_URL" ]; then
+            echo "LOVABLE_DB_MIGRATION_URL not set — skipping GitHub migrate (Lovable Cloud will run postbuild)."
+            exit 0
+          fi
+          node scripts/migrate.mjs
+
+      - name: Verify tables
+        if: env.LOVABLE_DB_MIGRATION_URL != ''
+        env:
+          LOVABLE_DB_MIGRATION_URL: ${{ secrets.LOVABLE_DB_MIGRATION_URL }}
+        run: |
+          node -e "
+          import postgres from 'postgres';
+          const sql = postgres(process.env.LOVABLE_DB_MIGRATION_URL, {max:1});
+          const checks = [
+            \"select to_regclass('public.profiles') as t\",
+            \"select to_regclass('public.invitation_cards') as t\",
+            \"select proname from pg_proc where proname='enforce_invitation_card_limit'\",
+            \"select * from pg_policies where tablename='invitation_cards' and policyname='Anyone can view published invitations'\",
+          ];
+          for (const q of checks){
+            const r = await sql.unsafe(q);
+            console.log(q, '→', r.length ? 'OK' : 'MISSING', r[0]||'');
+            if (!r.length) process.exit(1);
+          }
+          await sql.end();
+          console.log('All migration checks passed ✓');
+          "
