@@ -8,6 +8,8 @@ describe("One RSVP per name", () => {
     expect(normalizeGuestName("Simran")).not.toBe(normalizeGuestName("Saif Khan"));
   });
   it("rejects blank names", () => {
-    expect(rsvpSchema.safeParse({ name: "   ", guests: 1, events: [], diet: "", message: "" }).success).toBe(false);
+    expect(
+      rsvpSchema.safeParse({ name: "   ", guests: 1, events: [], diet: "", message: "" }).success,
+    ).toBe(false);
   });
 });
