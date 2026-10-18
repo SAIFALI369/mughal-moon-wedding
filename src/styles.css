@@ -219,3 +219,176 @@
   html { scroll-behavior: auto; }
   *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
+
+/* Phone-only polish: keep the established tablet/desktop treatment intact. */
+.wedding-brand-date,
+.simran-launcher-caption { display: none; }
+
+@media (max-width: 639px) {
+  .wedding-header {
+    padding: max(10px, env(safe-area-inset-top)) 12px 0;
+  }
+  .wedding-nav {
+    min-height: 68px;
+    padding: 10px 12px;
+    border-radius: 22px;
+    border-color: #c9a45d;
+    background: linear-gradient(120deg, #fffaf0 0%, #fffdf8 60%, #f3e6cd 100%);
+    box-shadow: 0 8px 28px #47202c20, inset 0 1px 0 #ffffff;
+  }
+  .wedding-brand {
+    display: flex;
+    flex-shrink: 0;
+    flex-direction: column;
+    gap: 4px;
+    color: #642637;
+    font-size: 28px;
+    line-height: 1;
+  }
+  .wedding-brand-date {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    color: #795f35;
+  }
+  .wedding-nav button:not(.nav-concierge) {
+    width: 40px;
+    height: 44px;
+    border-color: #bd955a66;
+    background: #ffffff80;
+    color: #642637;
+  }
+  .wedding-nav .nav-concierge {
+    min-height: 44px;
+    padding: 10px;
+    gap: 5px;
+    font-size: 10px;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+    color: #fff4da;
+    background: linear-gradient(135deg, #81394c, #4c1c2b);
+    border: 1px solid #ba8d52;
+    box-shadow: 0 4px 12px #64263726;
+  }
+  .wedding-mobile-menu {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    background: var(--background);
+    border-radius: 22px;
+    padding: 12px;
+  }
+  .wedding-mobile-menu a {
+    display: flex;
+    align-items: center;
+    min-height: 44px;
+    border-radius: 12px;
+    background: var(--muted);
+    font-size: 11px;
+  }
+  .simran-launcher {
+    left: 16px;
+    bottom: calc(18px + env(safe-area-inset-bottom));
+    gap: 10px;
+    padding: 10px 18px 10px 10px;
+    border: 1px solid #d9b678;
+    border-radius: 20px;
+    color: #fff2d7;
+    background: linear-gradient(125deg, #81394c, #461b29);
+    box-shadow: 0 8px 24px #451a3540, inset 0 1px 0 #ffffff26;
+    text-align: left;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    text-transform: none;
+  }
+  .simran-launcher > svg {
+    width: 38px;
+    height: 38px;
+    padding: 9px;
+    border: 1px solid #e5bf7880;
+    border-radius: 13px;
+    background: #e5bf781a;
+    color: #f5d79b;
+  }
+  .simran-launcher-caption {
+    display: block;
+    margin-top: 2px;
+    color: #ecd9bf;
+    font-size: 10px;
+    font-weight: 400;
+    letter-spacing: 0.02em;
+  }
+  .simran-chat {
+    bottom: calc(96px + env(safe-area-inset-bottom));
+    max-height: calc(100dvh - 120px - env(safe-area-inset-bottom));
+    overflow-y: auto;
+    background: var(--background);
+    box-shadow: 0 16px 60px #32131c40;
+  }
+  .simran-chat input { min-height: 44px; font-size: 16px; }
+  .simran-chat button, .simran-chat select { min-height: 44px; }
+  .wedding-header :focus-visible, .simran-launcher:focus-visible {
+    outline: 2px solid var(--gold);
+    outline-offset: 3px;
+  }
+  .dark .wedding-nav {
+    background: linear-gradient(120deg, #351b24, #24151d 60%, #402333);
+    border-color: #b89152;
+  }
+  .dark .wedding-brand { color: #f1d39a; }
+  .dark .wedding-brand-date { color: #d7bd94; }
+  .dark .wedding-nav button:not(.nav-concierge) {
+    color: #f1d39a;
+    background: #ffffff0a;
+  }
+}
+
+/* A pair of gilded celestial doors, built without heavyweight image assets. */
+.heavenly-entrance {
+  background: #fff5dc;
+  perspective: 1200px;
+}
+.gate-radiance {
+  position: absolute;
+  inset: -30%;
+  background: radial-gradient(ellipse, #fffef5 12%, #f9df9e88 42%, #d8b77533 65%, transparent 75%);
+}
+.heavenly-gate {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 50.1%;
+  background: repeating-linear-gradient(90deg, transparent 0 36px, #e7c78922 37px 39px, transparent 40px 76px), linear-gradient(145deg, #273d4b, #172631 65%, #364958);
+  border: 2px solid #c5a168;
+  box-shadow: inset 0 0 70px #0008, 0 0 35px #fce8aa80;
+  transition: transform 1.8s cubic-bezier(.4, 0, .2, 1), opacity 1.8s;
+}
+.gate-left { left: 0; transform-origin: left center; }
+.gate-right { right: 0; transform-origin: right center; }
+.gate-arch {
+  position: absolute;
+  inset: 6% 8% 5%;
+  border: 2px solid #dfbf7e;
+  border-radius: 50% 50% 8px 8px / 26% 26% 8px 8px;
+  box-shadow: inset 0 0 0 7px #22333e, inset 0 0 0 8px #b99150, 0 0 22px #f5d49420;
+}
+.gate-arch::after {
+  content: "✧";
+  position: absolute;
+  bottom: 12%;
+  left: 50%;
+  transform: translateX(-50%);
+  color: #e9cd91;
+  font-size: 56px;
+}
+.gate-welcome {
+  background: radial-gradient(ellipse at center, #172631dd, #17263170 45%, transparent 75%);
+  transition: opacity .65s, transform .9s;
+}
+.is-opening .gate-left { transform: rotateY(-105deg); opacity: 0; }
+.is-opening .gate-right { transform: rotateY(105deg); opacity: 0; }
+.is-opening .gate-welcome { opacity: 0; transform: scale(1.08); pointer-events: none; }
+@media (prefers-reduced-motion: reduce) {
+  .heavenly-gate, .gate-welcome { transition-duration: .01ms; }
+}
