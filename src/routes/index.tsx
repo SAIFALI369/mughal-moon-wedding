@@ -1,24 +1,36 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useState } from "react";
+import { Divider } from "@/components/wedding/ornaments";
+import { Countdown, DressCode, Events, Footer, Gallery, Hero, MusicToggle, Preloader, Rsvp, Story, VenueMap } from "@/components/wedding/sections";
 
-// No head() here: the home route inherits title/description/og/twitter from
-// __root.tsx, and ships no og:image so serve-time hosting can inject the
-// project's social preview (explicit og:image or latest screenshot).
 export const Route = createFileRoute("/")({
+  head: () => ({
+    meta: [
+      { title: "Mohsin & Simran — Wedding Invitation" },
+      { name: "description", content: "Join Mohsin & Simran for their Nikah, Barat and Walima celebrations. RSVP, event details and more." },
+      { property: "og:title", content: "Mohsin & Simran — Wedding Invitation" },
+      { property: "og:description", content: "You're invited to celebrate the Nikah of Mohsin & Simran. #MohsinWedsSimran" },
+    ],
+  }),
   component: Index,
 });
 
-// IMPORTANT: Replace this placeholder. See ./README.md for routing conventions.
 function Index() {
+  const [, setReady] = useState(false);
   return (
-    <div
-      className="flex min-h-screen items-center justify-center"
-      style={{ backgroundColor: "#fcfbf8" }}
-    >
-      <img
-        data-lovable-blank-page-placeholder="REMOVE_THIS"
-        src="https://cdn.gpteng.co/blank-app-v1.svg"
-        alt="Your app will live here!"
-      />
-    </div>
+    <main className="overflow-x-hidden">
+      <Preloader onDone={() => setReady(true)} />
+      <Hero />
+      <Countdown />
+      <Story />
+      <Events />
+      <Divider className="bg-muted" />
+      <Gallery />
+      <DressCode />
+      <Rsvp />
+      <VenueMap />
+      <Footer />
+      <MusicToggle />
+    </main>
   );
 }
