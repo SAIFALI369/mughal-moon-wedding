@@ -47,16 +47,16 @@
   --radius: 0.75rem;
   --burgundy: oklch(0.33 0.1 15);
   --burgundy-deep: oklch(0.2 0.07 15);
-  --gold: oklch(0.73 0.11 85);
-  --gold-light: oklch(0.88 0.09 90);
+  --gold: oklch(0.52 0.09 80);
+  --gold-light: oklch(0.55 0.09 80);
   --emerald: oklch(0.42 0.09 155);
   --navy: oklch(0.28 0.07 260);
   --ivory: oklch(0.982 0.012 85);
   --charcoal: oklch(0.2 0.03 280);
   --brown: oklch(0.3 0.04 40);
 
-  --background: var(--ivory);
-  --foreground: var(--brown);
+  --background: oklch(0.99 0.004 220);
+  --foreground: oklch(0.3 0.045 215);
   --card: oklch(1 0 0 / 0.55);
   --card-foreground: var(--brown);
   --popover: var(--ivory);
@@ -65,8 +65,8 @@
   --primary-foreground: var(--ivory);
   --secondary: var(--gold);
   --secondary-foreground: var(--burgundy-deep);
-  --muted: oklch(0.95 0.02 80);
-  --muted-foreground: oklch(0.48 0.04 40);
+  --muted: oklch(0.965 0.012 215);
+  --muted-foreground: oklch(0.45 0.03 215);
   --accent: var(--emerald);
   --accent-foreground: var(--ivory);
   --destructive: oklch(0.577 0.245 27.325);
@@ -76,7 +76,7 @@
   --ring: var(--gold);
 
   --gradient-gold: linear-gradient(110deg, oklch(0.62 0.11 75), var(--gold) 30%, var(--gold-light) 50%, var(--gold) 70%, oklch(0.62 0.11 75));
-  --gradient-hero: radial-gradient(ellipse at center, oklch(0.38 0.11 15) 0%, var(--burgundy-deep) 55%, oklch(0.12 0.03 15) 100%);
+  --gradient-hero: linear-gradient(var(--background), var(--muted));
   --shadow-gold: 0 20px 50px -20px oklch(0.73 0.11 85 / 0.55);
 }
 
@@ -163,4 +163,15 @@
 
 @keyframes shimmer {
   to { background-position: 200% center; }
+}
+
+.eid-hero { min-height: min(880px, 88svh); padding-block: 5rem; }
+.eid-hero h1 { color: var(--foreground); }
+@media (max-width: 767px) {
+  .eid-hero { min-height: 88svh; padding-block: 4rem; }
+  .eid-hero img { object-position: 72% center; opacity: 0.65; }
+}
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  *, *::before, *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; }
 }
