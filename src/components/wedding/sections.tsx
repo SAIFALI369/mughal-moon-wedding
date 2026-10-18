@@ -1,3 +1,4 @@
+import { requestConcierge } from "./concierge-client";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import confetti from "canvas-confetti";
@@ -220,23 +221,38 @@ export function Preloader({ onDone }: { onDone: () => void }) {
           transition={{ duration: 0.5 }}
           className={`heavenly-entrance fixed inset-0 z-[100] overflow-hidden ${opening ? "is-opening" : ""}`}
         >
-          <div className="gate-radiance" />
+          <img
+            src={eidSky}
+            alt=""
+            aria-hidden="true"
+            width={1536}
+            height={1024}
+            fetchPriority="high"
+            className="gate-sky absolute inset-0 h-full w-full object-cover object-right"
+          />
+          <div className="gate-radiance" aria-hidden="true" />
           <div className="heavenly-gate gate-left" aria-hidden="true"><div className="gate-arch" /></div>
           <div className="heavenly-gate gate-right" aria-hidden="true"><div className="gate-arch" /></div>
           <Sparkles count={45} />
-          <div className="gate-welcome relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
-            <Moon className="mb-6 h-9 w-9 text-[#e9cd91]" aria-hidden="true" />
-            <p className="mb-5 text-[10px] uppercase tracking-[0.35em] text-[#ebd9b7]">A celebration written in the stars</p>
-            <h1 id="gate-title" className="font-script text-6xl text-[#fff0cf] sm:text-8xl">Mohsin &amp; Simran</h1>
-            <p className="mt-5 font-serif text-xl text-[#f5e3bf]">Two hearts. One beautiful beginning.</p>
-            <p className="mt-3 text-[10px] uppercase tracking-[0.25em] text-[#dfc498]">22–23 November 2026</p>
+          <div className="gate-welcome relative z-10 flex h-full flex-col items-center justify-center overflow-y-auto px-6 py-10 text-center text-foreground">
+            <p dir="rtl" className="font-arabic text-2xl text-gold-light sm:text-3xl">
+              بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+            </p>
+            <p className="mt-6 text-[10px] uppercase tracking-[0.3em] text-gold sm:tracking-[0.5em]">Together with their families</p>
+            <h1 id="gate-title" className="mt-6 flex flex-col items-center gap-2 font-serif text-6xl font-medium sm:flex-row sm:gap-6 sm:text-7xl lg:text-8xl">
+              <span>Mohsin</span>
+              <span className="text-gold-shimmer font-script text-5xl font-normal sm:text-6xl">weds</span>
+              <span>Simran</span>
+            </h1>
+            <p className="mt-6 font-serif text-xl italic text-foreground sm:text-2xl">Two hearts. One beautiful beginning.</p>
+            <p className="mt-4 text-[10px] uppercase tracking-[0.25em] text-gold">22–23 November 2026 · New Delhi</p>
             <button ref={enterButton} type="button" disabled={opening} onClick={() => enter(true)}
-              className="mt-10 inline-flex min-h-12 items-center gap-3 rounded-full border border-[#e7c789] bg-[#f4dfb6] px-8 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#4c2431] shadow-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ffe8b8]">
+              className="btn-shimmer bg-gold-gradient mt-8 inline-flex min-h-12 items-center gap-3 rounded-full px-8 py-3 text-xs font-medium uppercase tracking-[0.2em] text-burgundy-deep shadow-gold transition hover:scale-105 disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold">
               <SparklesIcon className="h-4 w-4" /> {opening ? "Welcome inside" : "Open the gates"}
             </button>
-            <p className="mt-4 text-xs text-[#e6d4b5]">Enter with music · sound on</p>
+            <p className="mt-4 text-xs text-muted-foreground">Enter with music · sound on</p>
             <button type="button" disabled={opening} onClick={() => enter(false)}
-              className="mt-2 min-h-11 px-4 text-xs text-[#e6d4b5] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-[#ffe8b8]">Enter quietly</button>
+              className="mt-2 min-h-11 px-4 text-xs text-foreground underline decoration-gold/50 underline-offset-4 transition hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold">Enter quietly</button>
           </div>
         </motion.div>
       )}
@@ -1239,24 +1255,14 @@ export function SimranFloatingWidget({
     };
 
     try {
-      let reply: string | undefined;
-      try {
-        const { data, error } = await supabase.functions.invoke("wedding-concierge", {
+      const reply = await requestConcierge(
+        (signal) => supabase.functions.invoke("wedding-concierge", {
           body: payload,
-        });
-        if (!error && typeof data?.reply === "string") {
-          reply = data.reply;
-        }
-      } catch {
-        // Fallback to server function
-      }
+          signal,
+        }),
+        () => askSimranServer({ data: payload }),
+      );
 
-      if (!reply) {
-        const fallback = await askSimranServer({ data: payload });
-        reply = fallback.reply;
-      }
-
-      if (!reply) throw new Error("No reply");
       setMessages((curr) => [...curr, { role: "assistant", text: reply }]);
     } catch {
       setMessages((curr) => [...curr, { role: "assistant", text: copy.error }]);

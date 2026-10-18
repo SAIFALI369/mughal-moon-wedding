@@ -1,3 +1,4 @@
+import { requestConcierge } from "@/components/wedding/concierge-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, type FormEvent } from "react";
 import { askSimranServer } from "@/components/wedding/concierge.functions";
@@ -96,26 +97,13 @@ function AiConcierge() {
     };
 
     try {
-      let reply: string | undefined;
-      try {
-        const { data, error } = await supabase.functions.invoke("wedding-concierge", {
+      const reply = await requestConcierge(
+        (signal) => supabase.functions.invoke("wedding-concierge", {
           body: payload,
-        });
-        if (!error && typeof data?.reply === "string") {
-          reply = data.reply;
-        }
-      } catch {
-        // Fall back to server function if Edge Function is not yet deployed or reachable
-      }
-
-      if (!reply) {
-        const fallback = await askSimranServer({ data: payload });
-        reply = fallback.reply;
-      }
-
-      if (typeof reply !== "string" || !reply.trim()) {
-        throw new Error("No reply");
-      }
+          signal,
+        }),
+        () => askSimranServer({ data: payload }),
+      );
 
       const assistantMessage: Message = { role: "assistant", text: reply };
       setMessages((current) => [...current, assistantMessage].slice(-10));

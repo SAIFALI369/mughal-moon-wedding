@@ -5,7 +5,7 @@ The guest-facing AI assistant **Simran** at `/ai-concierge` supports English, Hi
 ## Files
 
 - `src/routes/ai-concierge.tsx` — TanStack Start page and `/ai-concierge` route for chatting with Simran.
-- `supabase/functions/wedding-concierge/gemini-key.ts` — Supabase Edge Function configuration file where you can paste your `GEMINI_API_KEY` and `GEMINI_MODEL`.
+- `supabase/functions/wedding-concierge/gemini-key.ts` — non-secret defaults for the assistant name and Gemini model. Never paste credentials into this tracked file.
 - `supabase/.env` — Supabase environment file for setting `GEMINI_API_KEY` locally or pushing via `supabase secrets set --env-file supabase/.env`.
 - `supabase/functions/wedding-concierge/index.ts` — server-side Gemini proxy for Simran.
 
@@ -17,13 +17,35 @@ supabase.functions.invoke("wedding-concierge", { body: { language, messages } })
 
 ## Where to add your Gemini API key
 
-You can configure your Gemini API key in any of these places:
+The checked-in key is an **intentionally invalid dummy**, not a working credential. It is present in the shared server-only config and `supabase/.env.example` so the setup locations are easy to find. Both backends use the shared `gemini-2.5-flash` model default.
 
-1. **Direct Supabase config file**: Open `supabase/functions/wedding-concierge/gemini-key.ts` and paste your key into `GEMINI_API_KEY = "your-gemini-api-key"`.
-2. **Supabase `.env` file**: Open `supabase/.env` and set `GEMINI_API_KEY="your-gemini-api-key"`.
-3. **Supabase Dashboard Secrets**: In **Supabase Dashboard → Edge Functions → Secrets**, add `GEMINI_API_KEY`.
+For local use, copy `supabase/.env.example` to `supabase/.env` (already prepared in this workspace) and replace the dummy value there. **Do not put a real key into `gemini-key.ts` or `.env.example`**, which are tracked by Git.
 
-Optionally set `GEMINI_MODEL` (defaults to `gemini-2.5-flash`) and `ALLOWED_ORIGIN` (for production origin restriction).
+Replies require a valid key on at least one backend:
+
+- **Production (recommended):** In **Supabase Dashboard → Edge Functions → Secrets**, set `GEMINI_API_KEY`. Deploy the function to the same project as `VITE_SUPABASE_URL`:
+  ```sh
+  supabase functions deploy wedding-concierge --project-ref zcqlvyzlbfhdkomexihd
+  ```
+- **CLI alternative for production:** After replacing the dummy in your private `supabase/.env`, run `supabase secrets set --env-file supabase/.env --project-ref zcqlvyzlbfhdkomexihd`. This uploads the private environment values to Supabase; the example file alone does not configure production.
+- **Local development:** Set `GEMINI_API_KEY` in the ignored `supabase/.env`, or export it in the app server environment. Restart the dev server after changing environment variables.
+- **Hosted app server fallback:** Set `GEMINI_API_KEY` in your hosting provider's server secrets and redeploy. The local `supabase/.env` is not uploaded automatically.
+
+Never use a `VITE_` prefix for the Gemini key or commit it to source control.
+
+Optionally set `GEMINI_MODEL` (defaults to `gemini-2.5-flash`) and `ALLOWED_ORIGIN` (the exact production origin for the Edge Function). Remove any stale `gemini-3.5-flash` override or replace it with a model available to your Gemini project.
+
+## Troubleshooting replies
+
+Both chat surfaces try the Edge Function first, then the app server. Each attempt is bounded so a stalled service cannot leave the chat stuck on “thinking”. Upstream Gemini calls have a 15-second timeout. Backend logs report HTTP failure status without logging keys or guest messages.
+
+- **Not configured:** Add the key to the backend secrets as above. An empty or dummy key cannot generate AI responses.
+- **400/404 from Gemini:** Check the configured model is supported by your account.
+- **401/403:** Check the key and API access restrictions.
+- **429:** Check Gemini quota/billing and retry later.
+- **Browser CORS or function not found:** Deploy the function and verify `ALLOWED_ORIGIN` matches your site.
+
+After deployment, test a greeting and a schedule question from both the homepage chat and `/ai-concierge`. Also test Hindi and Urdu. Do not paste keys into chat or browser code.
 
 ## Confirmed schedule
 
