@@ -36,6 +36,17 @@ export const Route = createFileRoute("/")({
         content: "You're invited to celebrate the Nikah of Mohsin & Simran. #MohsinWedsSimran",
       },
       { property: "og:type", content: "website" },
+      {
+        property: "og:image",
+        content: `${(import.meta.env["VITE_SITE_URL"] || "").replace(/\/$/, "")}/social-preview.jpg`,
+      },
+      { property: "og:image:width", content: "1200" },
+      { property: "og:image:height", content: "630" },
+      { property: "og:image:alt", content: "Mohsin & Simran — 22–23 November 2026, New Delhi" },
+      {
+        name: "twitter:image",
+        content: `${(import.meta.env["VITE_SITE_URL"] || "").replace(/\/$/, "")}/social-preview.jpg`,
+      },
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),

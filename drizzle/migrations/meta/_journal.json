@@ -8,6 +8,13 @@
       "when": 1792310404713,
       "tag": "0000_wedding_rsvp_and_live_wishes",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1792327086996,
+      "tag": "0001_shared_guest_gallery",
+      "breakpoints": true
     }
   ]
 }

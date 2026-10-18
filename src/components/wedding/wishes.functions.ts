@@ -17,7 +17,11 @@ export const getWishes = createServerFn({ method: "GET" }).handler(async () => {
         if (key.startsWith("sb_") && headers.get("Authorization") === `Bearer ${key}`)
           headers.delete("Authorization");
         headers.set("apikey", key);
-        return fetch(input, { ...init, headers });
+        return fetch(input, {
+          ...init,
+          headers,
+          signal: init?.signal ?? AbortSignal.timeout(5_000),
+        });
       },
     },
   });

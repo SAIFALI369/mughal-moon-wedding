@@ -1,46 +1,7 @@
 export const WEDDING_DATE = new Date("2026-11-22T16:00:00+05:30");
 
-export const EVENTS = [
-  {
-    key: "Nikah",
-    title: "Nikah Ceremony",
-    date: "Sunday, 22 November 2026",
-    time: "4:00 PM",
-    venue: "Jama Masjid Hall",
-    address: "Chandni Chowk, Old Delhi, India",
-    dress: "Ivory, Gold & Pastels",
-    icon: "mosque",
-    startUtc: "20261122T103000Z",
-    endUtc: "20261122T123000Z",
-    mapQuery: "Jama Masjid Hall, Chandni Chowk, Old Delhi, India",
-  },
-  {
-    key: "Barat",
-    title: "Barat / Reception",
-    date: "Sunday, 22 November 2026",
-    time: "7:30 PM",
-    venue: "The Imperial Ballroom",
-    address: "Janpath, New Delhi, India",
-    dress: "Burgundy & Gold Formal",
-    icon: "rings",
-    startUtc: "20261122T140000Z",
-    endUtc: "20261122T173000Z",
-    mapQuery: "The Imperial Ballroom, Janpath, New Delhi, India",
-  },
-  {
-    key: "Walima",
-    title: "Walima",
-    date: "Monday, 23 November 2026",
-    time: "8:00 PM",
-    venue: "The Leela Palace",
-    address: "Chanakyapuri, New Delhi, India",
-    dress: "Emerald & Royal Navy",
-    icon: "feast",
-    startUtc: "20261123T143000Z",
-    endUtc: "20261123T173000Z",
-    mapQuery: "The Leela Palace, Chanakyapuri, New Delhi, India",
-  },
-] as const;
+import { EVENTS } from "../../../supabase/functions/_shared/wedding";
+export { EVENTS };
 
 export type WeddingEvent = (typeof EVENTS)[number];
 export type WeddingEventKey = WeddingEvent["key"];
@@ -50,7 +11,7 @@ export type WeddingEventKey = WeddingEvent["key"];
  * Set `CUSTOM_MUSIC_URL` (e.g. "/audio/balagal-ula-bi-kamalihi.mp3") if you upload a custom MP3 file.
  */
 export const CUSTOM_MUSIC_URL = "";
-export const MUSIC_URL = CUSTOM_MUSIC_URL.trim() || "/audio/balagal-ula-bi-kamalihi.wav";
+export const MUSIC_URL = CUSTOM_MUSIC_URL.trim() || "/audio/balagal-ula-bi-kamalihi.mp3";
 
 export const MUSIC_TRACK = {
   title: "Balagal Ula Bi Kamalihi",
