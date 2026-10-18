@@ -89,16 +89,18 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
   };
 
   return (
-    <header className="fixed inset-x-0 top-0 z-40 px-3 pt-3 sm:px-6">
+    <header className="wedding-header fixed inset-x-0 top-0 z-40 px-3 pt-3 sm:px-6">
       <nav
         aria-label="Wedding sections"
-        className="glass-card mx-auto flex max-w-6xl items-center justify-between rounded-full px-4 py-2.5 shadow-gold sm:px-6"
+        className="wedding-nav glass-card mx-auto flex max-w-6xl items-center justify-between rounded-full px-4 py-2.5 shadow-gold sm:px-6"
       >
         <a
           href="#"
-          className="font-script text-2xl text-gold transition hover:scale-105 sm:text-3xl"
+          aria-label="Mohsin and Simran — back to top"
+          className="wedding-brand font-script text-2xl text-gold transition hover:scale-105 sm:text-3xl"
         >
-          M &amp; S
+          <span>M &amp; S</span>
+          <span className="wedding-brand-date">22–23 NOV · 2026</span>
         </a>
 
         <div className="hidden items-center gap-5 lg:flex">
@@ -128,14 +130,14 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
             <button
               type="button"
               onClick={onOpenSimran}
-              className="bg-gold-gradient inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105 hover:shadow-gold"
+              className="nav-concierge bg-gold-gradient inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105 hover:shadow-gold"
             >
               <SparklesIcon className="h-3.5 w-3.5" /> Ask Simran
             </button>
           ) : (
             <a
               href="/ai-concierge"
-              className="bg-gold-gradient inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105 hover:shadow-gold"
+              className="nav-concierge bg-gold-gradient inline-flex items-center gap-1.5 rounded-full px-3.5 py-2 text-[11px] font-medium uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105 hover:shadow-gold"
             >
               <SparklesIcon className="h-3.5 w-3.5" /> Ask Simran
             </a>
@@ -145,6 +147,8 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
             type="button"
             onClick={() => setMobileOpen((prev) => !prev)}
             aria-label="Toggle navigation menu"
+            aria-expanded={mobileOpen}
+            aria-controls="wedding-mobile-menu"
             className="flex h-9 w-9 items-center justify-center rounded-full border border-gold/50 bg-background/70 text-gold lg:hidden"
           >
             {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
@@ -158,7 +162,8 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
             initial={{ opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -10 }}
-            className="glass-card mx-auto mt-2 flex max-w-md flex-wrap justify-center gap-2 rounded-2xl p-3 shadow-gold lg:hidden"
+            id="wedding-mobile-menu"
+            className="wedding-mobile-menu glass-card mx-auto mt-2 flex max-w-md flex-wrap justify-center gap-2 rounded-2xl p-3 shadow-gold lg:hidden"
           >
             {NAV_LINKS.map((item) => (
               <a
@@ -179,45 +184,60 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
 
 /* ───────── Preloader ───────── */
 export function Preloader({ onDone }: { onDone: () => void }) {
+  const [opening, setOpening] = useState(false);
   const [show, setShow] = useState(true);
-  const [parts] = useState(() =>
-    Array.from({ length: 48 }, () => ({
-      x: (Math.random() - 0.5) * 1400,
-      y: (Math.random() - 0.5) * 900,
-      d: Math.random() * 0.6,
-    })),
-  );
+  const enterButton = useRef<HTMLButtonElement>(null);
+
   useEffect(() => {
-    const t = setTimeout(() => setShow(false), 2800);
-    return () => clearTimeout(t);
-  }, []);
+    if (!show) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    enterButton.current?.focus();
+    return () => { document.body.style.overflow = previous; };
+  }, [show]);
+
+  useEffect(() => {
+    if (!opening) return;
+    const timer = setTimeout(() => setShow(false),
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 100 : 1900);
+    return () => clearTimeout(timer);
+  }, [opening]);
+
+  function enter(withMusic: boolean) {
+    if (opening) return;
+    window.dispatchEvent(new Event(withMusic ? "wedding:enter" : "wedding:enter-silent"));
+    setOpening(true);
+  }
+
   return (
     <AnimatePresence onExitComplete={onDone}>
       {show && (
         <motion.div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="gate-title"
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.8 }}
-          className="bg-hero fixed inset-0 z-50 flex items-center justify-center overflow-hidden"
+          transition={{ duration: 0.5 }}
+          className={`heavenly-entrance fixed inset-0 z-[100] overflow-hidden ${opening ? "is-opening" : ""}`}
         >
+          <div className="gate-radiance" />
+          <div className="heavenly-gate gate-left" aria-hidden="true"><div className="gate-arch" /></div>
+          <div className="heavenly-gate gate-right" aria-hidden="true"><div className="gate-arch" /></div>
           <Sparkles count={45} />
-          <GlimmeringButterflies intro />
-          {parts.map((p, i) => (
-            <motion.span
-              key={i}
-              className="absolute h-1.5 w-1.5 rounded-full bg-gold-light shadow-gold"
-              initial={{ x: p.x, y: p.y, opacity: 0 }}
-              animate={{ x: 0, y: 0, opacity: [0, 1, 0] }}
-              transition={{ duration: 1.6, delay: p.d, ease: "easeIn" }}
-            />
-          ))}
-          <motion.h1
-            initial={{ opacity: 0, scale: 0.9, filter: "blur(12px)" }}
-            animate={{ opacity: 1, scale: 1, filter: "blur(0px)" }}
-            transition={{ delay: 1.3, duration: 1 }}
-            className="text-gold-shimmer relative z-10 px-4 text-center font-script text-6xl md:text-8xl"
-          >
-            Mohsin &amp; Simran
-          </motion.h1>
+          <div className="gate-welcome relative z-10 flex h-full flex-col items-center justify-center px-6 text-center">
+            <Moon className="mb-6 h-9 w-9 text-[#e9cd91]" aria-hidden="true" />
+            <p className="mb-5 text-[10px] uppercase tracking-[0.35em] text-[#ebd9b7]">A celebration written in the stars</p>
+            <h1 id="gate-title" className="font-script text-6xl text-[#fff0cf] sm:text-8xl">Mohsin &amp; Simran</h1>
+            <p className="mt-5 font-serif text-xl text-[#f5e3bf]">Two hearts. One beautiful beginning.</p>
+            <p className="mt-3 text-[10px] uppercase tracking-[0.25em] text-[#dfc498]">22–23 November 2026</p>
+            <button ref={enterButton} type="button" disabled={opening} onClick={() => enter(true)}
+              className="mt-10 inline-flex min-h-12 items-center gap-3 rounded-full border border-[#e7c789] bg-[#f4dfb6] px-8 py-3 text-xs font-semibold uppercase tracking-[0.16em] text-[#4c2431] shadow-lg focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#ffe8b8]">
+              <SparklesIcon className="h-4 w-4" /> {opening ? "Welcome inside" : "Open the gates"}
+            </button>
+            <p className="mt-4 text-xs text-[#e6d4b5]">Enter with music · sound on</p>
+            <button type="button" disabled={opening} onClick={() => enter(false)}
+              className="mt-2 min-h-11 px-4 text-xs text-[#e6d4b5] underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-[#ffe8b8]">Enter quietly</button>
+          </div>
         </motion.div>
       )}
     </AnimatePresence>
@@ -1029,10 +1049,26 @@ export function MusicToggle() {
   const [showVerses, setShowVerses] = useState(false);
 
   useEffect(() => {
+    const player = new Audio(MUSIC_URL);
+    player.loop = true;
+    player.volume = 0.45;
+    audio.current = player;
+    const start = () => {
+      void player.play().then(() => setPlaying(true)).catch(() => {
+        setPlaying(false);
+        toast("Music couldn't start. Use the music button to try again.");
+      });
+    };
+    const silence = () => { player.pause(); setPlaying(false); };
+    window.addEventListener("wedding:enter", start);
+    window.addEventListener("wedding:enter-silent", silence);
+    // Browsers that allow autoplay can begin immediately; otherwise the gate tap starts it.
+    void player.play().then(() => setPlaying(true)).catch(() => {});
     return () => {
-      if (audio.current) {
-        audio.current.pause();
-      }
+      window.removeEventListener("wedding:enter", start);
+      window.removeEventListener("wedding:enter-silent", silence);
+      player.pause();
+      audio.current = null;
     };
   }, []);
 
@@ -1235,10 +1271,12 @@ export function SimranFloatingWidget({
         type="button"
         onClick={() => onOpenChange(!open)}
         aria-label="Ask Simran AI Wedding Concierge"
-        className="bg-gold-gradient fixed bottom-6 left-6 z-40 inline-flex items-center gap-2 rounded-full border-2 border-gold-light px-5 py-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-burgundy-deep shadow-gold transition hover:scale-105"
+        aria-expanded={open}
+        aria-controls="simran-quick-chat"
+        className="simran-launcher bg-gold-gradient fixed bottom-6 left-6 z-40 inline-flex items-center gap-2 rounded-full border-2 border-gold-light px-5 py-3.5 text-xs font-semibold uppercase tracking-[0.2em] text-burgundy-deep shadow-gold transition hover:scale-105"
       >
         <MessageCircle className="h-4 w-4" />
-        <span>Ask Simran</span>
+        <span>Ask Simran<span className="simran-launcher-caption">Your wedding guide</span></span>
       </button>
 
       <AnimatePresence>
@@ -1247,8 +1285,9 @@ export function SimranFloatingWidget({
             initial={{ opacity: 0, y: 24, scale: 0.96 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 24, scale: 0.96 }}
+            id="simran-quick-chat"
             aria-label="Simran AI Wedding Concierge"
-            className="fixed bottom-24 left-4 right-4 z-50 max-w-md overflow-hidden rounded-3xl border border-gold/50 bg-card shadow-gold sm:left-6 sm:right-auto sm:w-96"
+            className="simran-chat fixed bottom-24 left-4 right-4 z-50 max-w-md overflow-hidden rounded-3xl border border-gold/50 bg-card shadow-gold sm:left-6 sm:right-auto sm:w-96"
           >
             <div className="flex items-center justify-between bg-burgundy-deep px-5 py-4 text-ivory">
               <div>
