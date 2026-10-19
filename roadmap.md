@@ -27,3 +27,11 @@
 - [x] Share a broader conversational personality across both backends: general assistance, happy wit and optional mild dark humour, with wedding accuracy and privacy intact.
 - [x] Add offline capability/humour previews and regression tests; verify compact layouts and chat flow in a headless browser at 375px and 320px.
 - [x] Bound server-side wishes loading to five seconds so an unavailable backend cannot indefinitely hold the page loader.
+
+## Per-card AI host assistants, soundtracks and a richer invitation suite
+
+- [x] Give every creator card its own AI host assistant, named from the card's host name (falling back to host contact, family line, then the groom's name).
+- [x] Ground card replies in the published card's own ceremony, story, contact, events and playlist; never use Mohsin & Simran's facts.
+- [x] Add an instant offline answer layer for date, venue, dress code, contact, schedule, playlist and RSVP.
+- [x] Add up to five host-chosen songs with safe-URL validation, quick-adds for the bundled instrumentals, and a guest-played soundtrack panel.
+- [x] Redesign the cover and full invitation suite: gold monogram seals, arch frames, corner filigree, a date plate, a timeline, a venue card and a decorative back page.

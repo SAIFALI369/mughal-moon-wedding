@@ -532,10 +532,14 @@ export function Countdown({
   weddingDate = WEDDING_DATE,
   waitingText = "Until We Say Qubool Hai",
   reachedText = "Alhamdulillah — We Said Qubool Hai",
+  eyebrow = "The countdown",
+  title = "Counting Every Moment",
 }: {
   weddingDate?: Date;
   waitingText?: string;
   reachedText?: string;
+  eyebrow?: string;
+  title?: string;
 }) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
@@ -557,7 +561,7 @@ export function Countdown({
       id="countdown"
       className="relative overflow-hidden bg-muted px-6 py-24 text-foreground"
     >
-      <SectionTitle eyebrow="The countdown">Counting Every Moment</SectionTitle>
+      <SectionTitle eyebrow={eyebrow}>{title}</SectionTitle>
       <motion.div
         {...fadeUp}
         className="mx-auto grid max-w-3xl grid-cols-2 gap-5 md:grid-cols-4 md:gap-8"

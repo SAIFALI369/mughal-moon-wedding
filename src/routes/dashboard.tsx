@@ -17,7 +17,11 @@ import {
   invitationFormForCard,
   type InvitationForm,
 } from "@/components/wedding/invitation-form-data";
-import { getInvitationDetails, invitationExpiry } from "@/components/wedding/invitation-details";
+import {
+  getInvitationAssistantName,
+  getInvitationDetails,
+  invitationExpiry,
+} from "@/components/wedding/invitation-details";
 import { InvitationCover, PersonalInvitation } from "@/components/wedding/invitation-template";
 import {
   Copy,
@@ -29,6 +33,8 @@ import {
   LogOut,
   Brain,
   HeartHandshake,
+  Sparkles,
+  Music2,
 } from "lucide-react";
 import { SimranMemoryBar } from "@/components/wedding/simran-memory-bar";
 import { cleanupExpiredMemories, deleteSimranMemory } from "@/lib/simran-memory";
@@ -286,6 +292,11 @@ function Dashboard() {
               Cards start as private drafts; only you can edit or delete them. Publish to share a
               public link.
             </p>
+            <p className="mt-1 flex items-center gap-1.5 text-xs text-gold">
+              <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
+              Each card gets its own AI host assistant, named after its host, plus the soundtrack
+              you choose.
+            </p>
           </div>
           <div className="flex items-center gap-2">
             <Link to="/profile" className="text-sm underline text-foreground">
@@ -390,6 +401,19 @@ function Dashboard() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-1 flex-col gap-3 pt-4">
+                  <div className="flex flex-wrap gap-1.5 text-[10px]">
+                    <span className="inline-flex items-center gap-1 rounded-full border border-gold/30 bg-gold/5 px-2 py-1 text-gold">
+                      <Sparkles className="h-3 w-3" aria-hidden="true" />
+                      {getInvitationAssistantName(getInvitationDetails(card.content))} · AI host
+                    </span>
+                    {getInvitationDetails(card.content).songs.length > 0 && (
+                      <span className="inline-flex items-center gap-1 rounded-full border border-gold/30 px-2 py-1 text-muted-foreground">
+                        <Music2 className="h-3 w-3" aria-hidden="true" />
+                        {getInvitationDetails(card.content).songs.length} song
+                        {getInvitationDetails(card.content).songs.length === 1 ? "" : "s"}
+                      </span>
+                    )}
+                  </div>
                   {getInvitationDetails(card.content).message && (
                     <p className="line-clamp-2 text-sm text-muted-foreground">
                       {getInvitationDetails(card.content).message}
@@ -525,11 +549,11 @@ function Dashboard() {
             <Brain className="h-4 w-4 text-gold" /> What Simran should know — per card, local only
           </p>
           <p className="mt-1 text-muted-foreground">
-            Each card above has its own “What Simran should know” bar. Fill
-            groom/bride/date/venue/custom notes → Save to Simran (local). It loads into Simran’s
-            memory to answer specific questions about <em>that</em> card. Memory is stored in your
-            browser only (localStorage), never on server, and auto-deleted when the card expires
-            (after marriage day).
+            Each card above has its own “What Simran should know” bar for the homepage Simran chat.
+            Fill groom/bride/date/venue/custom notes → Save to Simran (local). Your card’s own host
+            assistant does not need this bar — it is grounded in the card details and soundtrack you
+            save. Memory is stored in your browser only (localStorage), never on server, and
+            auto-deleted when the card expires (after marriage day).
           </p>
         </div>
 

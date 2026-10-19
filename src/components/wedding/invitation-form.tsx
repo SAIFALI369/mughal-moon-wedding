@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type Dispatch, type SetStateAction } from "react";
-import { ImagePlus, Plus, Trash2 } from "lucide-react";
+import { ImagePlus, Music2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,6 +12,8 @@ import {
   invitationThemes,
 } from "./invitation-options";
 import { processInvitationPortrait } from "./portrait-upload";
+import { INVITATION_SONG_LIMIT, suggestedInvitationSongs } from "./invitation-music";
+import { getInvitationAssistantName, getInvitationDetails } from "./invitation-details";
 import { InvitationCover, PersonalInvitation } from "./invitation-template";
 
 type Props = { value: InvitationForm; onChange: Dispatch<SetStateAction<InvitationForm>> };
@@ -35,6 +37,7 @@ const optionalFields = [
     placeholder: "Together with our families",
     limit: 160,
   },
+
   { key: "dressCode", label: "Dress code", placeholder: "Festive traditional attire", limit: 160 },
   {
     key: "contactName",
@@ -69,6 +72,30 @@ export function InvitationDetailsFields({ value, onChange }: Props) {
       setPhotoBusy(null);
       event.target.value = "";
     }
+  }
+
+  const assistantName = getInvitationAssistantName(getInvitationDetails(value));
+
+  function addSong(song: { title: string; url: string } = { title: "", url: "" }) {
+    onChange((form) =>
+      form.songs.length >= INVITATION_SONG_LIMIT ? form : { ...form, songs: [...form.songs, song] },
+    );
+  }
+
+  function updateSong(index: number, patch: Partial<{ title: string; url: string }>) {
+    onChange((form) => ({
+      ...form,
+      songs: form.songs.map((song, position) =>
+        position === index ? { ...song, ...patch } : song,
+      ),
+    }));
+  }
+
+  function removeSong(index: number) {
+    onChange((form) => ({
+      ...form,
+      songs: form.songs.filter((_, position) => position !== index),
+    }));
   }
 
   return (
@@ -119,10 +146,37 @@ export function InvitationDetailsFields({ value, onChange }: Props) {
               placeholder="Nikah, wedding ceremony, or reception"
             />
           </div>
+          <div className="space-y-2 sm:col-span-2">
+            <Label htmlFor="card-host-name">
+              Host name{" "}
+              <span className="font-normal text-muted-foreground">
+                (your card&apos;s AI assistant takes this name)
+              </span>
+            </Label>
+            <Input
+              id="card-host-name"
+              value={value.hostName}
+              onChange={(event) => change("hostName", event.target.value)}
+              maxLength={60}
+              placeholder="Your name, e.g. Ayesha"
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank and we&apos;ll use your host contact, family line, then the groom&apos;s
+              first name.
+            </p>
+          </div>
         </div>
         <p className="text-xs text-muted-foreground">
           Use a real date. Include a time zone (such as IST or UTC) so Save the Date has a precise
           calendar time.
+        </p>
+        <p className="flex items-start gap-2 rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-xs leading-relaxed">
+          <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
+          <span>
+            Your card gets its own AI host assistant. It will introduce itself as{" "}
+            <strong>{assistantName}</strong> and answer guests using only this invitation&apos;s
+            details. Set your host name above to choose the assistant&apos;s name yourself.
+          </span>
         </p>
       </section>
 
@@ -413,10 +467,109 @@ export function InvitationDetailsFields({ value, onChange }: Props) {
         )}
       </section>
 
+      <section aria-labelledby="form-songs" className="space-y-4 border-t border-border pt-8">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <h2 id="form-songs" className="font-serif text-2xl">
+              06 — Your soundtrack
+            </h2>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Add up to {INVITATION_SONG_LIMIT} songs for guests to play from the invitation. Your
+              AI host assistant can also answer questions about this playlist.
+            </p>
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            disabled={value.songs.length >= INVITATION_SONG_LIMIT}
+            onClick={() => addSong()}
+          >
+            <Plus className="mr-1 h-4 w-4" /> Add song
+          </Button>
+        </div>
+
+        {value.songs.length === 0 && (
+          <div className="rounded-xl border border-dashed border-gold/40 bg-gold/5 px-5 py-6 text-center text-sm text-muted-foreground">
+            <Music2 className="mx-auto mb-2 h-6 w-6 text-gold" aria-hidden="true" />
+            No songs yet. Add your first dance, a gentle mehfil tune, or use a quick-add below.
+          </div>
+        )}
+
+        {value.songs.map((song, index) => (
+          <fieldset key={index} className="rounded-xl border border-border p-4">
+            <legend className="px-2 font-serif text-lg">Song {index + 1}</legend>
+            <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]">
+              <div className="space-y-2">
+                <Label htmlFor={`song-title-${index}`}>Title *</Label>
+                <Input
+                  id={`song-title-${index}`}
+                  value={song.title}
+                  maxLength={80}
+                  required
+                  placeholder="Moonlit Dua"
+                  onChange={(event) => updateSong(index, { title: event.target.value })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor={`song-url-${index}`}>Audio link *</Label>
+                <Input
+                  id={`song-url-${index}`}
+                  value={song.url}
+                  maxLength={500}
+                  required
+                  inputMode="url"
+                  placeholder="https://example.com/song.mp3 or /audio/moonlit-dua.mp3"
+                  onChange={(event) => updateSong(index, { url: event.target.value })}
+                />
+              </div>
+              <div className="flex items-end">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="text-destructive"
+                  onClick={() => removeSong(index)}
+                  aria-label={`Remove song ${index + 1}`}
+                >
+                  <Trash2 className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </fieldset>
+        ))}
+
+        <div>
+          <p className="mb-2 text-xs uppercase tracking-[0.18em] text-muted-foreground">
+            Quick add from the local soundtrack
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {suggestedInvitationSongs.map((song) => {
+              const added = value.songs.some((item) => item.url === song.url);
+              return (
+                <button
+                  key={song.url}
+                  type="button"
+                  disabled={value.songs.length >= INVITATION_SONG_LIMIT || added}
+                  onClick={() => addSong({ title: song.title, url: song.url })}
+                  className="rounded-full border border-gold/40 bg-gold/5 px-3 py-1.5 text-xs text-foreground transition hover:bg-gold/10 disabled:cursor-not-allowed disabled:opacity-40"
+                >
+                  {added ? "✓ " : "+ "}
+                  {song.title}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground">
+          Use an <code>https://</code> audio URL you have permission to share, or one of the bundled{" "}
+          <code>/audio/</code> files. Guests press play themselves; nothing auto-plays.
+        </p>
+      </section>
+
       <section aria-labelledby="form-elements" className="space-y-4 border-t border-border pt-8">
         <div>
           <h2 id="form-elements" className="font-serif text-2xl">
-            06 — What guests see
+            07 — What guests see
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Choose each optional part independently. Names, wedding date, time, venue and address

@@ -166,7 +166,7 @@ This project was built with [Lovable](https://lovable.dev).
 
 **Live app**: https://mughal-moon-wedding.vercel.app
 
-**Personal invitation builder and private RSVPs**: See [the creator and migration guide](docs/personal-invitations.md). The original moonlit invitation is the default, with independent theme and layout choices. Database migrations are verified separately from the UI deployment.
+**Personal invitation builder and private RSVPs**: See [the creator and migration guide](docs/personal-invitations.md). The original moonlit invitation is the default, with independent theme and layout choices. Every published card also gets its own AI host assistant, named after the host, plus a host-chosen soundtrack of up to five songs. The invitation suite has been redesigned with ornate arches, monograms, a cover keepsake, a date plate and a celebration timeline.
 
 ## Build with Lovable
 

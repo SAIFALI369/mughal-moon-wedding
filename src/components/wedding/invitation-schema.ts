@@ -5,6 +5,25 @@ import {
   invitationThemeIds,
 } from "./invitation-options";
 import { isSafePortrait, parseInvitationDate } from "./invitation-details";
+import { INVITATION_SONG_LIMIT, isSafeSongUrl } from "./invitation-music";
+
+/**
+ * JSON-safe content. Invitation content is user-authored JSON, and the server
+ * functions must hand the database something serializable — never `unknown`.
+ */
+export type JsonValue =
+  string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue };
+
+export const jsonValueSchema: z.ZodType<JsonValue> = z.lazy(() =>
+  z.union([
+    z.string(),
+    z.number(),
+    z.boolean(),
+    z.null(),
+    z.array(jsonValueSchema),
+    z.record(jsonValueSchema),
+  ]),
+);
 
 const portraitSchema = z
   .string()
@@ -23,6 +42,16 @@ const extraEventSchema = z.object({
   time: z.string().trim().min(1, "Event time is required").max(100),
   venue: z.string().trim().min(1, "Event venue is required").max(120),
   address: z.string().trim().max(200).default(""),
+});
+
+const songSchema = z.object({
+  title: z.string().trim().min(1, "Give the song a title").max(80),
+  url: z
+    .string()
+    .trim()
+    .min(1, "Add a song link")
+    .max(500)
+    .refine(isSafeSongUrl, "Use an https:// audio link or a local /audio/ file"),
 });
 
 const elementsSchema = z.object({
@@ -62,6 +91,7 @@ export const invitationContentSchema = z.object({
   message: z.string().trim().max(2000).default(""),
   story: z.string().trim().max(2000).default(""),
   hosts: z.string().trim().max(160).default(""),
+  hostName: z.string().trim().max(60).default(""),
   dressCode: z.string().trim().max(160).default(""),
   contactName: z.string().trim().max(100).default(""),
   contactPhone: z
@@ -78,6 +108,7 @@ export const invitationContentSchema = z.object({
     .refine((value) => !value || !!parseInvitationDate(value), "Use a real RSVP date")
     .default(""),
   additionalEvents: z.array(extraEventSchema).max(4, "Add at most four extra events").default([]),
+  songs: z.array(songSchema).max(INVITATION_SONG_LIMIT, "Add at most five songs").default([]),
   groomPhoto: portraitSchema,
   bridePhoto: portraitSchema,
   theme: z.enum(invitationThemeIds).default("eid"),
@@ -86,6 +117,7 @@ export const invitationContentSchema = z.object({
 });
 
 export type InvitationContent = z.infer<typeof invitationContentSchema>;
+export type InvitationSongInput = InvitationContent["songs"][number];
 export type ExtraEvent = InvitationContent["additionalEvents"][number];
 
 export const invitationCardSchema = z.object({
