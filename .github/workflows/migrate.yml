@@ -48,6 +48,10 @@ jobs:
             \"select proname from pg_proc where proname='delete_expired_invitations'\",
             \"select 1 where to_regprocedure('public.register_username(text,text)') is not null\",
             \"select 1 where to_regprocedure('public.username_login_address(text,text)') is not null\",
+            \"select 1 where not exists (select 1 from pg_policies where schemaname='public' and tablename='profiles' and policyname='Anyone can view profiles')\",
+            \"select 1 where not has_table_privilege('anon','public.profiles','SELECT')\",
+            \"select 1 where not has_table_privilege('anon','public.wedding_rsvps','SELECT')\",
+            \"select 1 where not exists (select 1 from pg_policies where schemaname='public' and tablename='wedding_photos' and cmd in ('UPDATE','DELETE'))\",
           ];
           for (const q of checks){
             const r = await sql.unsafe(q);

@@ -18,7 +18,16 @@ function CardEditor() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [card, setCard] = useState<any>(null);
-  const [form, setForm] = useState({ title: "", groomName: "", brideName: "", date: "", time: "", venue: "", address: "", message: "" });
+  const [form, setForm] = useState({
+    title: "",
+    groomName: "",
+    brideName: "",
+    date: "",
+    time: "",
+    venue: "",
+    address: "",
+    message: "",
+  });
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -28,7 +37,15 @@ function CardEditor() {
 
   useEffect(() => {
     async function load() {
-      const { data, error } = await supabase.from("invitation_cards").select("*").eq("id", id).single();
+      // RLS already restricts drafts to their owner; scope the query too.
+      const { data, error } = await supabase
+        .from("invitation_cards")
+        .select(
+          "id, owner_id, title, slug, status, content, created_at, updated_at, published_at, expires_at",
+        )
+        .eq("id", id)
+        .eq("owner_id", user.id)
+        .single();
       if (error) {
         setError(error.message);
         return;
@@ -58,8 +75,21 @@ function CardEditor() {
     setBusy(true);
     setError("");
     try {
-      const content = { groomName: form.groomName, brideName: form.brideName, date: form.date, time: form.time, venue: form.venue, address: form.address, message: form.message, theme: (card?.content as any)?.theme || "mughal" };
-      const { error } = await supabase.from("invitation_cards").update({ title: form.title, content }).eq("id", id);
+      const content = {
+        groomName: form.groomName,
+        brideName: form.brideName,
+        date: form.date,
+        time: form.time,
+        venue: form.venue,
+        address: form.address,
+        message: form.message,
+        theme: (card?.content as any)?.theme || "mughal",
+      };
+      const { error } = await supabase
+        .from("invitation_cards")
+        .update({ title: form.title, content })
+        .eq("id", id)
+        .eq("owner_id", user.id);
       if (error) throw error;
       toast.success("Card saved");
       navigate({ to: "/dashboard" });
@@ -71,7 +101,15 @@ function CardEditor() {
   }
 
   if (loading) return <main className="p-8">Loading…</main>;
-  if (error && !card) return <main className="p-8"><p className="text-destructive">{error}</p><Link to="/dashboard" className="underline">Back</Link></main>;
+  if (error && !card)
+    return (
+      <main className="p-8">
+        <p className="text-destructive">{error}</p>
+        <Link to="/dashboard" className="underline">
+          Back
+        </Link>
+      </main>
+    );
   if (!card) return <main className="p-8">Loading card…</main>;
 
   return (
@@ -80,25 +118,92 @@ function CardEditor() {
         <Card>
           <CardHeader>
             <CardTitle>Edit — {card.title}</CardTitle>
-            <CardDescription>Only you can edit this private draft. Publish from dashboard to share.</CardDescription>
+            <CardDescription>
+              Only you can edit this private draft. Publish from dashboard to share.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={save} className="space-y-4">
-              <div className="space-y-2"><Label>Title</Label><Input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} required maxLength={120} /></div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2"><Label>Groom</Label><Input value={form.groomName} onChange={(e) => setForm({ ...form, groomName: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Bride</Label><Input value={form.brideName} onChange={(e) => setForm({ ...form, brideName: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Date</Label><Input value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Time</Label><Input value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Venue</Label><Input value={form.venue} onChange={(e) => setForm({ ...form, venue: e.target.value })} /></div>
-                <div className="space-y-2"><Label>Address</Label><Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} /></div>
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input
+                  value={form.title}
+                  onChange={(e) => setForm({ ...form, title: e.target.value })}
+                  required
+                  maxLength={120}
+                />
               </div>
-              <div className="space-y-2"><Label>Message</Label><Textarea value={form.message} onChange={(e) => setForm({ ...form, message: e.target.value })} rows={4} /></div>
+              <div className="grid sm:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Groom</Label>
+                  <Input
+                    value={form.groomName}
+                    onChange={(e) => setForm({ ...form, groomName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Bride</Label>
+                  <Input
+                    value={form.brideName}
+                    onChange={(e) => setForm({ ...form, brideName: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Date</Label>
+                  <Input
+                    value={form.date}
+                    onChange={(e) => setForm({ ...form, date: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Time</Label>
+                  <Input
+                    value={form.time}
+                    onChange={(e) => setForm({ ...form, time: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Venue</Label>
+                  <Input
+                    value={form.venue}
+                    onChange={(e) => setForm({ ...form, venue: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Address</Label>
+                  <Input
+                    value={form.address}
+                    onChange={(e) => setForm({ ...form, address: e.target.value })}
+                  />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Label>Message</Label>
+                <Textarea
+                  value={form.message}
+                  onChange={(e) => setForm({ ...form, message: e.target.value })}
+                  rows={4}
+                />
+              </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex gap-2">
-                <Button type="submit" disabled={busy} className="bg-burgundy text-ivory">{busy ? "Saving…" : "Save"}</Button>
-                <Button type="button" variant="outline" onClick={() => navigate({ to: "/dashboard" })}>Cancel</Button>
-                <Link to="/invite/$slug" params={{ slug: card.slug }} className="ml-auto text-sm underline">Preview public link</Link>
+                <Button type="submit" disabled={busy} className="bg-burgundy text-ivory">
+                  {busy ? "Saving…" : "Save"}
+                </Button>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => navigate({ to: "/dashboard" })}
+                >
+                  Cancel
+                </Button>
+                <Link
+                  to="/invite/$slug"
+                  params={{ slug: card.slug }}
+                  className="ml-auto text-sm underline"
+                >
+                  Preview public link
+                </Link>
               </div>
             </form>
           </CardContent>

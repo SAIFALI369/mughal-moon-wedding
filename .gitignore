@@ -31,7 +31,10 @@ dist-ssr
 *.sln
 *.sw?
 
-# Local server credentials
+# Local server credentials and environment files
+.env
+.env.*
+!.env.example
 supabase/.env
 # Scratch file used to hand off API keys; never track it
 /key
