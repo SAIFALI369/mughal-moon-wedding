@@ -10,9 +10,9 @@ This project is hosted with:
 
 Production URLs:
 
-- https://mughal-moon-wedding.vercel.app
 - https://invitingyou.vercel.app (canonical `VITE_SITE_URL`)
-- https://invitation.cashiea.app
+- https://mughal-moon-wedding.vercel.app
+- `invitation.cashiea.app` is attached to the project, but its DNS currently does not point at Vercel (`misconfigured: true`). Add the recommended `CNAME` at the registrar before sharing it.
 
 Supabase API URL: `https://ibqkslwleelhijhujjcm.supabase.co`
 
