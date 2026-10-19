@@ -27,4 +27,8 @@ it("schedules migrations on every main push and every six hours, not on PRs", ()
   expect(workflow).toContain("cancel-in-progress: false");
   expect(workflow).toContain('REQUIRE_DB_MIGRATIONS: "1"');
   expect(workflow).toContain("node scripts/migrate.mjs");
+  expect(workflow).toContain("public.invitation_rsvps");
+  expect(workflow).toContain("invitation_published_basics");
+  const journal = readFileSync("drizzle/migrations/meta/_journal.json", "utf8");
+  expect(journal).toContain("0009_private_card_rsvps_and_portraits");
 });

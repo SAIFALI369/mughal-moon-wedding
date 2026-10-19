@@ -9,7 +9,7 @@ import {
 } from "./concierge-ui";
 import { getInstantConciergeReply, requestConcierge } from "./concierge-client";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
@@ -124,10 +124,17 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <a href="/dashboard" className="hidden items-center gap-1 rounded-full border border-gold/40 px-3 py-2 text-[11px] uppercase tracking-[0.15em] text-foreground hover:bg-gold/10 sm:inline-flex" title="Create & manage your private invitations (up to 3)">
+          <a
+            href="/dashboard"
+            className="hidden items-center gap-1 rounded-full border border-gold/40 px-3 py-2 text-[11px] uppercase tracking-[0.15em] text-foreground hover:bg-gold/10 sm:inline-flex"
+            title="Create & manage your private invitations (up to 3)"
+          >
             My Invites
           </a>
-          <a href="/sign-in" className="hidden items-center gap-1 rounded-full bg-burgundy px-3 py-2 text-[11px] uppercase tracking-[0.15em] text-ivory hover:bg-burgundy/90 sm:inline-flex">
+          <a
+            href="/sign-in"
+            className="hidden items-center gap-1 rounded-full bg-burgundy px-3 py-2 text-[11px] uppercase tracking-[0.15em] text-ivory hover:bg-burgundy/90 sm:inline-flex"
+          >
             Sign in
           </a>
           <button
@@ -189,8 +196,20 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
                 {item.label}
               </a>
             ))}
-            <a href="/dashboard" onClick={() => setMobileOpen(false)} className="rounded-full border border-burgundy/30 bg-burgundy/10 px-3 py-1.5 text-xs uppercase tracking-[0.18em] text-burgundy">My Invites (≤3)</a>
-            <a href="/sign-in" onClick={() => setMobileOpen(false)} className="rounded-full border border-gold/30 px-3 py-1.5 text-xs uppercase tracking-[0.18em]">Sign in</a>
+            <a
+              href="/dashboard"
+              onClick={() => setMobileOpen(false)}
+              className="rounded-full border border-burgundy/30 bg-burgundy/10 px-3 py-1.5 text-xs uppercase tracking-[0.18em] text-burgundy"
+            >
+              My Invites (≤3)
+            </a>
+            <a
+              href="/sign-in"
+              onClick={() => setMobileOpen(false)}
+              className="rounded-full border border-gold/30 px-3 py-1.5 text-xs uppercase tracking-[0.18em]"
+            >
+              Sign in
+            </a>
           </motion.div>
         )}
       </AnimatePresence>
@@ -199,7 +218,21 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
 }
 
 /* ───────── Preloader ───────── */
-export function Preloader({ onDone }: { onDone: () => void }) {
+export function Preloader({
+  onDone,
+  groomName = "Mohsin",
+  brideName = "Simran",
+  dateLine = "22–23 November 2026 · New Delhi",
+  enableMusic = true,
+  backgroundImage = eidSky,
+}: {
+  onDone: () => void;
+  groomName?: string;
+  brideName?: string;
+  dateLine?: string;
+  enableMusic?: boolean;
+  backgroundImage?: string;
+}) {
   const [opening, setOpening] = useState(false);
   const [show, setShow] = useState(true);
   const enterButton = useRef<HTMLButtonElement>(null);
@@ -225,7 +258,9 @@ export function Preloader({ onDone }: { onDone: () => void }) {
 
   function enter(withMusic: boolean) {
     if (opening) return;
-    window.dispatchEvent(new Event(withMusic ? "wedding:enter" : "wedding:enter-silent"));
+    if (enableMusic) {
+      window.dispatchEvent(new Event(withMusic ? "wedding:enter" : "wedding:enter-silent"));
+    }
     setOpening(true);
   }
 
@@ -241,7 +276,7 @@ export function Preloader({ onDone }: { onDone: () => void }) {
           className={`heavenly-entrance fixed inset-0 z-[100] overflow-hidden ${opening ? "is-opening" : ""}`}
         >
           <img
-            src={eidSky}
+            src={backgroundImage}
             alt=""
             aria-hidden="true"
             width={1536}
@@ -266,38 +301,46 @@ export function Preloader({ onDone }: { onDone: () => void }) {
             </p>
             <h1
               id="gate-title"
-              className="mt-6 flex flex-col items-center gap-2 font-serif text-6xl font-medium sm:flex-row sm:gap-6 sm:text-7xl lg:text-8xl"
+              className={`mt-6 flex max-w-full flex-col items-center gap-2 font-serif font-medium ${enableMusic ? "text-6xl sm:flex-row sm:gap-6 sm:text-7xl lg:text-8xl" : "text-[clamp(2.75rem,6vw,6rem)] lg:flex-row lg:gap-6"}`}
             >
-              <span>Mohsin</span>
-              <span className="text-gold-shimmer font-script text-5xl font-normal sm:text-6xl">
+              <span className={`max-w-full break-words ${enableMusic ? "" : "lg:max-w-[38vw]"}`}>
+                {groomName}
+              </span>
+              <span className="text-gold-shimmer shrink-0 font-script text-5xl font-normal sm:text-6xl">
                 weds
               </span>
-              <span>Simran</span>
+              <span className={`max-w-full break-words ${enableMusic ? "" : "lg:max-w-[38vw]"}`}>
+                {brideName}
+              </span>
             </h1>
             <p className="mt-6 font-serif text-xl italic text-foreground sm:text-2xl">
               Two hearts. One beautiful beginning.
             </p>
-            <p className="mt-4 text-[10px] uppercase tracking-[0.25em] text-gold">
-              22–23 November 2026 · New Delhi
+            <p className="mt-4 max-w-xl text-[10px] uppercase tracking-[0.25em] text-gold">
+              {dateLine}
             </p>
             <button
               ref={enterButton}
               type="button"
               disabled={opening}
-              onClick={() => enter(true)}
+              onClick={() => enter(enableMusic)}
               className="btn-shimmer bg-gold-gradient mt-8 inline-flex min-h-12 items-center gap-3 rounded-full px-8 py-3 text-xs font-medium uppercase tracking-[0.2em] text-burgundy-deep shadow-gold transition hover:scale-105 disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
             >
               <SparklesIcon className="h-4 w-4" /> {opening ? "Welcome inside" : "Open the gates"}
             </button>
-            <p className="mt-4 text-xs text-muted-foreground">Enter with music · sound on</p>
-            <button
-              type="button"
-              disabled={opening}
-              onClick={() => enter(false)}
-              className="mt-2 min-h-11 px-4 text-xs text-foreground underline decoration-gold/50 underline-offset-4 transition hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
-            >
-              Enter quietly
-            </button>
+            {enableMusic && (
+              <>
+                <p className="mt-4 text-xs text-muted-foreground">Enter with music · sound on</p>
+                <button
+                  type="button"
+                  disabled={opening}
+                  onClick={() => enter(false)}
+                  className="mt-2 min-h-11 px-4 text-xs text-foreground underline decoration-gold/50 underline-offset-4 transition hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
+                >
+                  Enter quietly
+                </button>
+              </>
+            )}
           </div>
         </motion.div>
       )}
@@ -306,7 +349,29 @@ export function Preloader({ onDone }: { onDone: () => void }) {
 }
 
 /* ───────── Hero ───────── */
-export function Hero({ guestName = "" }: { guestName?: string }) {
+export function Hero({
+  guestName = "",
+  groomName = "Mohsin",
+  brideName = "Simran",
+  dateLine = "Sunday, the Twenty-Second of November, Two Thousand Twenty-Six",
+  actions,
+  scrollTo = "#countdown",
+  entranceDelay = 3,
+  compactNames = false,
+  backgroundImage = eidSky,
+  portraits,
+}: {
+  guestName?: string;
+  groomName?: string;
+  brideName?: string;
+  dateLine?: string;
+  actions?: ReactNode;
+  scrollTo?: string;
+  entranceDelay?: number;
+  compactNames?: boolean;
+  backgroundImage?: string;
+  portraits?: ReactNode;
+}) {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
@@ -318,8 +383,12 @@ export function Hero({ guestName = "" }: { guestName?: string }) {
     >
       <motion.div style={{ y }} className="absolute inset-0">
         <img
-          src={eidSky}
-          alt="Golden crescent moon and stars above luminous Eid clouds"
+          src={backgroundImage}
+          alt={
+            backgroundImage === eidSky
+              ? "Golden crescent moon and stars above luminous Eid clouds"
+              : "Decorative wedding scene"
+          }
           width={1536}
           height={1024}
           fetchPriority="high"
@@ -332,7 +401,7 @@ export function Hero({ guestName = "" }: { guestName?: string }) {
         <motion.p
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 3.2, duration: 1 }}
+          transition={{ delay: entranceDelay + 0.2, duration: 1 }}
           dir="rtl"
           className="font-arabic text-2xl text-gold-light md:text-4xl"
         >
@@ -343,7 +412,7 @@ export function Hero({ guestName = "" }: { guestName?: string }) {
           <motion.div
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 3.4, duration: 0.8 }}
+            transition={{ delay: entranceDelay + 0.4, duration: 0.8 }}
             className="glass-card mx-auto mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs uppercase tracking-[0.28em] text-gold shadow-gold"
           >
             <span>✦</span> Cordially Inviting {guestName} <span>✦</span>
@@ -353,24 +422,26 @@ export function Hero({ guestName = "" }: { guestName?: string }) {
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 3.6 }}
+          transition={{ delay: entranceDelay + 0.6 }}
           className="mt-8 text-xs uppercase tracking-[0.5em] text-gold md:text-sm"
         >
           Together with their families
         </motion.p>
-        <div className="mt-8 flex flex-col items-center gap-2 md:flex-row md:gap-10">
+        <div
+          className={`mt-8 flex flex-col items-center gap-2 ${compactNames ? "lg:flex-row lg:gap-8" : "md:flex-row md:gap-10"}`}
+        >
           <motion.h1
             initial={{ opacity: 0, x: -60 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 3.8, duration: 1.2 }}
-            className="font-serif text-6xl font-medium sm:text-7xl md:text-9xl"
+            transition={{ delay: entranceDelay + 0.8, duration: 1.2 }}
+            className={`font-serif font-medium ${compactNames ? "max-w-full break-words text-[clamp(3.5rem,7vw,7rem)] lg:max-w-[35vw]" : "text-6xl sm:text-7xl md:text-9xl"}`}
           >
-            Mohsin
+            {groomName}
           </motion.h1>
           <motion.span
             initial={{ opacity: 0, scale: 0.4 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: 4.3, duration: 1 }}
+            transition={{ delay: entranceDelay + 1.3, duration: 1 }}
             className="text-gold-shimmer font-script text-6xl md:text-8xl"
           >
             weds
@@ -378,42 +449,49 @@ export function Hero({ guestName = "" }: { guestName?: string }) {
           <motion.h1
             initial={{ opacity: 0, x: 60 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 3.8, duration: 1.2 }}
-            className="font-serif text-6xl font-medium sm:text-7xl md:text-9xl"
+            transition={{ delay: entranceDelay + 0.8, duration: 1.2 }}
+            className={`font-serif font-medium ${compactNames ? "max-w-full break-words text-[clamp(3.5rem,7vw,7rem)] lg:max-w-[35vw]" : "text-6xl sm:text-7xl md:text-9xl"}`}
           >
-            Simran
+            {brideName}
           </motion.h1>
         </div>
         <motion.p
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 4.8, duration: 1 }}
+          transition={{ delay: entranceDelay + 1.8, duration: 1 }}
           className="mx-auto mt-10 max-w-xl font-serif text-lg italic text-foreground md:text-2xl"
         >
-          Sunday, the Twenty-Second of November, Two Thousand Twenty-Six
+          {dateLine}
         </motion.p>
+        {portraits}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 5.2 }}
+          transition={{ delay: entranceDelay + 2.2 }}
           className="mt-10 flex flex-wrap items-center justify-center gap-3"
         >
-          <button
-            onClick={downloadIcs}
-            className="btn-shimmer inline-flex items-center gap-2 rounded-full border border-gold px-7 py-3 text-xs uppercase tracking-[0.25em] text-gold-light transition hover:scale-105 hover:bg-gold/10"
-          >
-            <CalendarHeart className="h-4 w-4" /> Save the Date
-          </button>
-          <a
-            href="/ai-concierge"
-            className="btn-shimmer bg-gold-gradient inline-flex items-center gap-2 rounded-full px-7 py-3 text-xs font-medium uppercase tracking-[0.25em] text-burgundy-deep transition hover:scale-105 hover:shadow-gold"
-          >
-            <MessageCircle className="h-4 w-4" /> Ask Simran
-          </a>
+          {actions === undefined ? (
+            <>
+              <button
+                onClick={downloadIcs}
+                className="btn-shimmer inline-flex items-center gap-2 rounded-full border border-gold px-7 py-3 text-xs uppercase tracking-[0.25em] text-gold-light transition hover:scale-105 hover:bg-gold/10"
+              >
+                <CalendarHeart className="h-4 w-4" /> Save the Date
+              </button>
+              <a
+                href="/ai-concierge"
+                className="btn-shimmer bg-gold-gradient inline-flex items-center gap-2 rounded-full px-7 py-3 text-xs font-medium uppercase tracking-[0.25em] text-burgundy-deep transition hover:scale-105 hover:shadow-gold"
+              >
+                <MessageCircle className="h-4 w-4" /> Ask Simran
+              </a>
+            </>
+          ) : (
+            actions
+          )}
         </motion.div>
       </motion.div>
       <motion.a
-        href="#countdown"
+        href={scrollTo}
         animate={{ y: [0, 10, 0] }}
         transition={{ repeat: Infinity, duration: 2 }}
         className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 text-center text-[10px] uppercase tracking-[0.4em] text-gold"
@@ -450,14 +528,22 @@ function FlipCard({ value, label }: { value: number; label: string }) {
   );
 }
 
-export function Countdown() {
+export function Countdown({
+  weddingDate = WEDDING_DATE,
+  waitingText = "Until We Say Qubool Hai",
+  reachedText = "Alhamdulillah — We Said Qubool Hai",
+}: {
+  weddingDate?: Date;
+  waitingText?: string;
+  reachedText?: string;
+}) {
   const [now, setNow] = useState<number | null>(null);
   useEffect(() => {
     setNow(Date.now());
     const i = setInterval(() => setNow(Date.now()), 1000);
     return () => clearInterval(i);
   }, []);
-  const diff = Math.max(0, WEDDING_DATE.getTime() - (now ?? WEDDING_DATE.getTime()));
+  const diff = Math.max(0, weddingDate.getTime() - (now ?? weddingDate.getTime()));
   const s = Math.floor(diff / 1000);
   const parts = [
     { l: "Days", v: Math.floor(s / 86400) },
@@ -484,7 +570,7 @@ export function Countdown() {
         {...fadeUp}
         className="mt-12 text-center font-script text-4xl text-gold-light md:text-5xl"
       >
-        {passed ? "Alhamdulillah — We Said Qubool Hai" : "Until We Say Qubool Hai"}
+        {passed ? reachedText : waitingText}
       </motion.p>
     </section>
   );

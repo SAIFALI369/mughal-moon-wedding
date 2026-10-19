@@ -129,6 +129,18 @@ describe("personal invitation cards — database enforcement", () => {
     expect(res.rows[0].published_at).toBeNull();
   });
 
+  it("lets anonymous guests see only published invitations, never private drafts", async () => {
+    await db.exec("TRUNCATE public.invitation_cards CASCADE;");
+    await db.query("INSERT INTO public.invitation_cards (owner_id, title, slug, status) VALUES ($1, 'Private party', 'private-party-123', 'draft'), ($1, 'Public party', 'public-party-123', 'published')", [ownerA]);
+    await db.exec("SET ROLE anon;");
+    try {
+      const { rows } = await db.query<{ title: string }>("SELECT title FROM public.invitation_cards ORDER BY title");
+      expect(rows.map((row) => row.title)).toEqual(["Public party"]);
+    } finally {
+      await db.exec("RESET ROLE;");
+    }
+  });
+
   it("exposes RLS policies: owners manage own, anyone can read published", async () => {
     const sql = readFileSync(new URL("../../drizzle/migrations/0002_personal_invitation_cards.sql", import.meta.url), "utf8");
     expect(sql).toContain("ENABLE ROW LEVEL SECURITY");

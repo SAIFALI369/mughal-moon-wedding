@@ -535,3 +535,287 @@
   }
   .wedding-mobile-menu { max-height: calc(100dvh - 90px); overflow-y: auto; }
 }
+
+/* Personal invitations use the same sky, gate, gold and glass as the homepage.
+   Scope the palette so a visitor's homepage dark-mode choice doesn't restyle someone else's card. */
+.personal-invite,
+.personal-invite-cover {
+  --background: oklch(0.99 0.004 220);
+  --foreground: oklch(0.3 0.045 215);
+  --muted: oklch(0.965 0.012 215);
+  --muted-foreground: oklch(0.45 0.03 215);
+  --card: oklch(1 0 0 / 0.55);
+  --burgundy: oklch(0.33 0.1 15);
+  --burgundy-deep: oklch(0.2 0.07 15);
+  --gold: oklch(0.52 0.09 80);
+  --gold-light: oklch(0.55 0.09 80);
+  --ivory: oklch(0.982 0.012 85);
+  --border: oklch(0.73 0.11 85 / 0.35);
+  --shadow-gold: 0 20px 50px -20px oklch(0.73 0.11 85 / 0.55);
+  --gradient-gold: linear-gradient(110deg, oklch(0.62 0.11 75), var(--gold) 30%, var(--gold-light) 50%, var(--gold) 70%, oklch(0.62 0.11 75));
+}
+.personal-invite[data-theme="mughal"],
+.personal-invite-cover[data-theme="mughal"] {
+  --background: oklch(0.16 0.035 18);
+  --foreground: oklch(0.95 0.015 85);
+  --muted: oklch(0.2 0.04 18);
+  --muted-foreground: oklch(0.76 0.03 80);
+  --card: oklch(0.21 0.045 18 / 0.72);
+  --burgundy: oklch(0.8 0.1 80);
+  --burgundy-deep: oklch(0.18 0.06 15);
+  --gold: oklch(0.76 0.11 82);
+  --gold-light: oklch(0.85 0.11 85);
+  --ivory: oklch(0.96 0.015 85);
+  --border: oklch(0.76 0.11 82 / 0.35);
+  --shadow-gold: 0 20px 55px -18px oklch(0.76 0.11 82 / 0.38);
+  --gradient-gold: linear-gradient(110deg, oklch(0.72 0.12 75), var(--gold) 30%, var(--gold-light) 50%, var(--gold) 70%, oklch(0.72 0.12 75));
+}
+.personal-invite[data-theme="classic"],
+.personal-invite-cover[data-theme="classic"] {
+  --background: oklch(0.984 0.016 85);
+  --foreground: oklch(0.29 0.05 35);
+  --muted: oklch(0.945 0.025 80);
+  --muted-foreground: oklch(0.46 0.04 60);
+  --card: oklch(1 0 0 / 0.63);
+  --burgundy: oklch(0.39 0.09 22);
+  --gold: oklch(0.53 0.11 75);
+  --gold-light: oklch(0.63 0.09 78);
+  --border: oklch(0.72 0.11 80 / 0.4);
+}
+.personal-invite .eid-hero img,
+.personal-invite .gate-sky {
+  filter: none;
+}
+.personal-invite[data-theme="mughal"] .eid-hero img,
+.personal-invite[data-theme="mughal"] .gate-sky,
+.personal-invite-cover[data-theme="mughal"] img {
+  filter: brightness(0.42) contrast(1.1) saturate(1.15);
+}
+.personal-invite[data-theme="classic"] .eid-hero img,
+.personal-invite[data-theme="classic"] .gate-sky,
+.personal-invite-cover[data-theme="classic"] img {
+  filter: sepia(0.2) saturate(0.85);
+}
+.personal-invite .glass-card {
+  background: color-mix(in oklch, var(--background) 70%, transparent);
+  backdrop-filter: blur(16px) saturate(140%);
+  border: 1px solid var(--border);
+}
+.personal-invite-cover {
+  background: var(--background);
+  box-shadow: var(--shadow-gold);
+}
+.personal-invite-cover .invite-cover-wash {
+  background: radial-gradient(ellipse at center, color-mix(in oklch, var(--background) 91%, transparent), color-mix(in oklch, var(--background) 62%, transparent) 75%, transparent);
+}
+
+/* Five art-directed palettes: theme changes the whole invitation, not just a swatch. */
+.personal-invite[data-theme="aladin"], .personal-invite-cover[data-theme="aladin"] {
+  --background: oklch(0.18 0.05 303); --foreground: oklch(0.96 0.018 86);
+  --muted: oklch(0.23 0.055 302); --muted-foreground: oklch(0.77 0.035 85);
+  --card: oklch(0.21 0.047 303 / 0.8); --burgundy: oklch(0.85 0.12 85);
+  --burgundy-deep: oklch(0.17 0.055 303); --gold: oklch(0.78 0.13 82);
+  --gold-light: oklch(0.88 0.1 88); --border: oklch(0.74 0.11 83 / .4);
+  --shadow-gold: 0 22px 65px -22px oklch(0.78 0.13 82 / .42);
+  --gradient-gold: linear-gradient(110deg, #a96f37, #e8bd72 33%, #ffe6a7 50%, #e8bd72 68%, #a96f37);
+}
+.personal-invite[data-theme="bihari-vibe"], .personal-invite-cover[data-theme="bihari-vibe"] {
+  --background: oklch(0.974 0.027 83); --foreground: oklch(0.3 0.065 42);
+  --muted: oklch(0.93 0.055 78); --muted-foreground: oklch(0.46 0.055 43);
+  --card: oklch(0.985 0.025 83 / .85); --burgundy: oklch(0.42 0.135 32);
+  --burgundy-deep: oklch(0.27 0.075 38); --gold: oklch(0.49 0.12 46);
+  --gold-light: oklch(0.57 0.11 55); --border: oklch(0.62 0.13 49 / .5);
+  --shadow-gold: 0 20px 50px -20px oklch(0.54 0.12 45 / .35);
+  --gradient-gold: linear-gradient(110deg, #ad422c, #d97a45 32%, #edb361 50%, #d97a45 68%, #ad422c);
+}
+.personal-invite[data-theme="mecca_madinah"], .personal-invite-cover[data-theme="mecca_madinah"] {
+  --background: oklch(0.17 0.045 165); --foreground: oklch(0.96 0.02 90);
+  --muted: oklch(0.22 0.052 165); --muted-foreground: oklch(0.78 0.025 90);
+  --card: oklch(0.19 0.045 165 / .82); --burgundy: oklch(0.83 0.10 87);
+  --burgundy-deep: oklch(0.16 0.045 165); --gold: oklch(0.76 0.11 88);
+  --gold-light: oklch(0.87 0.08 90); --border: oklch(0.75 0.1 90 / .42);
+  --shadow-gold: 0 20px 52px -20px oklch(0.76 0.11 88 / .38);
+  --gradient-gold: linear-gradient(110deg, #9b7945, #d1af70 32%, #f7dfa9 50%, #d1af70 68%, #9b7945);
+}
+.personal-invite[data-theme="luxury"], .personal-invite-cover[data-theme="luxury"] {
+  --background: oklch(0.14 0.013 285); --foreground: oklch(0.96 0.012 80);
+  --muted: oklch(0.19 0.014 285); --muted-foreground: oklch(0.73 0.018 80);
+  --card: oklch(0.19 0.014 285 / .8); --burgundy: oklch(0.86 0.085 84);
+  --burgundy-deep: oklch(0.14 0.013 285); --gold: oklch(0.75 0.095 83);
+  --gold-light: oklch(0.86 0.07 82); --border: oklch(0.76 0.09 83 / .38);
+  --shadow-gold: 0 24px 65px -22px oklch(0.75 0.095 83 / .4);
+  --gradient-gold: linear-gradient(110deg, #94724b, #d7b786 32%, #f7e3ba 50%, #d7b786 68%, #94724b);
+}
+.personal-invite[data-theme="futuristic"], .personal-invite-cover[data-theme="futuristic"] {
+  --background: oklch(0.14 0.046 257); --foreground: oklch(0.96 0.018 220);
+  --muted: oklch(0.2 0.055 260); --muted-foreground: oklch(0.75 0.05 210);
+  --card: oklch(0.22 0.06 255 / .65); --burgundy: oklch(0.81 0.11 202);
+  --burgundy-deep: oklch(0.14 0.046 257); --gold: oklch(0.81 0.11 202);
+  --gold-light: oklch(0.9 0.09 195); --border: oklch(0.75 0.11 202 / .38);
+  --shadow-gold: 0 20px 65px -20px oklch(0.75 0.12 202 / .48);
+  --gradient-gold: linear-gradient(110deg, #579cd2, #91dbe9 32%, #def9f5 50%, #a49cf7 72%, #579cd2);
+}
+.personal-invite-cover[data-theme="aladin"] .invite-cover-wash,
+.personal-invite-cover[data-theme="mecca_madinah"] .invite-cover-wash,
+.personal-invite-cover[data-theme="luxury"] .invite-cover-wash,
+.personal-invite-cover[data-theme="futuristic"] .invite-cover-wash {
+  background: radial-gradient(ellipse at 50% 52%, color-mix(in oklch, var(--background) 89%, transparent) 4%, color-mix(in oklch, var(--background) 59%, transparent) 68%, transparent 100%);
+}
+.personal-invite-cover[data-theme="bihari-vibe"] .invite-cover-wash {
+  background: radial-gradient(ellipse at center, oklch(0.97 0.025 85 / .94) 4%, oklch(0.97 0.025 85 / .53) 73%, transparent 100%);
+}
+.personal-invite-cover .cover-art { transition: transform .7s cubic-bezier(.22, 1, .36, 1); }
+a:hover .personal-invite-cover .cover-art { transform: scale(1.07); }
+.personal-invite-cover .cover-kicker { max-width: 90%; overflow-wrap: anywhere; }
+.personal-invite-cover[data-framework="royal-folio"] .cover-outline { inset: 9px; border-radius: 50% 50% 2% 2% / 23% 23% 2% 2%; border-width: 2px; }
+.personal-invite-cover[data-framework="royal-folio"] .cover-inner { margin: 15px; border: 1px solid var(--border); min-height: calc(21rem - 30px); }
+.personal-invite-cover[data-framework="royal-folio"] .cover-names { font-style: italic; letter-spacing: -.035em; }
+.personal-invite-cover[data-framework="cinematic-stage"] { perspective: 900px; }
+.personal-invite-cover[data-framework="cinematic-stage"] .cover-inner {
+  margin: 12px; min-height: calc(21rem - 24px); border: 1px solid var(--border);
+  background: color-mix(in oklch, var(--background) 35%, transparent);
+  backdrop-filter: blur(5px); transform: rotateX(3deg) translateZ(12px);
+  box-shadow: 0 20px 45px #0005, inset 0 0 45px color-mix(in oklch, var(--gold) 15%, transparent);
+  transition: transform .45s ease;
+}
+a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner { transform: rotateX(0) translateZ(30px); }
+.personal-invite-cover[data-framework="cinematic-stage"] .cover-outline { border-radius: 1.5rem; }
+.personal-invite-cover[data-framework="modern-mosaic"] .cover-inner {
+  min-height: 21rem; align-items: flex-start; justify-content: flex-end;
+  padding: 2.5rem 2.25rem; text-align: left;
+  background: linear-gradient(90deg, color-mix(in oklch, var(--background) 92%, transparent), transparent);
+}
+.personal-invite-cover[data-framework="modern-mosaic"] .cover-outline { inset: 8px; border-radius: 0; }
+.personal-invite-cover[data-framework="modern-mosaic"] .cover-names { align-items: flex-start; margin-top: .4rem; font-weight: 600; }
+.personal-invite-cover[data-framework="modern-mosaic"] .cover-amp { line-height: .75; margin-left: 2rem; }
+.personal-invite-cover[data-framework="modern-mosaic"] .cover-divider { margin-block: .7rem; }
+.personal-invite-cover[data-framework="modern-mosaic"] .cover-label { align-self: flex-start; }
+
+/* Art-directed full-size layouts, separate from theme. The original moonlit Hero remains intact. */
+.personal-invite .invitation-stage { perspective: 1300px; background: var(--background); }
+.personal-invite .invitation-stage .stage-background { object-position: center; }
+.personal-invite .stage-shade {
+  background: radial-gradient(ellipse at 50% 55%, color-mix(in oklch, var(--background) 87%, transparent), color-mix(in oklch, var(--background) 59%, transparent) 53%, color-mix(in oklch, var(--background) 18%, transparent) 100%);
+}
+.personal-invite[data-theme="bihari-vibe"] .stage-shade { background: radial-gradient(ellipse at center, oklch(0.97 0.025 85 / .9), oklch(0.97 0.025 85 / .59) 53%, transparent 90%); }
+.personal-invite .stage-frame { border-radius: 45% 45% .5rem .5rem / 20% 20% .5rem .5rem; }
+.personal-invite .stage-content { text-align: center; transform-style: preserve-3d; }
+.personal-invite .stage-copy {
+  margin-inline: auto; padding: clamp(2rem, 5vw, 5rem); max-width: 920px;
+  border: 1px solid var(--border); border-radius: 44% 44% 1rem 1rem / 16% 16% 1rem 1rem;
+  background: color-mix(in oklch, var(--background) 55%, transparent);
+  backdrop-filter: blur(15px); box-shadow: var(--shadow-gold), inset 0 0 40px color-mix(in oklch, var(--gold) 9%, transparent);
+}
+.personal-invite .stage-names { font-size: clamp(3.3rem, 8vw, 8.7rem); letter-spacing: -.05em; }
+.personal-invite .stage-name { display: block; max-width: 100%; overflow-wrap: anywhere; }
+.personal-invite .stage-amp { display: block; font-size: clamp(4rem, 8vw, 7rem); line-height: .75; margin: .6rem 0 1rem; }
+.personal-invite .stage-orbit, .personal-invite .stage-light { display: none; }
+.personal-invite .stage-kicker { line-height: 1.8; overflow-wrap: anywhere; }
+.personal-invite .stage-scroll { transition: transform .25s ease; }
+.personal-invite .stage-scroll:hover { transform: translate(-50%, 4px); }
+.personal-invite .invite-portraits { display: flex; justify-content: center; gap: 1.2rem; margin: 1.8rem auto 0; }
+.personal-invite .invite-portraits figure { text-align: center; font-size: .72rem; color: var(--gold); }
+.personal-invite .invite-portraits img {
+  width: 6.2rem; height: 6.2rem; border-radius: 50%; object-fit: cover;
+  border: 3px solid var(--gold); padding: 3px; box-shadow: 0 8px 24px #0004;
+}
+.personal-invite .invite-portraits figcaption { margin-top: .4rem; font-family: var(--font-serif); font-size: 1rem; }
+.personal-invite-cover .invite-portraits { display: flex; gap: .5rem; margin-top: .8rem; }
+.personal-invite-cover .invite-portraits img { width: 2.5rem; height: 2.5rem; border-radius: 50%; border: 1px solid var(--gold); object-fit: cover; }
+.personal-invite .invite-section { scroll-margin-top: 6rem; }
+.personal-invite .invitation-stage { scroll-margin-top: 6rem; }
+
+/* Royal Folio: two-page, editorial invitation with a raised date plate. */
+.personal-invite[data-framework="royal-folio"] .stage-frame { border-radius: 0; inset: 2.2rem; border-width: 2px; }
+.personal-invite[data-framework="royal-folio"] .stage-shade { background: linear-gradient(90deg, color-mix(in oklch, var(--background) 90%, transparent), color-mix(in oklch, var(--background) 68%, transparent) 68%, color-mix(in oklch, var(--background) 25%, transparent)); }
+.personal-invite[data-framework="royal-folio"] .stage-content { display: grid; align-items: center; grid-template-columns: minmax(0, 1.35fr) minmax(260px, .65fr); gap: 1.4rem; }
+.personal-invite[data-framework="royal-folio"] .stage-copy { margin: 0; text-align: left; border-radius: 0; background: color-mix(in oklch, var(--background) 75%, transparent); }
+.personal-invite[data-framework="royal-folio"] .stage-names { font-size: clamp(3.4rem, 6vw, 7rem); }
+.personal-invite[data-framework="royal-folio"] .stage-amp { margin-left: 12%; }
+.personal-invite[data-framework="royal-folio"] .stage-actions,
+.personal-invite[data-framework="royal-folio"] .invite-portraits { justify-content: flex-start; }
+.personal-invite .stage-aside {
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  min-height: 425px; padding: 2.5rem 1.7rem; border: 1px solid var(--border); outline: 1px solid var(--border); outline-offset: -10px;
+  background: color-mix(in oklch, var(--background) 84%, transparent);
+  backdrop-filter: blur(19px); box-shadow: 0 22px 54px #0004;
+  font-size: .8rem; line-height: 1.5; transform: rotateY(-7deg) translateZ(24px); transition: transform .5s ease;
+}
+.personal-invite[data-framework="royal-folio"] .stage-aside:hover { transform: rotateY(0) translateZ(30px); }
+.personal-invite .stage-aside-number { font-size: 2rem; color: var(--gold); }
+.personal-invite .stage-aside-line { width: 2px; height: 5rem; margin: 1.5rem 0; background: var(--gold); }
+
+/* Cinematic Stage: concentric depth planes, parallax art and pointer-driven tilt. */
+.personal-invite[data-framework="cinematic-stage"] .stage-copy {
+  transform: rotateX(var(--stage-y, 0deg)) rotateY(var(--stage-x, 0deg)) translateZ(55px);
+  transform-style: preserve-3d; transition: transform .32s ease-out;
+  background: color-mix(in oklch, var(--background) 53%, transparent);
+  box-shadow: 0 35px 95px #0008, 0 0 70px color-mix(in oklch, var(--gold) 25%, transparent), inset 0 0 45px color-mix(in oklch, var(--gold) 14%, transparent);
+}
+.personal-invite[data-framework="cinematic-stage"] .stage-names,
+.personal-invite[data-framework="cinematic-stage"] .stage-kicker { transform: translateZ(34px); }
+.personal-invite[data-framework="cinematic-stage"] .stage-orbit { display: block; position: absolute; inset: 13% 16%; border: 1px solid color-mix(in oklch, var(--gold) 47%, transparent); border-radius: 50%; transform: rotateX(72deg) rotateZ(-18deg); box-shadow: 0 0 45px color-mix(in oklch, var(--gold) 22%, transparent); animation: invite-orbit 24s ease-in-out infinite alternate; }
+.personal-invite[data-framework="cinematic-stage"] .stage-orbit-two { inset: 4% 8%; transform: rotateX(73deg) rotateZ(24deg); animation-delay: -9s; animation-duration: 30s; opacity: .58; }
+.personal-invite[data-framework="cinematic-stage"] .stage-light { display: block; position: absolute; width: 15rem; height: 15rem; border-radius: 50%; filter: blur(25px); background: radial-gradient(circle, color-mix(in oklch, var(--gold) 25%, transparent), transparent 70%); animation: invite-glow 9s ease-in-out infinite alternate; }
+.personal-invite[data-framework="cinematic-stage"] .stage-light-one { top: 8%; left: 5%; }
+.personal-invite[data-framework="cinematic-stage"] .stage-light-two { bottom: 7%; right: 4%; animation-delay: -4s; }
+@keyframes invite-orbit { to { transform: rotateX(66deg) rotateZ(19deg) scale(1.06); } }
+@keyframes invite-glow { to { opacity: .3; transform: translate3d(2rem, -1rem, 0); } }
+
+/* Modern Mosaic: a sharp asymmetric invitation with a floating detail tile. */
+.personal-invite[data-framework="modern-mosaic"] .stage-frame { inset: 2rem; border-radius: 0; }
+.personal-invite[data-framework="modern-mosaic"] .stage-shade { background: linear-gradient(90deg, color-mix(in oklch, var(--background) 94%, transparent) 1%, color-mix(in oklch, var(--background) 78%, transparent) 60%, color-mix(in oklch, var(--background) 18%, transparent) 100%); }
+.personal-invite[data-framework="modern-mosaic"] .stage-content { display: grid; align-items: end; grid-template-columns: minmax(0, 1.25fr) minmax(240px, .55fr); gap: 1.5rem; }
+.personal-invite[data-framework="modern-mosaic"] .stage-copy {
+  margin: 0; padding: clamp(2rem, 5vw, 5rem); text-align: left; border-radius: 0;
+  background: color-mix(in oklch, var(--background) 76%, transparent);
+  box-shadow: 16px 16px 0 color-mix(in oklch, var(--gold) 26%, transparent), var(--shadow-gold);
+  transform: translateZ(35px);
+}
+.personal-invite[data-framework="modern-mosaic"] .stage-names { font-size: clamp(3.5rem, 7vw, 7.6rem); letter-spacing: -.07em; }
+.personal-invite[data-framework="modern-mosaic"] .stage-amp { margin-left: 15%; }
+.personal-invite[data-framework="modern-mosaic"] .stage-actions,
+.personal-invite[data-framework="modern-mosaic"] .invite-portraits { justify-content: flex-start; }
+.personal-invite .stage-mosaic-details {
+  padding: 2.4rem; min-height: 280px; text-align: left;
+  border: 1px solid var(--border); backdrop-filter: blur(22px);
+  background: color-mix(in oklch, var(--background) 80%, transparent);
+  box-shadow: var(--shadow-gold); transform: translateZ(85px) translateY(-20px);
+}
+.personal-invite .stage-mosaic-number { display: block; margin-bottom: 1.5rem; color: var(--gold); font-size: 3rem; font-weight: 300; letter-spacing: -.08em; }
+.personal-invite .stage-mosaic-number span { font-size: 1rem; vertical-align: middle; }
+
+@media (max-width: 800px) {
+  .personal-invite[data-framework="royal-folio"] .stage-content,
+  .personal-invite[data-framework="modern-mosaic"] .stage-content { display: flex; flex-direction: column; align-items: stretch; }
+  .personal-invite .stage-aside { min-height: auto; transform: none; gap: .2rem; }
+  .personal-invite .stage-aside-line { height: 2rem; margin: .5rem 0; }
+  .personal-invite .stage-mosaic-details { min-height: auto; transform: none; }
+}
+@media (max-width: 640px) {
+  .personal-invite .invitation-stage { padding-inline: 1.2rem; padding-top: 8rem; min-height: 100svh; }
+  .personal-invite .stage-copy { padding: 3rem 1.4rem; border-radius: 37% 37% .75rem .75rem / 10% 10% .75rem .75rem; }
+  .personal-invite .stage-frame { inset: .7rem; }
+  .personal-invite .stage-names { font-size: clamp(3rem, 12vw, 5rem); }
+  .personal-invite .stage-date { font-size: 1.3rem; }
+  .personal-invite .stage-amp { font-size: 4rem; }
+  .personal-invite[data-framework="royal-folio"] .stage-content,
+  .personal-invite[data-framework="modern-mosaic"] .stage-content { gap: .8rem; }
+  .personal-invite .stage-mosaic-details { padding: 1.4rem; }
+  .personal-invite .stage-mosaic-number { font-size: 2rem; margin: 0 0 .5rem; }
+  .personal-invite .stage-aside { padding: 1.2rem; }
+  .personal-invite .stage-aside-line { display: none; }
+  .personal-invite .stage-aside-number { font-size: 1.2rem; }
+  .personal-invite[data-framework="royal-folio"] .stage-frame,
+  .personal-invite[data-framework="modern-mosaic"] .stage-frame { inset: .7rem; }
+  .personal-invite .invite-portraits img { width: 4.7rem; height: 4.7rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .personal-invite .stage-orbit, .personal-invite .stage-light,
+  .personal-invite .text-gold-shimmer { animation: none !important; }
+  .personal-invite[data-framework="cinematic-stage"] .stage-copy,
+  .personal-invite .stage-aside,
+  .personal-invite .stage-mosaic-details,
+  .personal-invite .stage-background { transform: none !important; transition: none !important; }
+  .personal-invite-cover .cover-art, .personal-invite-cover .cover-inner { transition: none !important; }
+}

@@ -64,6 +64,13 @@
       "when": 1792383897083,
       "tag": "0008_lock_down_personal_data",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1792400400000,
+      "tag": "0009_private_card_rsvps_and_portraits",
+      "breakpoints": true
     }
   ]
 }

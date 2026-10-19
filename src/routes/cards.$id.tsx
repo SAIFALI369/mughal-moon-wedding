@@ -3,11 +3,19 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
+import { invitationContentSchema } from "@/components/wedding/invitation-schema";
+import { InvitationDetailsFields } from "@/components/wedding/invitation-form";
+import {
+  emptyInvitationForm,
+  invitationFormForCard,
+  type InvitationForm,
+} from "@/components/wedding/invitation-form-data";
+import { invitationExpiry } from "@/components/wedding/invitation-details";
+import type { Database } from "@/integrations/supabase/types";
+
+type InvitationCard = Database["public"]["Tables"]["invitation_cards"]["Row"];
 
 export const Route = createFileRoute("/cards/$id")({
   component: CardEditor,
@@ -17,17 +25,8 @@ function CardEditor() {
   const { id } = Route.useParams();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [card, setCard] = useState<any>(null);
-  const [form, setForm] = useState({
-    title: "",
-    groomName: "",
-    brideName: "",
-    date: "",
-    time: "",
-    venue: "",
-    address: "",
-    message: "",
-  });
+  const [card, setCard] = useState<InvitationCard | null>(null);
+  const [form, setForm] = useState<InvitationForm>(emptyInvitationForm);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
@@ -54,18 +53,8 @@ function CardEditor() {
         setError("You can only edit your own cards.");
         return;
       }
-      setCard(data);
-      const c = data.content as any;
-      setForm({
-        title: data.title,
-        groomName: c.groomName || "",
-        brideName: c.brideName || "",
-        date: c.date || "",
-        time: c.time || "",
-        venue: c.venue || "",
-        address: c.address || "",
-        message: c.message || "",
-      });
+      setCard(data as InvitationCard);
+      setForm(invitationFormForCard(data.title, data.content));
     }
     if (user) load();
   }, [id, user]);
@@ -75,19 +64,17 @@ function CardEditor() {
     setBusy(true);
     setError("");
     try {
-      const content = {
-        groomName: form.groomName,
-        brideName: form.brideName,
-        date: form.date,
-        time: form.time,
-        venue: form.venue,
-        address: form.address,
-        message: form.message,
-        theme: (card?.content as any)?.theme || "mughal",
-      };
+      if (!form.title.trim()) throw new Error("Card title is required.");
+      const parsed = invitationContentSchema.safeParse(form);
+      if (!parsed.success)
+        throw new Error(parsed.error.issues[0]?.message || "Complete the invitation details.");
       const { error } = await supabase
         .from("invitation_cards")
-        .update({ title: form.title, content })
+        .update({
+          title: form.title.trim(),
+          content: parsed.data,
+          expires_at: invitationExpiry(parsed.data.date),
+        })
         .eq("id", id)
         .eq("owner_id", user?.id ?? "");
       if (error) throw error;
@@ -114,77 +101,18 @@ function CardEditor() {
 
   return (
     <main className="min-h-screen bg-background px-4 py-8">
-      <div className="mx-auto max-w-2xl">
+      <div className="mx-auto max-w-5xl">
         <Card>
           <CardHeader>
             <CardTitle>Edit — {card.title}</CardTitle>
             <CardDescription>
-              Only you can edit this private draft. Publish from dashboard to share.
+              Only you can edit this card. Preview private drafts on the dashboard; publish there to
+              share.
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={save} className="space-y-4">
-              <div className="space-y-2">
-                <Label>Title</Label>
-                <Input
-                  value={form.title}
-                  onChange={(e) => setForm({ ...form, title: e.target.value })}
-                  required
-                  maxLength={120}
-                />
-              </div>
-              <div className="grid sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label>Groom</Label>
-                  <Input
-                    value={form.groomName}
-                    onChange={(e) => setForm({ ...form, groomName: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Bride</Label>
-                  <Input
-                    value={form.brideName}
-                    onChange={(e) => setForm({ ...form, brideName: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Date</Label>
-                  <Input
-                    value={form.date}
-                    onChange={(e) => setForm({ ...form, date: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Time</Label>
-                  <Input
-                    value={form.time}
-                    onChange={(e) => setForm({ ...form, time: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Venue</Label>
-                  <Input
-                    value={form.venue}
-                    onChange={(e) => setForm({ ...form, venue: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>Address</Label>
-                  <Input
-                    value={form.address}
-                    onChange={(e) => setForm({ ...form, address: e.target.value })}
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label>Message</Label>
-                <Textarea
-                  value={form.message}
-                  onChange={(e) => setForm({ ...form, message: e.target.value })}
-                  rows={4}
-                />
-              </div>
+              <InvitationDetailsFields value={form} onChange={setForm} />
               {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex gap-2">
                 <Button type="submit" disabled={busy} className="bg-burgundy text-ivory">
@@ -197,13 +125,15 @@ function CardEditor() {
                 >
                   Cancel
                 </Button>
-                <Link
-                  to="/invite/$slug"
-                  params={{ slug: card.slug }}
-                  className="ml-auto text-sm underline"
-                >
-                  Preview public link
-                </Link>
+                {card.status === "published" && (
+                  <Link
+                    to="/invite/$slug"
+                    params={{ slug: card.slug }}
+                    className="ml-auto text-sm underline"
+                  >
+                    View published invitation
+                  </Link>
+                )}
               </div>
             </form>
           </CardContent>

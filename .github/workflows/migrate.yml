@@ -51,6 +51,12 @@ jobs:
             \"select 1 where not exists (select 1 from pg_policies where schemaname='public' and tablename='profiles' and policyname='Anyone can view profiles')\",
             \"select 1 where not has_table_privilege('anon','public.profiles','SELECT')\",
             \"select 1 where not has_table_privilege('anon','public.wedding_rsvps','SELECT')\",
+            \"select 1 where to_regclass('public.invitation_rsvps') is not null\",
+            \"select 1 where exists (select 1 from pg_policies where schemaname='public' and tablename='invitation_rsvps' and cmd='INSERT' and policyname='Guests can reply to published invitations')\",
+            \"select 1 where exists (select 1 from pg_policies where schemaname='public' and tablename='invitation_rsvps' and cmd='SELECT' and policyname='Owners can read their invitation replies')\",
+            \"select 1 where not has_table_privilege('anon','public.invitation_rsvps','SELECT')\",
+            \"select 1 where exists (select 1 from pg_constraint where conname='invitation_portraits_safe')\",
+            \"select 1 where exists (select 1 from pg_constraint where conname='invitation_published_basics')\",
             \"select 1 where not exists (select 1 from pg_policies where schemaname='public' and tablename='wedding_photos' and cmd in ('UPDATE','DELETE'))\",
           ];
           for (const q of checks){
