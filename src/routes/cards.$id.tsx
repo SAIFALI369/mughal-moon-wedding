@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -98,7 +98,7 @@ function CardEditor() {
               <div className="flex gap-2">
                 <Button type="submit" disabled={busy} className="bg-burgundy text-ivory">{busy ? "Saving…" : "Save"}</Button>
                 <Button type="button" variant="outline" onClick={() => navigate({ to: "/dashboard" })}>Cancel</Button>
-                <Link to={`/invite/${card.slug}`} className="ml-auto text-sm underline">Preview public link</Link>
+                <Link to="/invite/$slug" params={{ slug: card.slug }} className="ml-auto text-sm underline">Preview public link</Link>
               </div>
             </form>
           </CardContent>
