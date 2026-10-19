@@ -1,4 +1,4 @@
-import { supabase } from "@/integrations/supabase/client";
+import { supabase } from "@/lib/db";
 import type { Database } from "@/integrations/supabase/types";
 
 export type InvitationCardRow = Database["public"]["Tables"]["invitation_cards"]["Row"];
