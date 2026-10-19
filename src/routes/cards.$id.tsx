@@ -44,7 +44,7 @@ function CardEditor() {
           "id, owner_id, title, slug, status, content, created_at, updated_at, published_at, expires_at",
         )
         .eq("id", id)
-        .eq("owner_id", user.id)
+        .eq("owner_id", user?.id ?? "")
         .single();
       if (error) {
         setError(error.message);
@@ -89,7 +89,7 @@ function CardEditor() {
         .from("invitation_cards")
         .update({ title: form.title, content })
         .eq("id", id)
-        .eq("owner_id", user.id);
+        .eq("owner_id", user?.id ?? "");
       if (error) throw error;
       toast.success("Card saved");
       navigate({ to: "/dashboard" });

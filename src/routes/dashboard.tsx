@@ -79,7 +79,7 @@ function Dashboard() {
       .select(
         "id, owner_id, title, slug, status, content, created_at, updated_at, published_at, expires_at",
       )
-      .eq("owner_id", user.id)
+      .eq("owner_id", user?.id ?? "")
       .order("created_at", { ascending: false });
     if (error) {
       console.error(error);
@@ -193,7 +193,7 @@ function Dashboard() {
       .from("invitation_cards")
       .update({ title, content })
       .eq("id", card.id)
-      .eq("owner_id", user.id);
+      .eq("owner_id", user?.id ?? "");
     if (error) {
       setError(error.message);
       toast.error(error.message);
@@ -210,7 +210,7 @@ function Dashboard() {
       .from("invitation_cards")
       .update({ status: newStatus })
       .eq("id", card.id)
-      .eq("owner_id", user.id);
+      .eq("owner_id", user?.id ?? "");
     if (error) {
       setError(error.message);
       toast.error(error.message);
@@ -228,7 +228,7 @@ function Dashboard() {
       .from("invitation_cards")
       .delete()
       .eq("id", card.id)
-      .eq("owner_id", user.id);
+      .eq("owner_id", user?.id ?? "");
     if (error) {
       setError(error.message);
       toast.error(error.message);
