@@ -42,7 +42,7 @@ describe("personal invitation cards — database enforcement", () => {
 
   it("stores cards as private drafts by default and enforces slug/status checks", async () => {
     await db.exec("TRUNCATE public.invitation_cards CASCADE;");
-    const { rows } = await db.query("INSERT INTO public.invitation_cards (owner_id, title, slug, content) VALUES ($1,$2,$3,$4) RETURNING status, slug", [
+    const { rows } = await db.query<any>("INSERT INTO public.invitation_cards (owner_id, title, slug, content) VALUES ($1,$2,$3,$4) RETURNING status, slug", [
       ownerA,
       "My Draft",
       "my-draft-123456",
@@ -52,11 +52,11 @@ describe("personal invitation cards — database enforcement", () => {
     expect(rows[0].slug).toBe("my-draft-123456");
     // Invalid slug should fail
     await expect(
-      db.query("INSERT INTO public.invitation_cards (owner_id, title, slug) VALUES ($1,$2,$3)", [ownerA, "Bad", "BAD_SLUG"]),
+      db.query<any>("INSERT INTO public.invitation_cards (owner_id, title, slug) VALUES ($1,$2,$3)", [ownerA, "Bad", "BAD_SLUG"]),
     ).rejects.toThrow();
     // Invalid status
     await expect(
-      db.query("INSERT INTO public.invitation_cards (owner_id, title, slug, status) VALUES ($1,$2,$3,$4)", [ownerA, "Bad", "bad-slug1", "archived"]),
+      db.query<any>("INSERT INTO public.invitation_cards (owner_id, title, slug, status) VALUES ($1,$2,$3,$4)", [ownerA, "Bad", "bad-slug1", "archived"]),
     ).rejects.toThrow();
   });
 
@@ -65,7 +65,7 @@ describe("personal invitation cards — database enforcement", () => {
     // Insert 3 for owner A should succeed
     for (let i = 1; i <= 3; i++) {
       const c = card(ownerA, `a${i}`);
-      await db.query("INSERT INTO public.invitation_cards (owner_id, title, slug, content) VALUES ($1,$2,$3,$4)", [
+      await db.query<any>("INSERT INTO public.invitation_cards (owner_id, title, slug, content) VALUES ($1,$2,$3,$4)", [
         c.owner_id,
         c.title,
         c.slug,
@@ -74,7 +74,7 @@ describe("personal invitation cards — database enforcement", () => {
     }
     // 4th should fail with limit message
     await expect(
-      db.query("INSERT INTO public.invitation_cards (owner_id, title, slug, content) VALUES ($1,$2,$3,$4)", [
+      db.query<any>("INSERT INTO public.invitation_cards (owner_id, title, slug, content) VALUES ($1,$2,$3,$4)", [
         ownerA,
         "Fourth",
         "test-invite-a4",
@@ -83,30 +83,30 @@ describe("personal invitation cards — database enforcement", () => {
     ).rejects.toThrow("at most 3");
 
     // Different owner B still has capacity
-    await db.query("INSERT INTO public.invitation_cards (owner_id, title, slug, content) VALUES ($1,$2,$3,$4)", [
+    await db.query<any>("INSERT INTO public.invitation_cards (owner_id, title, slug, content) VALUES ($1,$2,$3,$4)", [
       ownerB,
       "B First",
       "test-invite-b1",
       "{}",
     ]);
-    const { rows } = await db.query("SELECT count(*) as c FROM public.invitation_cards WHERE owner_id = $1", [ownerA]);
+    const { rows } = await db.query<any>("SELECT count(*) as c FROM public.invitation_cards WHERE owner_id = $1", [ownerA]);
     expect(Number(rows[0].c)).toBe(3);
 
     // Deleting frees slot
     await db.exec(`DELETE FROM public.invitation_cards WHERE owner_id = '${ownerA}' AND slug = 'test-invite-a1'`);
-    await db.query("INSERT INTO public.invitation_cards (owner_id, title, slug, content) VALUES ($1,$2,$3,$4)", [
+    await db.query<any>("INSERT INTO public.invitation_cards (owner_id, title, slug, content) VALUES ($1,$2,$3,$4)", [
       ownerA,
       "After Delete",
       "test-invite-a5",
       "{}",
     ]);
-    const { rows: after } = await db.query("SELECT count(*) as c FROM public.invitation_cards WHERE owner_id = $1", [ownerA]);
+    const { rows: after } = await db.query<any>("SELECT count(*) as c FROM public.invitation_cards WHERE owner_id = $1", [ownerA]);
     expect(Number(after[0].c)).toBe(3);
   });
 
   it("prevents owner_id tampering on update and manages published_at", async () => {
     await db.exec("TRUNCATE public.invitation_cards CASCADE;");
-    await db.query("INSERT INTO public.invitation_cards (id, owner_id, title, slug) VALUES ($1,$2,$3,$4)", [
+    await db.query<any>("INSERT INTO public.invitation_cards (id, owner_id, title, slug) VALUES ($1,$2,$3,$4)", [
       "33333333-3333-4333-8333-333333333333",
       ownerA,
       "Owner Test",
@@ -114,17 +114,17 @@ describe("personal invitation cards — database enforcement", () => {
     ]);
     // Try to change owner_id should fail
     await expect(
-      db.query("UPDATE public.invitation_cards SET owner_id = $1 WHERE id = $2", [ownerB, "33333333-3333-4333-8333-333333333333"]),
+      db.query<any>("UPDATE public.invitation_cards SET owner_id = $1 WHERE id = $2", [ownerB, "33333333-3333-4333-8333-333333333333"]),
     ).rejects.toThrow("owner_id cannot be changed");
 
     // Publishing sets published_at, drafting clears it
-    await db.query("UPDATE public.invitation_cards SET status='published' WHERE id='33333333-3333-4333-8333-333333333333'");
-    let res = await db.query("SELECT status, published_at FROM public.invitation_cards WHERE id='33333333-3333-4333-8333-333333333333'");
+    await db.query<any>("UPDATE public.invitation_cards SET status='published' WHERE id='33333333-3333-4333-8333-333333333333'");
+    let res = await db.query<any>("SELECT status, published_at FROM public.invitation_cards WHERE id='33333333-3333-4333-8333-333333333333'");
     expect(res.rows[0].status).toBe("published");
     expect(res.rows[0].published_at).toBeTruthy();
 
-    await db.query("UPDATE public.invitation_cards SET status='draft' WHERE id='33333333-3333-4333-8333-333333333333'");
-    res = await db.query("SELECT status, published_at FROM public.invitation_cards WHERE id='33333333-3333-4333-8333-333333333333'");
+    await db.query<any>("UPDATE public.invitation_cards SET status='draft' WHERE id='33333333-3333-4333-8333-333333333333'");
+    res = await db.query<any>("SELECT status, published_at FROM public.invitation_cards WHERE id='33333333-3333-4333-8333-333333333333'");
     expect(res.rows[0].status).toBe("draft");
     expect(res.rows[0].published_at).toBeNull();
   });
