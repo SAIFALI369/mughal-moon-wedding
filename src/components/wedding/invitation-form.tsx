@@ -1,5 +1,5 @@
 import { useState, type ChangeEvent, type Dispatch, type SetStateAction } from "react";
-import { ImagePlus, Plus, Trash2 } from "lucide-react";
+import { ImagePlus, Music2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -13,8 +13,15 @@ import {
 } from "./invitation-options";
 import { processInvitationPortrait } from "./portrait-upload";
 import { InvitationCover, PersonalInvitation } from "./invitation-template";
+import { MAX_SONGS } from "./invitation-songs";
+import { uploadInvitationSong } from "./invitation-song-storage";
 
-type Props = { value: InvitationForm; onChange: Dispatch<SetStateAction<InvitationForm>> };
+type Props = {
+  value: InvitationForm;
+  onChange: Dispatch<SetStateAction<InvitationForm>>;
+  /** Called with each storage path uploaded in this editing session, so unsaved uploads can be removed. */
+  onSongUploaded?: (path: string) => void;
+};
 const requiredFields = [
   { key: "groomName", label: "Groom's name", placeholder: "Groom's name", limit: 80 },
   { key: "brideName", label: "Bride's name", placeholder: "Bride's name", limit: 80 },
@@ -29,6 +36,12 @@ const requiredFields = [
   },
 ] as const;
 const optionalFields = [
+  {
+    key: "hostName",
+    label: "Host name (your AI assistant's name)",
+    placeholder: "Your name, as host",
+    limit: 80,
+  },
   {
     key: "hosts",
     label: "Hosting families",
@@ -46,9 +59,11 @@ const optionalFields = [
   { key: "rsvpDeadline", label: "Please RSVP by", placeholder: "10 December 2026", limit: 100 },
 ] as const;
 
-export function InvitationDetailsFields({ value, onChange }: Props) {
+export function InvitationDetailsFields({ value, onChange, onSongUploaded }: Props) {
   const [photoBusy, setPhotoBusy] = useState<"groomPhoto" | "bridePhoto" | null>(null);
   const [photoError, setPhotoError] = useState("");
+  const [songBusy, setSongBusy] = useState(false);
+  const [songError, setSongError] = useState("");
   const [showPreview, setShowPreview] = useState(false);
 
   function change(key: keyof InvitationForm, next: string) {
@@ -67,6 +82,23 @@ export function InvitationDetailsFields({ value, onChange }: Props) {
       setPhotoError(err instanceof Error ? err.message : "Photo could not be processed.");
     } finally {
       setPhotoBusy(null);
+      event.target.value = "";
+    }
+  }
+
+  async function addSong(event: ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    if (!file) return;
+    setSongBusy(true);
+    setSongError("");
+    try {
+      const song = await uploadInvitationSong(file);
+      onSongUploaded?.(song.path);
+      onChange((form) => ({ ...form, songs: [...form.songs, song].slice(0, MAX_SONGS) }));
+    } catch (err: unknown) {
+      setSongError(err instanceof Error ? err.message : "The song could not be uploaded.");
+    } finally {
+      setSongBusy(false);
       event.target.value = "";
     }
   }
@@ -228,6 +260,12 @@ export function InvitationDetailsFields({ value, onChange }: Props) {
                 placeholder={placeholder}
                 maxLength={limit}
               />
+              {key === "hostName" && (
+                <p className="text-xs text-muted-foreground">
+                  Your invitation’s AI assistant is named after you and answers guests’ questions
+                  about this card only.
+                </p>
+              )}
             </div>
           ))}
           <div className="space-y-2 sm:col-span-2">
@@ -345,10 +383,93 @@ export function InvitationDetailsFields({ value, onChange }: Props) {
         ))}
       </section>
 
+      <section aria-labelledby="form-songs" className="space-y-4 border-t border-border pt-8">
+        <div>
+          <h2 id="form-songs" className="font-serif text-2xl">
+            05 — Songs for your guests
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Add up to {MAX_SONGS} songs (MP3, M4A, WAV or OGG, 10 MB each). Guests can play them
+            from a Songs button on your invitation. Upload only music you have the right to share.
+          </p>
+        </div>
+        {value.songs.length === 0 && (
+          <p className="text-xs text-muted-foreground">
+            No songs yet. The Songs button appears on your invitation once you add one.
+          </p>
+        )}
+        <div className="space-y-3">
+          {value.songs.map((song, index) => (
+            <div
+              key={song.id}
+              className="flex flex-wrap items-end gap-3 rounded-xl border border-border p-4"
+            >
+              <div className="min-w-[12rem] flex-1 space-y-2">
+                <Label htmlFor={`song-title-${song.id}`}>Song {index + 1} title</Label>
+                <Input
+                  id={`song-title-${song.id}`}
+                  value={song.title}
+                  maxLength={120}
+                  onChange={(event) =>
+                    onChange((form) => ({
+                      ...form,
+                      songs: form.songs.map((item) =>
+                        item.id === song.id ? { ...item, title: event.target.value } : item,
+                      ),
+                    }))
+                  }
+                />
+              </div>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="text-destructive"
+                onClick={() =>
+                  onChange((form) => ({
+                    ...form,
+                    songs: form.songs.filter((item) => item.id !== song.id),
+                  }))
+                }
+              >
+                <Trash2 className="mr-1 h-4 w-4" /> Remove song
+              </Button>
+            </div>
+          ))}
+        </div>
+        {value.songs.length < MAX_SONGS ? (
+          <div className="flex flex-wrap items-center gap-4">
+            <Label htmlFor="song-file" className="inline-flex cursor-pointer items-center gap-2">
+              <Music2 aria-hidden="true" className="h-4 w-4 text-gold" />
+              {songBusy ? "Uploading song…" : "Add a song"}
+            </Label>
+            <Input
+              id="song-file"
+              type="file"
+              accept="audio/mpeg,audio/mp4,audio/x-m4a,audio/wav,audio/ogg,.mp3,.m4a,.wav,.ogg"
+              disabled={songBusy}
+              onChange={(event) => {
+                void addSong(event);
+              }}
+              className="max-w-64 cursor-pointer text-xs"
+            />
+          </div>
+        ) : (
+          <p className="text-xs text-muted-foreground">
+            You have added {MAX_SONGS} songs. Remove one to add another.
+          </p>
+        )}
+        {songError && (
+          <p role="alert" className="text-sm text-destructive">
+            {songError}
+          </p>
+        )}
+      </section>
+
       <section aria-labelledby="form-photos" className="space-y-4 border-t border-border pt-8">
         <div>
           <h2 id="form-photos" className="font-serif text-2xl">
-            05 — Your portraits
+            06 — Your portraits
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Optional groom and bride photos. JPEG, PNG or WebP up to 8 MB; compressed to a small
@@ -416,7 +537,7 @@ export function InvitationDetailsFields({ value, onChange }: Props) {
       <section aria-labelledby="form-elements" className="space-y-4 border-t border-border pt-8">
         <div>
           <h2 id="form-elements" className="font-serif text-2xl">
-            06 — What guests see
+            07 — What guests see
           </h2>
           <p className="mt-1 text-sm text-muted-foreground">
             Choose each optional part independently. Names, wedding date, time, venue and address

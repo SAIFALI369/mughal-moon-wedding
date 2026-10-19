@@ -32,3 +32,19 @@ it("schedules migrations on every main push and every six hours, not on PRs", ()
   const journal = readFileSync("drizzle/migrations/meta/_journal.json", "utf8");
   expect(journal).toContain("0009_private_card_rsvps_and_portraits");
 });
+
+it("journals every migration in order, each with its SQL file present", () => {
+  const journal = JSON.parse(readFileSync("drizzle/migrations/meta/_journal.json", "utf8")) as {
+    entries: Array<{ idx: number; tag: string }>;
+  };
+  expect(journal.entries.map((entry) => entry.idx)).toEqual(
+    journal.entries.map((_, index) => index),
+  );
+  for (const entry of journal.entries) {
+    expect(
+      readFileSync(`drizzle/migrations/${entry.tag}.sql`, "utf8").length,
+      entry.tag,
+    ).toBeGreaterThan(0);
+  }
+  expect(journal.entries.at(-1)?.tag).toBe("0010_invitation_songs");
+});

@@ -10,10 +10,13 @@ import {
 import { Countdown, Hero, Preloader } from "./sections";
 import { Divider, Mandala, SectionTitle, fadeUp } from "./ornaments";
 import {
+  assistantName,
   buildInvitationCalendarUrl,
   getInvitationCountdownDate,
   getInvitationDetails,
 } from "./invitation-details";
+import { HostAssistant } from "./host-assistant";
+import { CardSongPlayer } from "./card-song-player";
 import { invitationArt } from "./invitation-art";
 import { CouplePortraits, InvitationStage } from "./invitation-stage";
 import { InvitationRsvp } from "./invitation-rsvp";
@@ -89,17 +92,23 @@ export function InvitationCover({ content }: { content: unknown }) {
   );
 }
 
-/** Entire invitation is driven by its own card; never borrows the homepage's photos, story or RSVP. */
+/**
+ * Entire invitation is driven by its own card; never borrows the homepage's photos, story or RSVP.
+ * `slug` is the public link. Only a live published card has one, so the host's AI assistant and
+ * songs appear there and not in the creator's private preview.
+ */
 export function PersonalInvitation({
   title,
   content,
   cardId,
+  slug,
   showGate = true,
   preview = false,
 }: {
   title: string;
   content: unknown;
   cardId?: string;
+  slug?: string;
   showGate?: boolean;
   preview?: boolean;
 }) {
@@ -438,6 +447,15 @@ export function PersonalInvitation({
           </a>
         )}
       </footer>
+
+      {!preview && slug && (
+        <HostAssistant
+          slug={slug}
+          name={assistantName(details)}
+          coupleLabel={`${details.groomName} & ${details.brideName}`}
+        />
+      )}
+      {!preview && slug && details.songs.length > 0 && <CardSongPlayer songs={details.songs} />}
     </div>
   );
 }

@@ -96,6 +96,69 @@ describe("personal invitation design", () => {
     expect(markup).not.toContain("20261122");
   });
 
+  it("gives a live card its own assistant named after the host, and its own songs, never Simran", () => {
+    const markup = renderToStaticMarkup(
+      <PersonalInvitation
+        title="Our Day"
+        content={{
+          ...content,
+          hostName: "Farah Khan",
+          songs: [
+            {
+              id: "s1",
+              title: "Rosewater",
+              path: "11111111-2222-4333-8444-555555555555/66666666-7777-4888-8999-aaaaaaaaaaaa.mp3",
+            },
+          ],
+        }}
+        showGate={false}
+        slug="our-day-a1b2c3d4"
+      />,
+    );
+    expect(markup).toContain("Ask Farah Khan");
+    expect(markup).toContain("Your AI assistant");
+    expect(markup).toContain("Open songs for this invitation (1)");
+    expect(markup).not.toContain("Ask Simran");
+    expect(markup).not.toContain("Mohsin");
+    expect(markup).not.toContain("Simran");
+    expect(markup).not.toContain("Assalamu alaikum");
+  });
+
+  it("names a live card's assistant after the contact, then the groom, when no host name was given", () => {
+    const withContact = renderToStaticMarkup(
+      <PersonalInvitation
+        title="Our Day"
+        content={{ ...content, contactName: "Imran" }}
+        showGate={false}
+        slug="our-day-a1b2c3d4"
+      />,
+    );
+    expect(withContact).toContain("Ask Imran");
+    const groomOnly = renderToStaticMarkup(
+      <PersonalInvitation
+        title="Our Day"
+        content={content}
+        showGate={false}
+        slug="our-day-a1b2c3d4"
+      />,
+    );
+    expect(groomOnly).toContain("Ask Ayaan");
+    expect(groomOnly).not.toContain("Open songs for this invitation");
+  });
+
+  it("keeps the assistant and song player out of the dashboard preview", () => {
+    const markup = renderToStaticMarkup(
+      <PersonalInvitation
+        title="Our Day"
+        content={{ ...content, hostName: "Farah Khan" }}
+        showGate={false}
+        preview
+      />,
+    );
+    expect(markup).not.toContain("Ask Farah Khan");
+    expect(markup).not.toContain("Open songs for this invitation");
+  });
+
   it("keeps unknown dates visible as written without inserting the main event's countdown", () => {
     const markup = renderToStaticMarkup(
       <PersonalInvitation

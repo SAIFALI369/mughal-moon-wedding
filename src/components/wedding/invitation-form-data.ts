@@ -13,6 +13,8 @@ export function emptyInvitationForm(): InvitationForm {
     venue: "",
     address: "",
     eventType: "Wedding celebration",
+    hostName: "",
+    songs: [],
     message: "",
     story: "",
     hosts: "",

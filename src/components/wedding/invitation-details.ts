@@ -6,7 +6,9 @@ import {
   type InvitationFramework,
   type InvitationTheme,
 } from "./invitation-options";
+import { normalizeSongs, type InvitationSong } from "./invitation-songs";
 
+export type { InvitationSong } from "./invitation-songs";
 export type {
   InvitationTheme,
   InvitationFramework,
@@ -16,6 +18,9 @@ export type {
 export type InvitationDetails = {
   groomName: string;
   brideName: string;
+  /** Name of the card's host; the per-card AI assistant is named after it. */
+  hostName: string;
+  songs: InvitationSong[];
   date: string;
   time: string;
   venue: string;
@@ -91,6 +96,8 @@ export function getInvitationDetails(content: unknown): InvitationDetails {
   return {
     groomName: stringField(data, "groomName") || "Groom",
     brideName: stringField(data, "brideName") || "Bride",
+    hostName: stringField(data, "hostName"),
+    songs: normalizeSongs(data.songs),
     date: stringField(data, "date"),
     time: stringField(data, "time"),
     venue: stringField(data, "venue"),
@@ -137,6 +144,14 @@ export function getInvitationDetails(content: unknown): InvitationDetails {
       ]),
     ) as InvitationElements,
   };
+}
+
+/**
+ * The per-card assistant takes the host's name. Cards created before host names existed
+ * fall back to the host contact, then to the groom, so the assistant always has a name.
+ */
+export function assistantName(details: Pick<InvitationDetails, "hostName" | "contactName" | "groomName">): string {
+  return details.hostName || details.contactName || details.groomName;
 }
 
 /** Accept both the dashboard's displayed date and ISO dates without locale-dependent parsing. */

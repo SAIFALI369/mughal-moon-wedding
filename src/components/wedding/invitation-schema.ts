@@ -5,6 +5,7 @@ import {
   invitationThemeIds,
 } from "./invitation-options";
 import { isSafePortrait, parseInvitationDate } from "./invitation-details";
+import { MAX_SONGS, isSafeSongPath } from "./invitation-songs";
 
 const portraitSchema = z
   .string()
@@ -23,6 +24,15 @@ const extraEventSchema = z.object({
   time: z.string().trim().min(1, "Event time is required").max(100),
   venue: z.string().trim().min(1, "Event venue is required").max(120),
   address: z.string().trim().max(200).default(""),
+});
+
+const songSchema = z.object({
+  id: z.string().trim().min(1).max(64),
+  title: z.string().trim().min(1, "Song title is required").max(120),
+  path: z
+    .string()
+    .trim()
+    .refine(isSafeSongPath, "Song upload is invalid. Upload the song again."),
 });
 
 const elementsSchema = z.object({
@@ -59,6 +69,11 @@ export const invitationContentSchema = z.object({
     .min(1, "Name the main ceremony")
     .max(80)
     .default("Wedding celebration"),
+  hostName: z.string().trim().max(80).default(""),
+  songs: z
+    .array(songSchema)
+    .max(MAX_SONGS, `Add at most ${MAX_SONGS} songs`)
+    .default([]),
   message: z.string().trim().max(2000).default(""),
   story: z.string().trim().max(2000).default(""),
   hosts: z.string().trim().max(160).default(""),
@@ -87,6 +102,7 @@ export const invitationContentSchema = z.object({
 
 export type InvitationContent = z.infer<typeof invitationContentSchema>;
 export type ExtraEvent = InvitationContent["additionalEvents"][number];
+export type SongEntry = InvitationContent["songs"][number];
 
 export const invitationCardSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(120),

@@ -27,3 +27,20 @@
 - [x] Share a broader conversational personality across both backends: general assistance, happy wit and optional mild dark humour, with wedding accuracy and privacy intact.
 - [x] Add offline capability/humour previews and regression tests; verify compact layouts and chat flow in a headless browser at 375px and 320px.
 - [x] Bound server-side wishes loading to five seconds so an unavailable backend cannot indefinitely hold the page loader.
+
+## Personal card assistants and songs
+
+- [x] Give every personal invitation card its own AI assistant, named after the card's host name (fallback: contact name, then groom's name) and shown only on the published `/invite/:slug` page.
+- [x] Answer only from the card's visible sections (element toggles respected), disclose that it is AI, refer RSVPs to the on-page form, and never read RSVP rows.
+- [x] Keep personal cards free of the main site's Simran quick replies, wedding facts, visitor counter and "Ask Simran" / "Mohsin" text.
+- [x] Let hosts add up to five songs (MP3, M4A, WAV or OGG, 10 MB each) to a card's editor, stored in a private `invitation-songs` bucket.
+- [x] Serve songs to guests only as one-hour signed links, and only while the card is published and unexpired.
+- [x] Delete replaced, removed or cancelled song files on save or cancel, and remove a card's songs when the card is deleted.
+- [x] Add migration `0010_invitation_songs` in both migration directories, with a journal entry and PGlite policy tests.
+- [x] Add unit, component and PGlite tests for the assistant, songs, storage policies and migration packaging.
+- [x] Update `docs/personal-invitations.md`.
+- [x] Sweep unreferenced song files older than a day from the private bucket after expired cards are deleted, through the Storage API with the service role (`scripts/song-sweep.mjs`, `scripts/cleanup-expired.mjs`).
+- [ ] Add `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` as repository Actions secrets so the storage sweep runs; without them it is skipped with a warning.
+- [ ] Apply `0010_invitation_songs.sql` to the production Supabase database and confirm the `invitation-songs` bucket is private.
+- [ ] Redeploy the `wedding-concierge` Edge Function and confirm a live card's assistant answers with its host name.
+- [ ] Check a published card in a browser on a phone-sized screen: the assistant panel, the Songs panel, and playback.

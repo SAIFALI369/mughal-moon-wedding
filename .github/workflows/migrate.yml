@@ -58,6 +58,7 @@ jobs:
             \"select 1 where exists (select 1 from pg_constraint where conname='invitation_portraits_safe')\",
             \"select 1 where exists (select 1 from pg_constraint where conname='invitation_published_basics')\",
             \"select 1 where not exists (select 1 from pg_policies where schemaname='public' and tablename='wedding_photos' and cmd in ('UPDATE','DELETE'))\",
+            \"select 1 where exists (select 1 from storage.buckets where id='invitation-songs' and public = false)\",
           ];
           for (const q of checks){
             const r = await sql.unsafe(q);
@@ -69,6 +70,9 @@ jobs:
           "
 
       - name: Cleanup expired invitations (auto-delete after wedding)
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
           node scripts/cleanup-expired.mjs
 

@@ -12,7 +12,11 @@ import {
   invitationFormForCard,
   type InvitationForm,
 } from "@/components/wedding/invitation-form-data";
-import { invitationExpiry } from "@/components/wedding/invitation-details";
+import {
+  getInvitationDetails,
+  invitationExpiry,
+} from "@/components/wedding/invitation-details";
+import { SongUploadSession } from "@/components/wedding/invitation-song-storage";
 import type { Database } from "@/integrations/supabase/types";
 
 type InvitationCard = Database["public"]["Tables"]["invitation_cards"]["Row"];
@@ -29,6 +33,8 @@ function CardEditor() {
   const [form, setForm] = useState<InvitationForm>(emptyInvitationForm);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  // Songs uploaded in this editor. Unsaved ones are removed from storage when the edit is cancelled.
+  const [songSession] = useState(() => new SongUploadSession());
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/sign-in" });
@@ -78,6 +84,10 @@ function CardEditor() {
         .eq("id", id)
         .eq("owner_id", user?.id ?? "");
       if (error) throw error;
+      await songSession.settle(
+        parsed.data.songs.map((song) => song.path),
+        card ? getInvitationDetails(card.content).songs.map((song) => song.path) : [],
+      );
       toast.success("Card saved");
       navigate({ to: "/dashboard" });
     } catch (err: unknown) {
@@ -112,7 +122,11 @@ function CardEditor() {
           </CardHeader>
           <CardContent>
             <form onSubmit={save} className="space-y-4">
-              <InvitationDetailsFields value={form} onChange={setForm} />
+              <InvitationDetailsFields
+                value={form}
+                onChange={setForm}
+                onSongUploaded={(path) => songSession.track(path)}
+              />
               {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex gap-2">
                 <Button type="submit" disabled={busy} className="bg-burgundy text-ivory">
@@ -121,7 +135,10 @@ function CardEditor() {
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => navigate({ to: "/dashboard" })}
+                  onClick={() => {
+                    void songSession.discard();
+                    navigate({ to: "/dashboard" });
+                  }}
                 >
                   Cancel
                 </Button>

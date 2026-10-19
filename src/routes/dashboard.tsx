@@ -32,6 +32,10 @@ import {
 } from "lucide-react";
 import { SimranMemoryBar } from "@/components/wedding/simran-memory-bar";
 import { cleanupExpiredMemories, deleteSimranMemory } from "@/lib/simran-memory";
+import {
+  SongUploadSession,
+  removeInvitationSongs,
+} from "@/components/wedding/invitation-song-storage";
 
 type InvitationCard = {
   id: string;
@@ -60,12 +64,30 @@ function Dashboard() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [previewCard, setPreviewCard] = useState<InvitationCard | null>(null);
   const [error, setError] = useState("");
+  // Songs uploaded while this editor is open. Unsaved ones are removed from storage on cancel.
+  const [songSession] = useState(() => new SongUploadSession());
 
   useEffect(() => {
     if (!loading && !user) {
       navigate({ to: "/sign-in" });
     }
   }, [user, loading, navigate]);
+
+  // A new card's host name defaults to the signed-in account; the assistant is named after it.
+  function blankForm(): InvitationForm {
+    return { ...emptyInvitationForm(), hostName: getUsernameFromUser(user) };
+  }
+
+  useEffect(() => {
+    if (user && !editingId) {
+      setForm((current) =>
+        current.hostName || current.title || current.groomName
+          ? current
+          : { ...current, hostName: getUsernameFromUser(user) },
+      );
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
 
   async function load() {
     if (!user) return;
@@ -168,7 +190,8 @@ function Dashboard() {
       }
       toast.success("Card created as draft (private). Only you can see it until published.");
       setCards((prev) => [data as InvitationCard, ...prev]);
-      setForm(emptyInvitationForm());
+      await songSession.settle(content.songs.map((song) => song.path));
+      setForm(blankForm());
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Create failed");
     } finally {
@@ -194,6 +217,10 @@ function Dashboard() {
     }
     toast.success("Card updated");
     setEditingId(null);
+    await songSession.settle(
+      content.songs.map((song) => song.path),
+      getInvitationDetails(card.content).songs.map((song) => song.path),
+    );
     load();
   }
 
@@ -234,11 +261,13 @@ function Dashboard() {
       toast.error(error.message);
       return;
     }
+    await removeInvitationSongs(getInvitationDetails(card.content).songs.map((song) => song.path));
     toast.success("Card deleted");
     setCards((prev) => prev.filter((c) => c.id !== card.id));
   }
 
   function startEdit(card: InvitationCard) {
+    void songSession.discard();
     setEditingId(card.id);
     setForm(invitationFormForCard(card.title, card.content));
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -327,7 +356,11 @@ function Dashboard() {
               }
               className="space-y-4"
             >
-              <InvitationDetailsFields value={form} onChange={setForm} />
+              <InvitationDetailsFields
+                value={form}
+                onChange={setForm}
+                onSongUploaded={(path) => songSession.track(path)}
+              />
               {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex gap-2">
                 <Button
@@ -346,8 +379,9 @@ function Dashboard() {
                     type="button"
                     variant="outline"
                     onClick={() => {
+                      void songSession.discard();
                       setEditingId(null);
-                      setForm(emptyInvitationForm());
+                      setForm(blankForm());
                       setError("");
                     }}
                   >

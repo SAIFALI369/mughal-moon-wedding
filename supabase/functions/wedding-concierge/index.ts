@@ -1,4 +1,8 @@
 import { buildConciergeInstruction } from "../_shared/concierge-personality.ts";
+import {
+  buildCardAssistantInstruction,
+  cardAssistantFacts,
+} from "../_shared/card-assistant.ts";
 import { AI_NAME, GEMINI_API_KEY, GEMINI_MODEL } from "./gemini-key.ts";
 
 declare const Deno: {
@@ -62,7 +66,9 @@ function requestIp(request: Request) {
   );
 }
 
-function rateLimit(request: Request) {
+// `scope` separates counters for each per-card assistant from the main Simran visitor limit,
+// so chatting with one host's card does not use up the wedding concierge's messages.
+function rateLimit(request: Request, scope = "") {
   const now = Date.now();
   if (rateBuckets.size > 500) {
     for (const [key, bucket] of rateBuckets) if (bucket.resetsAt <= now) rateBuckets.delete(key);
@@ -70,7 +76,7 @@ function rateLimit(request: Request) {
   if (visitorBuckets.size > 2000) {
     for (const [key, bucket] of visitorBuckets) if (bucket.resetsAt <= now) visitorBuckets.delete(key);
   }
-  const ip = requestIp(request);
+  const ip = scope ? `${scope}|${requestIp(request)}` : requestIp(request);
   // visitor total limit (5 per 24h) — saves tokens
   const v = visitorBuckets.get(ip);
   if (!v || v.resetsAt <= now) visitorBuckets.set(ip, { count: 1, resetsAt: now + VISITOR_WINDOW_MS });
@@ -89,6 +95,30 @@ function rateLimit(request: Request) {
   return { allowed: true, retryAfter: 0 };
 }
 
+const CARD_SLUG_PATTERN = /^[a-z0-9-]{8,64}$/;
+
+/**
+ * Loads a card through PostgREST with the public key. Row-level security returns only
+ * published cards, so drafts and deleted cards cannot be read here. Expiry is checked again.
+ */
+async function loadPublishedCard(slug: string): Promise<{ title: string; content: unknown } | null> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL")?.replace(/\/$/, "");
+  const key = Deno.env.get("SUPABASE_ANON_KEY") || Deno.env.get("SUPABASE_PUBLISHABLE_KEY") || "";
+  if (!supabaseUrl || !key) throw new Error("Invitation service is unavailable");
+  const url =
+    `${supabaseUrl}/rest/v1/invitation_cards?select=title,content,expires_at` +
+    `&slug=eq.${encodeURIComponent(slug)}&status=eq.published&limit=1`;
+  const response = await fetch(url, {
+    headers: { apikey: key, Accept: "application/json" },
+    signal: AbortSignal.timeout(5_000),
+  });
+  if (!response.ok) throw new Error("Invitation service is unavailable");
+  const rows = (await response.json()) as Array<{ title: string; content: unknown; expires_at: string | null }>;
+  const row = rows[0];
+  if (!row || (row.expires_at && new Date(row.expires_at).getTime() < Date.now())) return null;
+  return { title: row.title, content: row.content };
+}
+
 Deno.serve(async (request: Request) => {
   const configuredOrigin = Deno.env.get("ALLOWED_ORIGIN")?.replace(/\/$/, "");
   const requestOrigin = request.headers.get("origin")?.replace(/\/$/, "");
@@ -102,10 +132,31 @@ Deno.serve(async (request: Request) => {
   const declaredSize = Number(request.headers.get("content-length") || "0");
   if (declaredSize > MAX_BODY_BYTES) return json(request, { error: "Request is too large" }, 413);
 
-  const limit = rateLimit(request) as any;
+  let body: { language?: unknown; messages?: unknown; memory?: unknown; card?: unknown };
+  try {
+    const rawBody = await request.text();
+    if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) {
+      return json(request, { error: "Request is too large" }, 413);
+    }
+    const parsed = JSON.parse(rawBody);
+    body = parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return json(request, { error: "Invalid request" }, 400);
+  }
+
+  // A per-card assistant is identified by its public slug; anything else is the main Simran.
+  const cardSlug = typeof body.card === "string" ? body.card.trim() : "";
+  if (cardSlug && !CARD_SLUG_PATTERN.test(cardSlug)) {
+    return json(request, { error: "Invalid request" }, 400);
+  }
+
+  const limit = rateLimit(request, cardSlug ? `card:${cardSlug}` : "") as any;
   if (!limit.allowed) {
     const isVisitor = (limit as any).visitor;
-    return json(request, { error: isVisitor ? `You have used all ${VISITOR_LIMIT} messages for today. Please come back tomorrow or contact the couple directly.` : "Too many requests. Please wait a moment and try again." }, 429, {
+    const visitorMessage = cardSlug
+      ? `You have used all ${VISITOR_LIMIT} messages for today with this invitation's assistant. Please come back tomorrow or contact the host directly.`
+      : `You have used all ${VISITOR_LIMIT} messages for today. Please come back tomorrow or contact the couple directly.`;
+    return json(request, { error: isVisitor ? visitorMessage : "Too many requests. Please wait a moment and try again." }, 429, {
       "Retry-After": String(limit.retryAfter),
     });
   }
@@ -114,12 +165,6 @@ Deno.serve(async (request: Request) => {
   if (!apiKey) return json(request, { error: "AI service is not configured" }, 500);
 
   try {
-    const rawBody = await request.text();
-    if (new TextEncoder().encode(rawBody).byteLength > MAX_BODY_BYTES) {
-      return json(request, { error: "Request is too large" }, 413);
-    }
-
-    const body = JSON.parse(rawBody) as { language?: unknown; messages?: unknown; memory?: unknown };
     const language =
       typeof body.language === "string" && ["English", "हिन्दी", "اردو"].includes(body.language)
         ? body.language
@@ -142,7 +187,20 @@ Deno.serve(async (request: Request) => {
       return json(request, { error: "Please send a question" }, 400);
     }
 
-    const systemInstruction = buildConciergeInstruction(AI_NAME, language, memory);
+    let systemInstruction: string;
+    if (cardSlug) {
+      let card: Awaited<ReturnType<typeof loadPublishedCard>>;
+      try {
+        card = await loadPublishedCard(cardSlug);
+      } catch {
+        return json(request, { error: "Invitation service is unavailable" }, 503);
+      }
+      const facts = card ? cardAssistantFacts(card.content) : null;
+      if (!facts) return json(request, { error: "This invitation is not available." }, 404);
+      systemInstruction = buildCardAssistantInstruction(facts);
+    } else {
+      systemInstruction = buildConciergeInstruction(AI_NAME, language, memory);
+    }
 
     const configuredModel = (
       Deno.env.get("GEMINI_MODEL") ||
