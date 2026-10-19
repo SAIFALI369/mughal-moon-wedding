@@ -1,23 +1,39 @@
 import { motion } from "framer-motion";
 import {
+  CalendarDays,
   CalendarHeart,
   CalendarPlus,
+  Clock3,
   Heart,
   MapPin,
+  Music2,
   Phone,
+  Quote,
   Sparkles as SparklesIcon,
 } from "lucide-react";
 import { Countdown, Hero, Preloader } from "./sections";
-import { Divider, Mandala, SectionTitle, fadeUp } from "./ornaments";
+import { fadeUp } from "./ornaments";
 import {
   buildInvitationCalendarUrl,
   getInvitationCountdownDate,
+  getInvitationAssistantName,
   getInvitationDetails,
+  getInvitationMonogram,
+  parseInvitationDate,
 } from "./invitation-details";
 import { invitationArt } from "./invitation-art";
 import { CouplePortraits, InvitationStage } from "./invitation-stage";
 import { InvitationRsvp } from "./invitation-rsvp";
 import { invitationFrameworks, invitationThemes } from "./invitation-options";
+import {
+  ArchOutline,
+  InvitationCorners,
+  InviteCrest,
+  InviteMonogram,
+  SuiteHeading,
+} from "./invitation-ornaments";
+import { PersonalConcierge } from "./personal-concierge";
+import { InvitationMusicPlayer } from "./invitation-music-player";
 
 function directionsUrl(venue: string, address: string): string | null {
   const location = [venue, address].filter(Boolean).join(", ");
@@ -26,11 +42,34 @@ function directionsUrl(venue: string, address: string): string | null {
     : null;
 }
 
+function datePlate(value: string) {
+  const parts = parseInvitationDate(value);
+  if (!parts) return null;
+  const month = new Date(Date.UTC(parts.year, parts.month - 1, 1)).toLocaleString("en-US", {
+    month: "long",
+    timeZone: "UTC",
+  });
+  const weekday = new Date(Date.UTC(parts.year, parts.month - 1, parts.day)).toLocaleString(
+    "en-US",
+    { weekday: "long", timeZone: "UTC" },
+  );
+  return {
+    day: String(parts.day).padStart(2, "0"),
+    month,
+    year: String(parts.year),
+    weekday,
+  };
+}
+
 /** Cover thumbnails are a preview of the actual card, not generic dashboard art. */
 export function InvitationCover({ content }: { content: unknown }) {
   const details = getInvitationDetails(content);
   const framework = invitationFrameworks.find((value) => value.id === details.framework);
   const theme = invitationThemes.find((value) => value.id === details.theme);
+  const monogram = getInvitationMonogram(details);
+  const plate = datePlate(details.date);
+  const blessing = details.theme === "mecca_madinah" || details.framework === "moonlit";
+
   return (
     <div
       data-theme={details.theme}
@@ -41,51 +80,124 @@ export function InvitationCover({ content }: { content: unknown }) {
         src={invitationArt[details.theme]}
         alt=""
         aria-hidden="true"
-        className="cover-art absolute inset-0 -z-20 h-full w-full object-cover"
+        className="cover-art absolute inset-0 -z-30 h-full w-full object-cover"
       />
-      <div className="invite-cover-wash absolute inset-0 -z-10" aria-hidden="true" />
+      <div className="invite-cover-wash absolute inset-0 -z-20" aria-hidden="true" />
+      <div className="cover-glow absolute inset-0 -z-10" aria-hidden="true" />
       <div
         className="cover-outline pointer-events-none absolute inset-3 rounded-[45%_45%_0.75rem_0.75rem/19%_19%_0.75rem_0.75rem] border border-gold/70"
         aria-hidden="true"
       />
-      <div className="cover-inner relative flex min-h-[21rem] flex-col items-center justify-center px-7 py-9">
-        {details.theme === "mecca_madinah" || details.framework === "moonlit" ? (
-          <p dir="rtl" className="font-arabic text-xl text-gold">
-            بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-          </p>
-        ) : (
-          <p className="cover-emblem text-2xl text-gold" aria-hidden="true">
-            ✧
-          </p>
-        )}
-        <p className="cover-kicker mt-3 text-[9px] uppercase tracking-[0.26em] text-gold">
+      <div
+        className="cover-outline-inner pointer-events-none absolute inset-[18px] rounded-[46%_46%_0.5rem_0.5rem/20%_20%_0.5rem_0.5rem] border border-gold/25"
+        aria-hidden="true"
+      />
+      <InvitationCorners />
+      <div className="cover-inner relative flex min-h-[23rem] flex-col items-center justify-center px-7 py-9">
+        <div className="cover-blessing flex w-full items-center justify-center gap-2 text-gold">
+          <span className="cover-hairline" aria-hidden="true" />
+          {blessing ? (
+            <p dir="rtl" className="font-arabic text-lg leading-none text-gold">
+              بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+            </p>
+          ) : (
+            <p className="cover-emblem text-lg leading-none" aria-hidden="true">
+              ✧
+            </p>
+          )}
+          <span className="cover-hairline" aria-hidden="true" />
+        </div>
+        <p className="cover-kicker mt-4 text-[9px] uppercase tracking-[0.26em] text-gold">
           {details.hosts || "Together with their families"}
         </p>
-        <h3 className="cover-names mt-5 flex max-w-full flex-col items-center font-serif text-4xl leading-tight">
-          <span className="max-w-full break-words">{details.groomName}</span>
-          <span className="cover-amp text-gold-shimmer font-script text-3xl">
+
+        <InviteMonogram
+          left={monogram.left}
+          right={monogram.right}
+          size="sm"
+          className="cover-monogram mt-4"
+        />
+
+        <h3 className="cover-names mt-4 flex max-w-full flex-col items-center font-serif leading-tight">
+          <span className="max-w-full break-words text-3xl sm:text-4xl">{details.groomName}</span>
+          <span className="cover-amp text-gold-shimmer font-script text-2xl">
             {details.framework === "moonlit" ? "weds" : "&"}
           </span>
-          <span className="max-w-full break-words">{details.brideName}</span>
+          <span className="max-w-full break-words text-3xl sm:text-4xl">{details.brideName}</span>
         </h3>
+
         <CouplePortraits details={details} compact />
-        <div className="cover-divider my-4 flex items-center gap-2 text-gold" aria-hidden="true">
-          <span className="h-px w-10 bg-gold" />
-          <span>✧</span>
-          <span className="h-px w-10 bg-gold" />
+
+        <div className="cover-date-plate mt-4">
+          {plate ? (
+            <>
+              <span className="cover-date-day">{plate.day}</span>
+              <span className="cover-date-divider" aria-hidden="true" />
+              <span className="cover-date-copy">
+                <span className="cover-date-month">
+                  {plate.month} {plate.year}
+                </span>
+                {details.time && <span className="cover-date-time">{details.time}</span>}
+              </span>
+            </>
+          ) : (
+            <span className="cover-date-fallback">{details.date || "Date to be announced"}</span>
+          )}
         </div>
-        <p className="max-w-full break-words text-[10px] uppercase tracking-[0.17em] text-foreground">
-          {details.date || "Date to be announced"}
-          {details.time ? ` · ${details.time}` : ""}
-        </p>
+        {plate && <span className="sr-only">{details.date}</span>}
+
         {details.venue && (
-          <p className="mt-1 line-clamp-2 font-serif text-sm italic">{details.venue}</p>
+          <p className="cover-venue mt-3 flex items-center gap-1.5 font-serif text-sm italic">
+            <MapPin className="h-3 w-3 text-gold" aria-hidden="true" />
+            <span className="line-clamp-2">{details.venue}</span>
+          </p>
         )}
+
         <span className="cover-label mt-5 text-[9px] uppercase tracking-[0.2em] text-gold">
-          {theme?.label} / {framework?.label}
+          {theme?.label} · {framework?.label}
         </span>
       </div>
+      <span className="cover-sheen" aria-hidden="true" />
     </div>
+  );
+}
+
+function InvitationExtras({
+  details,
+  inline = false,
+  slug,
+  preview = false,
+}: {
+  details: ReturnType<typeof getInvitationDetails>;
+  inline?: boolean;
+  slug?: string;
+  preview?: boolean;
+}) {
+  const assistantName = getInvitationAssistantName(details);
+  if (inline) {
+    return (
+      <section id="assistant" className="invite-section invite-extras px-6 py-20 sm:py-24">
+        <SuiteHeading eyebrow="At your service">
+          Meet {assistantName}, your host assistant
+        </SuiteHeading>
+        <p className="mx-auto -mt-8 mb-10 max-w-2xl text-center text-sm text-muted-foreground">
+          Every invitation has its own AI guide, named after its host. Ask about the date, venue,
+          dress code, the soundtrack or RSVP — answers come from this card only.
+        </p>
+        <div
+          className={`mx-auto grid max-w-5xl gap-6 ${details.songs.length ? "lg:grid-cols-[1.15fr_0.85fr]" : "max-w-2xl"}`}
+        >
+          <PersonalConcierge details={details} slug={slug} preview={preview} inline />
+          {details.songs.length > 0 && <InvitationMusicPlayer details={details} inline />}
+        </div>
+      </section>
+    );
+  }
+  return (
+    <>
+      <PersonalConcierge details={details} slug={slug} preview={preview} />
+      {details.songs.length > 0 && <InvitationMusicPlayer details={details} />}
+    </>
   );
 }
 
@@ -94,12 +206,14 @@ export function PersonalInvitation({
   title,
   content,
   cardId,
+  slug,
   showGate = true,
   preview = false,
 }: {
   title: string;
   content: unknown;
   cardId?: string;
+  slug?: string;
   showGate?: boolean;
   preview?: boolean;
 }) {
@@ -110,6 +224,14 @@ export function PersonalInvitation({
   const dateLine = [details.date, details.time].filter(Boolean).join(" · ");
   const gateDateLine = [details.date, details.venue].filter(Boolean).join(" · ");
   const art = invitationArt[details.theme];
+  const monogram = getInvitationMonogram(details);
+  const assistantName = getInvitationAssistantName(details);
+  const plate = datePlate(details.date);
+  const hostLine =
+    details.hostName ||
+    details.contactName ||
+    (/^together with/i.test(details.hosts) ? "" : details.hosts) ||
+    `${details.groomName} & ${details.brideName}`;
   const scrollTo =
     countdownDate && details.elements.countdown
       ? "#countdown"
@@ -161,10 +283,18 @@ export function PersonalInvitation({
           >
             <a
               href="#invitation-top"
-              className="min-w-0 truncate font-script text-2xl text-gold sm:text-3xl"
+              className="invite-nav-brand min-w-0"
               aria-label={`${details.groomName} and ${details.brideName} — back to top`}
             >
-              {details.groomName[0]} &amp; {details.brideName[0]}
+              <InviteMonogram left={monogram.left} right={monogram.right} size="sm" />
+              <span className="min-w-0 truncate">
+                <span className="block font-script text-xl leading-none text-gold sm:text-2xl">
+                  {details.groomName[0]} &amp; {details.brideName[0]}
+                </span>
+                <span className="hidden text-[8px] uppercase tracking-[0.2em] text-muted-foreground sm:block">
+                  {details.date}
+                </span>
+              </span>
             </a>
             <div className="flex items-center gap-3 text-[10px] uppercase tracking-[0.15em] text-foreground sm:gap-6 sm:text-xs">
               <a href="#celebration" className="transition hover:text-gold">
@@ -180,13 +310,24 @@ export function PersonalInvitation({
                   RSVP
                 </a>
               )}
+              <button
+                type="button"
+                className="hidden items-center gap-1.5 rounded-full border border-gold/40 px-3 py-1 text-gold transition hover:bg-gold/10 sm:inline-flex"
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent("invite:close-music"));
+                  window.dispatchEvent(new CustomEvent("invite:open-concierge"));
+                }}
+                title={`Ask ${assistantName}`}
+              >
+                <SparklesIcon className="h-3 w-3" aria-hidden="true" /> Ask {assistantName}
+              </button>
             </div>
           </nav>
         </header>
       )}
 
       {details.framework === "moonlit" ? (
-        <div id="invitation-top">
+        <div id="invitation-top" className="invite-hero-wrap">
           <Hero
             groomName={details.groomName}
             brideName={details.brideName}
@@ -198,6 +339,11 @@ export function PersonalInvitation({
             backgroundImage={art}
             portraits={<CouplePortraits details={details} />}
           />
+          <div className="invite-hero-frame" aria-hidden="true">
+            <span className="invite-hero-arch" />
+            <span className="invite-hero-star invite-hero-star-left">✦</span>
+            <span className="invite-hero-star invite-hero-star-right">✦</span>
+          </div>
         </div>
       ) : (
         <InvitationStage
@@ -210,30 +356,37 @@ export function PersonalInvitation({
       )}
 
       {countdownDate && details.elements.countdown && (
-        <Countdown
-          weddingDate={countdownDate}
-          waitingText="Until We Celebrate Together"
-          reachedText="Our Celebration Has Arrived"
-        />
+        <div className="invite-countdown-wrap">
+          <Countdown
+            weddingDate={countdownDate}
+            waitingText="Until We Celebrate Together"
+            reachedText="Our Celebration Has Arrived"
+            eyebrow="The countdown"
+            title="Counting Down to Forever"
+          />
+        </div>
       )}
 
       {details.elements.message && (
         <section
           id="message"
-          className="invite-section relative overflow-hidden px-6 py-20 sm:py-28"
+          className="invite-section invite-suite invite-suite-note relative overflow-hidden px-6 py-20 sm:py-28"
         >
-          <Mandala className="pointer-events-none absolute -right-24 top-1/2 h-96 w-96 -translate-y-1/2 text-gold opacity-[0.08]" />
-          <SectionTitle eyebrow="With love">A Note From Us</SectionTitle>
-          <motion.div
-            {...fadeUp}
-            className="glass-card gold-corners relative mx-auto max-w-3xl rounded-2xl px-8 py-12 text-center shadow-gold sm:px-16"
-          >
-            <Heart className="mx-auto mb-7 h-7 w-7 text-gold" aria-hidden="true" />
-            <p className="whitespace-pre-wrap font-serif text-xl leading-relaxed text-foreground sm:text-3xl">
+          <SuiteHeading eyebrow="With love">A Note From Us</SuiteHeading>
+          <motion.div {...fadeUp} className="invite-note-card mx-auto max-w-3xl">
+            <InvitationCorners />
+            <span className="invite-note-seal">
+              <InviteMonogram left={monogram.left} right={monogram.right} size="md" />
+            </span>
+            <Heart className="invite-note-heart h-5 w-5" aria-hidden="true" />
+            <p className="invite-note-text whitespace-pre-wrap">
               {details.message || "Your presence would make our celebration even more special."}
             </p>
-            <p className="mt-8 font-script text-3xl text-gold">
-              {details.groomName} &amp; {details.brideName}
+            <p className="invite-note-signature">
+              With love,
+              <span className="font-script">
+                {details.groomName} &amp; {details.brideName}
+              </span>
             </p>
           </motion.div>
         </section>
@@ -242,70 +395,126 @@ export function PersonalInvitation({
       {details.elements.story && details.story && (
         <section
           id="story"
-          className="invite-section relative overflow-hidden bg-muted px-6 py-20 sm:py-28"
+          className="invite-section invite-suite invite-suite-story relative overflow-hidden px-6 py-20 sm:py-28"
         >
-          <SectionTitle eyebrow="Our journey">The Story So Far</SectionTitle>
-          <motion.div
-            {...fadeUp}
-            className="glass-card gold-corners mx-auto max-w-3xl rounded-2xl px-8 py-12 text-center shadow-gold sm:px-16"
-          >
-            <p className="whitespace-pre-wrap font-serif text-xl leading-relaxed text-foreground sm:text-3xl">
-              {details.story}
-            </p>
+          <SuiteHeading eyebrow="Our journey">The Story So Far</SuiteHeading>
+          <motion.div {...fadeUp} className="invite-story-panel mx-auto max-w-4xl">
+            <Quote className="invite-story-quote h-10 w-10" aria-hidden="true" />
+            <p className="invite-story-text whitespace-pre-wrap">{details.story}</p>
+            <div className="invite-story-signoff">
+              <span className="invite-story-rule" aria-hidden="true" />
+              <span>
+                {details.groomName} &amp; {details.brideName}
+              </span>
+              <span className="invite-story-rule" aria-hidden="true" />
+            </div>
           </motion.div>
         </section>
       )}
 
-      <Divider className="bg-muted" />
       <section
         id="celebration"
-        className="invite-section relative overflow-hidden bg-muted px-6 py-20 sm:py-28"
+        className="invite-section invite-suite invite-suite-celebration relative overflow-hidden px-6 py-20 sm:py-28"
       >
-        <Mandala className="pointer-events-none absolute left-1/2 top-1/2 h-[650px] w-[650px] -translate-x-1/2 -translate-y-1/2 text-gold opacity-[0.07]" />
-        <SectionTitle eyebrow="Join us">The Celebration</SectionTitle>
-        <motion.div
-          {...fadeUp}
-          className="glass-card gold-corners relative mx-auto max-w-2xl rounded-2xl p-8 text-center shadow-gold sm:p-12"
-        >
-          <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full border border-gold text-gold">
-            <CalendarHeart className="h-7 w-7" aria-hidden="true" />
+        <SuiteHeading eyebrow="Join us">The Celebration</SuiteHeading>
+        <motion.div {...fadeUp} className="invite-celebration mx-auto max-w-5xl">
+          <div className="invite-date-plate">
+            <ArchOutline className="invite-date-arch" />
+            <span className="invite-date-overline">Save the date</span>
+            {plate ? (
+              <>
+                <span className="invite-date-day">{plate.day}</span>
+                <span className="invite-date-month">{plate.month}</span>
+                <span className="invite-date-year">{plate.year}</span>
+                {details.time && (
+                  <span className="invite-date-time">
+                    <Clock3 className="h-3.5 w-3.5" aria-hidden="true" /> {details.time}
+                  </span>
+                )}
+                <span className="invite-date-weekday">{plate.weekday}</span>
+              </>
+            ) : (
+              <span className="invite-date-fallback">{details.date || "Date to be announced"}</span>
+            )}
+            <span className="invite-date-star" aria-hidden="true">
+              ✦
+            </span>
           </div>
-          <h3 className="mt-6 break-words font-serif text-3xl text-burgundy sm:text-4xl">
-            {details.eventType || title}
-          </h3>
-          <p className="mt-3 text-sm text-muted-foreground">
-            Honouring {details.groomName} &amp; {details.brideName}
-          </p>
-          <div className="mx-auto my-5 h-px w-20 bg-gold" />
-          {details.date && <p className="font-serif text-2xl">{details.date}</p>}
-          {details.time && <p className="mt-2 text-sm text-muted-foreground">{details.time}</p>}
-          <p className="mt-6 font-serif text-2xl text-burgundy">
-            {details.venue || "Venue to be announced"}
-          </p>
-          {details.address && (
-            <p className="mt-2 text-sm text-muted-foreground">{details.address}</p>
-          )}
-          <div className="mt-8 flex flex-wrap justify-center gap-3">
-            {mapUrl && details.elements.venueMap && (
-              <a
-                href={mapUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="btn-shimmer bg-gold-gradient inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105"
-              >
-                <MapPin className="h-4 w-4" /> Get Directions
-              </a>
-            )}
-            {calendarUrl && (
-              <a
-                href={calendarUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 rounded-full border border-gold px-6 py-3 text-xs uppercase tracking-[0.18em] text-gold transition hover:bg-gold/10"
-              >
-                <CalendarPlus className="h-4 w-4" /> Add to Calendar
-              </a>
-            )}
+
+          <div className="invite-celebration-details">
+            <p className="invite-mini-eyebrow">{details.eventType || title}</p>
+            <h3 className="invite-celebration-names">
+              {details.groomName} <span className="font-script text-gold">&amp;</span>{" "}
+              {details.brideName}
+            </h3>
+            <p className="invite-celebration-intro">
+              {details.hosts || "Together with their families"}
+            </p>
+            <div className="invite-rule" aria-hidden="true" />
+            <dl className="invite-facts">
+              <div className="invite-fact">
+                <dt>
+                  <CalendarDays className="h-4 w-4" aria-hidden="true" /> When
+                </dt>
+                <dd>
+                  {details.date || "To be announced"}
+                  {details.time ? ` · ${details.time}` : ""}
+                </dd>
+              </div>
+              <div className="invite-fact">
+                <dt>
+                  <MapPin className="h-4 w-4" aria-hidden="true" /> Where
+                </dt>
+                <dd>
+                  {details.venue || "Venue to be announced"}
+                  {details.address && <span>{details.address}</span>}
+                </dd>
+              </div>
+              {details.dressCode && (
+                <div className="invite-fact">
+                  <dt>
+                    <SparklesIcon className="h-4 w-4" aria-hidden="true" /> Attire
+                  </dt>
+                  <dd>{details.dressCode}</dd>
+                </div>
+              )}
+              {details.songs.length > 0 && (
+                <div className="invite-fact">
+                  <dt>
+                    <Music2 className="h-4 w-4" aria-hidden="true" /> Soundtrack
+                  </dt>
+                  <dd>
+                    {details.songs
+                      .slice(0, 3)
+                      .map((song) => song.title)
+                      .join(" · ")}
+                    {details.songs.length > 3 ? ` · +${details.songs.length - 3} more` : ""}
+                  </dd>
+                </div>
+              )}
+            </dl>
+            <div className="invite-celebration-actions">
+              {mapUrl && details.elements.venueMap && (
+                <a
+                  href={mapUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-shimmer bg-gold-gradient inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105"
+                >
+                  <MapPin className="h-4 w-4" /> Get Directions
+                </a>
+              )}
+              {calendarUrl && (
+                <a
+                  href={calendarUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 rounded-full border border-gold px-6 py-3 text-xs uppercase tracking-[0.18em] text-gold transition hover:bg-gold/10"
+                >
+                  <CalendarPlus className="h-4 w-4" /> Add to Calendar
+                </a>
+              )}
+            </div>
           </div>
         </motion.div>
       </section>
@@ -313,35 +522,52 @@ export function PersonalInvitation({
       {details.elements.schedule && details.additionalEvents.length > 0 && (
         <section
           id="schedule"
-          className="invite-section relative overflow-hidden px-6 py-20 sm:py-28"
+          className="invite-section invite-suite invite-suite-schedule relative overflow-hidden px-6 py-20 sm:py-28"
         >
-          <SectionTitle eyebrow="All our moments">The Wedding Events</SectionTitle>
-          <div className="mx-auto grid max-w-5xl gap-5 md:grid-cols-2">
+          <SuiteHeading eyebrow="All our moments">The Wedding Events</SuiteHeading>
+          <div className="invite-timeline mx-auto max-w-3xl">
+            <article className="invite-timeline-item">
+              <span className="invite-timeline-marker">01</span>
+              <div className="invite-timeline-card">
+                <p className="invite-mini-eyebrow">Main celebration</p>
+                <h3>{details.eventType || title}</h3>
+                <p className="invite-timeline-meta">
+                  {details.date}
+                  {details.time ? ` · ${details.time}` : ""}
+                </p>
+                <p className="invite-timeline-venue">
+                  {details.venue}
+                  {details.address ? `, ${details.address}` : ""}
+                </p>
+              </div>
+            </article>
             {details.additionalEvents.map((event, index) => (
               <motion.article
                 {...fadeUp}
                 key={`${index}-${event.title}`}
-                className="glass-card gold-corners rounded-2xl p-8 shadow-gold"
+                className="invite-timeline-item"
               >
-                <span className="font-script text-3xl text-gold">0{index + 1}</span>
-                <h3 className="mt-3 font-serif text-3xl text-burgundy">{event.title}</h3>
-                <p className="mt-4 font-serif text-xl">
-                  {event.date} · {event.time}
-                </p>
-                <p className="mt-3 text-sm">{event.venue}</p>
-                {event.address && (
-                  <p className="mt-1 text-sm text-muted-foreground">{event.address}</p>
-                )}
-                {details.elements.venueMap && (
-                  <a
-                    href={directionsUrl(event.venue, event.address) || "#celebration"}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="mt-5 inline-flex text-xs uppercase tracking-[0.18em] text-gold underline underline-offset-4"
-                  >
-                    Directions
-                  </a>
-                )}
+                <span className="invite-timeline-marker">0{index + 2}</span>
+                <div className="invite-timeline-card">
+                  <h3>{event.title}</h3>
+                  <p className="invite-timeline-meta">
+                    {event.date} · {event.time}
+                  </p>
+                  <p className="invite-timeline-venue">
+                    {event.venue}
+                    {event.address ? `, ${event.address}` : ""}
+                  </p>
+                  {details.elements.venueMap && (
+                    <a
+                      href={directionsUrl(event.venue, event.address) || "#celebration"}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="invite-text-link"
+                    >
+                      <MapPin className="h-3.5 w-3.5" aria-hidden="true" /> Directions
+                    </a>
+                  )}
+                </div>
               </motion.article>
             ))}
           </div>
@@ -349,95 +575,137 @@ export function PersonalInvitation({
       )}
 
       {details.elements.venueMap && (
-        <section id="venue" className="invite-section relative px-6 py-20 text-center sm:py-28">
-          <SectionTitle eyebrow="Find us">Where We’ll Celebrate</SectionTitle>
-          <motion.div
-            {...fadeUp}
-            className="glass-card mx-auto max-w-xl rounded-2xl border border-gold/40 p-9 shadow-gold sm:p-12"
-          >
-            <MapPin className="mx-auto h-10 w-10 text-gold" aria-hidden="true" />
-            <h3 className="mt-5 break-words font-serif text-3xl text-burgundy">
-              {details.venue || "Venue to be announced"}
-            </h3>
-            {details.address && (
-              <p className="mt-3 text-sm text-muted-foreground">{details.address}</p>
-            )}
-            {details.arrivalNotes && (
-              <p className="mt-5 whitespace-pre-wrap text-sm text-foreground">
-                {details.arrivalNotes}
-              </p>
-            )}
-            {mapUrl && (
-              <a
-                href={mapUrl}
-                target="_blank"
-                rel="noreferrer"
-                className="mt-7 inline-flex items-center gap-2 text-xs uppercase tracking-[0.2em] text-gold underline underline-offset-4 hover:text-burgundy"
-              >
-                Open in Google Maps <MapPin className="h-3.5 w-3.5" />
-              </a>
-            )}
+        <section
+          id="venue"
+          className="invite-section invite-suite invite-suite-venue relative overflow-hidden px-6 py-20 sm:py-28"
+        >
+          <SuiteHeading eyebrow="Find us">Where We’ll Celebrate</SuiteHeading>
+          <motion.div {...fadeUp} className="invite-venue-card mx-auto max-w-3xl">
+            <InvitationCorners />
+            <span className="invite-venue-lamp" aria-hidden="true">
+              <HangingLampMini />
+            </span>
+            <div className="invite-venue-copy">
+              <p className="invite-mini-eyebrow">The venue</p>
+              <h3>{details.venue || "Venue to be announced"}</h3>
+              {details.address && <p className="invite-venue-address">{details.address}</p>}
+              {details.arrivalNotes && (
+                <p className="invite-venue-notes whitespace-pre-wrap">{details.arrivalNotes}</p>
+              )}
+              {mapUrl && (
+                <a
+                  href={mapUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="btn-shimmer bg-gold-gradient mt-7 inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105"
+                >
+                  <MapPin className="h-4 w-4" /> Open in Google Maps
+                </a>
+              )}
+            </div>
           </motion.div>
         </section>
       )}
 
       {details.elements.dressCode && details.dressCode && (
-        <section id="dress-code" className="invite-section bg-muted px-6 py-20 text-center">
-          <SectionTitle eyebrow="What to wear">Dress Code</SectionTitle>
-          <p className="glass-card mx-auto max-w-xl rounded-xl px-8 py-7 font-serif text-2xl">
-            {details.dressCode}
-          </p>
+        <section
+          id="dress-code"
+          className="invite-section invite-suite invite-suite-dress relative overflow-hidden px-6 py-20 sm:py-24"
+        >
+          <SuiteHeading eyebrow="What to wear">Dress Code</SuiteHeading>
+          <motion.div {...fadeUp} className="invite-dress-card mx-auto max-w-2xl">
+            <span className="invite-dress-swatch invite-dress-swatch-one" aria-hidden="true" />
+            <span className="invite-dress-swatch invite-dress-swatch-two" aria-hidden="true" />
+            <span className="invite-dress-swatch invite-dress-swatch-three" aria-hidden="true" />
+            <p className="invite-dress-text">{details.dressCode}</p>
+            <p className="invite-dress-note">
+              Wear what makes you feel celebratory — these colours simply echo the day.
+            </p>
+          </motion.div>
         </section>
       )}
 
       {details.elements.contact && (details.contactName || details.contactPhone) && (
-        <section id="contact" className="invite-section px-6 py-20 text-center">
-          <SectionTitle eyebrow="Need anything?">Contact the Host</SectionTitle>
-          <div className="glass-card mx-auto max-w-lg rounded-xl p-8">
-            {details.contactName && <p className="font-serif text-2xl">{details.contactName}</p>}
+        <section
+          id="contact"
+          className="invite-section invite-suite invite-suite-contact px-6 py-20 text-center sm:py-24"
+        >
+          <SuiteHeading eyebrow="Need anything?">Contact the Host</SuiteHeading>
+          <div className="invite-contact-card mx-auto max-w-lg">
+            <p className="font-serif text-2xl">{details.contactName || details.hostName}</p>
             {details.contactPhone && (
               <a
                 href={`tel:${details.contactPhone.replace(/[^+0-9]/g, "")}`}
-                className="mt-3 inline-flex items-center gap-2 text-gold underline underline-offset-4"
+                className="invite-contact-phone"
               >
-                <Phone className="h-4 w-4" /> {details.contactPhone}
+                <Phone className="h-4 w-4" aria-hidden="true" /> {details.contactPhone}
               </a>
             )}
+            <p className="invite-contact-assistant">
+              Or ask <strong>{assistantName}</strong>, this invitation’s AI host assistant.
+            </p>
           </div>
         </section>
       )}
 
       {details.elements.rsvp && (
-        <InvitationRsvp cardId={cardId} deadline={details.rsvpDeadline} preview={preview} />
+        <div className="invite-rsvp-shell">
+          <InvitationRsvp cardId={cardId} deadline={details.rsvpDeadline} preview={preview} />
+        </div>
       )}
 
-      <footer className="bg-muted px-6 py-16 text-center">
-        {details.theme === "mecca_madinah" || details.framework === "moonlit" ? (
-          <p dir="rtl" className="font-arabic text-xl text-gold">
-            بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-          </p>
-        ) : (
-          <p className="text-xl text-gold" aria-hidden="true">
-            ✧
-          </p>
-        )}
-        <p className="mt-5 break-words font-script text-4xl text-gold">
+      {preview ? (
+        <InvitationExtras details={details} inline preview={preview} />
+      ) : (
+        <InvitationExtras details={details} slug={slug} />
+      )}
+
+      <footer className="invite-footer relative overflow-hidden px-6 py-20 text-center">
+        <div className="invite-footer-ornament" aria-hidden="true">
+          <ArchOutline />
+        </div>
+        <InviteCrest className="invite-footer-crest" />
+        <InviteMonogram left={monogram.left} right={monogram.right} size="lg" className="mt-4" />
+        <p className="invite-footer-names mt-6 break-words font-script text-4xl sm:text-5xl">
           {details.groomName} &amp; {details.brideName}
         </p>
-        {details.date && (
-          <p className="mt-4 text-xs uppercase tracking-[0.25em] text-muted-foreground">
-            {details.date}
+        {details.date && <p className="invite-footer-date">{details.date}</p>}
+        {hostLine && (
+          <p className="invite-footer-host">
+            Hosted with love by <span>{hostLine}</span>
           </p>
         )}
+        <div className="invite-footer-rule" aria-hidden="true">
+          <span />
+          <span className="invite-footer-diamond" />
+          <span />
+        </div>
         {!preview && (
-          <a
-            href="/dashboard"
-            className="mt-8 inline-block text-xs uppercase tracking-[0.18em] text-gold underline underline-offset-4 hover:text-burgundy"
-          >
+          <a href="/dashboard" className="invite-footer-link">
             Create your own invitation
           </a>
         )}
       </footer>
     </div>
+  );
+}
+
+/* A small inline lamp keeps the venue card self-contained. */
+function HangingLampMini() {
+  return (
+    <svg viewBox="0 0 70 120" aria-hidden="true" fill="none" stroke="currentColor" strokeWidth="1">
+      <path d="M35 0v26" opacity=".5" />
+      <path d="M35 26c-11 0-19 9-19 19h38c0-10-8-19-19-19Z" />
+      <path d="M18 45h34l-4 23H22Z" opacity=".8" />
+      <path d="M30 68c0 6 10 6 10 0M35 68v16" opacity=".6" />
+      <path d="M28 84h14l-2 8H30Z" />
+      <path d="M35 92v16" opacity=".4" />
+      <path
+        d="M35 108l2.5 5 5 2.5-5 2.5-2.5 5-2.5-5-5-2.5 5-2.5Z"
+        fill="currentColor"
+        stroke="none"
+        opacity=".8"
+      />
+    </svg>
   );
 }

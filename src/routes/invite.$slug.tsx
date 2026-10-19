@@ -71,5 +71,12 @@ function InviteView() {
     );
   }
 
-  return <PersonalInvitation title={card.title} content={card.content} cardId={card.id} />;
+  return (
+    <PersonalInvitation
+      title={card.title}
+      content={card.content}
+      cardId={card.id}
+      slug={card.slug}
+    />
+  );
 }

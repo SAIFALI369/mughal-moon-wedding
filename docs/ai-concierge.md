@@ -57,6 +57,14 @@ All times are India Standard Time (IST).
 
 The homepage hero, countdown, event cards, story milestone, and downloadable calendar use the same 2026 schedule. Verify venues, times, and dress codes with the couple before launch.
 
+## Per-card host assistants
+
+Creators' cards do **not** use Simran. Each published card has its own assistant, named after the host saved in the card, and a six-track-per-day limit. It is grounded server-side in that card's own content via `src/components/wedding/card-concierge.functions.ts`, which shares `gemini.server.ts` with the Simran server fallback. The shared prompt builder is `buildCardConciergeInstruction` in `supabase/functions/_shared/concierge-personality.ts`.
+
+A card's soundtrack is host-authored (up to five `https://` or `/audio/` links) and is played only after a guest presses play. Model playback markers are bounded to `play`, `pause`, `next` and a track number. The Edge Function is not used for card assistants, so no additional function deployment is required beyond a valid `GEMINI_API_KEY` on the app server; instant card answers work even without a key.
+
+See [personal-invitations.md](./personal-invitations.md) for the creator flow.
+
 ## Shared gallery and music updates
 
 See [gallery-and-music.md](./gallery-and-music.md) for deployment of the shared five-photo gallery and visitor-local soundtrack. The model prompt now includes the six-track allowlist and supports playback control markers. Redeploy the Edge Function for free-form Gemini music requests; common music commands are handled instantly in the browser. Wedding event facts now come from `supabase/functions/_shared/wedding.ts` rather than duplicate backend strings.

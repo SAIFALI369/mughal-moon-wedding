@@ -6,6 +6,7 @@ import {
   type InvitationFramework,
   type InvitationTheme,
 } from "./invitation-options";
+import { sanitizeInvitationSongs, type InvitationSong } from "./invitation-music";
 
 export type {
   InvitationTheme,
@@ -24,6 +25,8 @@ export type InvitationDetails = {
   message: string;
   story: string;
   hosts: string;
+  hostName: string;
+  songs: InvitationSong[];
   dressCode: string;
   contactName: string;
   contactPhone: string;
@@ -99,6 +102,8 @@ export function getInvitationDetails(content: unknown): InvitationDetails {
     message: stringField(data, "message"),
     story: stringField(data, "story"),
     hosts: stringField(data, "hosts"),
+    hostName: stringField(data, "hostName"),
+    songs: sanitizeInvitationSongs(data.songs),
     dressCode: stringField(data, "dressCode"),
     contactName: stringField(data, "contactName"),
     contactPhone: stringField(data, "contactPhone"),
@@ -137,6 +142,49 @@ export function getInvitationDetails(content: unknown): InvitationDetails {
       ]),
     ) as InvitationElements,
   };
+}
+
+const GENERIC_HOST_LABELS =
+  /^(together with (our|their) families?|our families?|the family|family|host|the host|groom|bride|couple|the couple)$/i;
+
+/**
+ * Every invitation has its own host-named assistant. Prefer the explicit host name,
+ * then the host contact, then the hosting family line, then the creator's name.
+ */
+export function getInvitationAssistantName(
+  details: Pick<InvitationDetails, "hostName" | "contactName" | "hosts" | "groomName">,
+): string {
+  const candidates = [details.hostName, details.contactName, details.hosts, details.groomName];
+  for (const candidate of candidates) {
+    const value = candidate
+      .replace(/^together with\s+/i, "")
+      .replace(/^the\s+/i, "")
+      .trim();
+    if (!value || GENERIC_HOST_LABELS.test(candidate.trim()) || GENERIC_HOST_LABELS.test(value)) {
+      continue;
+    }
+    return value
+      .replace(/[\r\n\t]+/g, " ")
+      .replace(/[^\p{L}\p{N}' .&-]/gu, "")
+      .replace(/\s+/g, " ")
+      .trim()
+      .split(" ")
+      .slice(0, 2)
+      .join(" ")
+      .slice(0, 32);
+  }
+  return "Your Host";
+}
+
+/** A tiny monogram for seals, navigation and the back of the card. */
+export function getInvitationMonogram(
+  details: Pick<InvitationDetails, "groomName" | "brideName">,
+): {
+  left: string;
+  right: string;
+} {
+  const initial = (value: string) => (value.trim()[0] ?? "?").toUpperCase();
+  return { left: initial(details.groomName), right: initial(details.brideName) };
 }
 
 /** Accept both the dashboard's displayed date and ISO dates without locale-dependent parsing. */
