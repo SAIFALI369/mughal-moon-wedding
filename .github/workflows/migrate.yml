@@ -1,4 +1,4 @@
-name: Migrate Lovable Supabase
+name: Migrate Supabase
 
 on:
   push:
@@ -31,10 +31,22 @@ jobs:
       - name: Install migrate deps
         run: npm ci --ignore-scripts
 
-      - name: Run drizzle migrations (Lovable)
+      - name: Check database secret
+        id: db
+        run: |
+          if [ -n "$LOVABLE_DB_MIGRATION_URL" ]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "::notice title=Database migration skipped::Add LOVABLE_DB_MIGRATION_URL (or DATABASE_URL / SUPABASE_DB_URL) as a repository secret to enable automatic migrations against Supabase project ibqkslwleelhijhujjcm."
+          fi
+
+      - name: Run drizzle migrations (Supabase)
+        if: steps.db.outputs.configured == 'true'
         run: node scripts/migrate.mjs
 
       - name: Verify tables
+        if: steps.db.outputs.configured == 'true'
         run: |
           node -e "
           import postgres from 'postgres';
@@ -69,6 +81,7 @@ jobs:
           "
 
       - name: Cleanup expired invitations (auto-delete after wedding)
+        if: steps.db.outputs.configured == 'true'
         run: |
           node scripts/cleanup-expired.mjs
 
@@ -76,9 +89,10 @@ jobs:
         if: always()
         env:
           MIGRATION_STATUS: ${{ job.status }}
+          DB_CONFIGURED: ${{ steps.db.outputs.configured }}
         run: |
           echo "## Database migration: $MIGRATION_STATUS" >> "$GITHUB_STEP_SUMMARY"
           echo "Runs after every push/merge to main and retries every six hours." >> "$GITHUB_STEP_SUMMARY"
-          if [ -z "$LOVABLE_DB_MIGRATION_URL" ]; then
-            echo "Blocked: no database connection secret is configured. SQL cannot execute without authorized database access." >> "$GITHUB_STEP_SUMMARY"
+          if [ "$DB_CONFIGURED" != "true" ]; then
+            echo "Skipped: no database connection secret is configured. Add LOVABLE_DB_MIGRATION_URL (or DATABASE_URL / SUPABASE_DB_URL) to enable SQL migrations against Supabase project ibqkslwleelhijhujjcm." >> "$GITHUB_STEP_SUMMARY"
           fi

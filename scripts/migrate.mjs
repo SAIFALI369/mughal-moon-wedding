@@ -13,13 +13,17 @@ const url =
   process.env.LOVABLE_DB_MIGRATION_URL || process.env.DATABASE_URL || process.env.SUPABASE_DB_URL;
 
 if (!url) {
-  if (process.env.REQUIRE_DB_MIGRATIONS === "1" || process.env.CI === "true") {
+  // Only an explicit REQUIRE_DB_MIGRATIONS=1 (set by the GitHub Actions job)
+  // makes a missing URL fatal. Hosting builds such as Vercel export CI=true but
+  // have no database password, so they must be able to finish the app build
+  // while the schema is managed through the Supabase Dashboard or connector.
+  if (process.env.REQUIRE_DB_MIGRATIONS === "1") {
     console.error(
       "[migrate] Database migrations required but no connection URL configured. Set LOVABLE_DB_MIGRATION_URL, DATABASE_URL or SUPABASE_DB_URL in the server build environment / Actions secrets.",
     );
     process.exit(1);
   }
-  console.log("[migrate] No LOVABLE_DB_MIGRATION_URL found — skipping (local dev without DB).");
+  console.log("[migrate] No LOVABLE_DB_MIGRATION_URL found — skipping (schema is managed separately).");
   process.exit(0);
 }
 
