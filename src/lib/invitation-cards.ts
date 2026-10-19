@@ -1,8 +1,7 @@
 import { supabase } from "@/lib/db";
-import type { Database } from "@/integrations/supabase/types";
 
-export type InvitationCardRow = Database["public"]["Tables"]["invitation_cards"]["Row"];
-export type InvitationCardInsert = Database["public"]["Tables"]["invitation_cards"]["Insert"];
+export type InvitationCardRow = { id: string; owner_id: string; title: string; slug: string; status: string; content: Record<string, unknown>; created_at: string; updated_at: string; published_at: string | null; expires_at: string | null };
+export type InvitationCardInsert = Partial<InvitationCardRow> & { owner_id: string; title: string; slug: string };
 
 export async function fetchMyCards() {
   const { data, error } = await supabase
