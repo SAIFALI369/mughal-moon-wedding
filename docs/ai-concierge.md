@@ -25,9 +25,9 @@ Replies require a valid key on at least one backend:
 
 - **Production (recommended):** In **Supabase Dashboard → Edge Functions → Secrets**, set `GEMINI_API_KEY`. Deploy the function to the same project as `VITE_SUPABASE_URL`:
   ```sh
-  supabase functions deploy wedding-concierge --project-ref zcqlvyzlbfhdkomexihd
+  supabase functions deploy wedding-concierge --project-ref ibqkslwleelhijhujjcm
   ```
-- **CLI alternative for production:** After replacing the dummy in your private `supabase/.env`, run `supabase secrets set --env-file supabase/.env --project-ref zcqlvyzlbfhdkomexihd`. This uploads the private environment values to Supabase; the example file alone does not configure production.
+- **CLI alternative for production:** After replacing the dummy in your private `supabase/.env`, run `supabase secrets set --env-file supabase/.env --project-ref ibqkslwleelhijhujjcm`. This uploads the private environment values to Supabase; the example file alone does not configure production.
 - **Local development:** Set `GEMINI_API_KEY` in the ignored `supabase/.env`, or export it in the app server environment. Restart the dev server after changing environment variables.
 - **Hosted app server fallback:** Set `GEMINI_API_KEY` in your hosting provider's server secrets and redeploy. The local `supabase/.env` is not uploaded automatically.
 
