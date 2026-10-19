@@ -124,10 +124,17 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
         </div>
 
         <div className="flex items-center gap-2">
-          <a href="/dashboard" className="hidden items-center gap-1 rounded-full border border-gold/40 px-3 py-2 text-[11px] uppercase tracking-[0.15em] text-foreground hover:bg-gold/10 sm:inline-flex" title="Create & manage your private invitations (up to 3)">
+          <a
+            href="/dashboard"
+            className="hidden items-center gap-1 rounded-full border border-gold/40 px-3 py-2 text-[11px] uppercase tracking-[0.15em] text-foreground hover:bg-gold/10 sm:inline-flex"
+            title="Create & manage your private invitations (up to 3)"
+          >
             My Invites
           </a>
-          <a href="/sign-in" className="hidden items-center gap-1 rounded-full bg-burgundy px-3 py-2 text-[11px] uppercase tracking-[0.15em] text-ivory hover:bg-burgundy/90 sm:inline-flex">
+          <a
+            href="/sign-in"
+            className="hidden items-center gap-1 rounded-full bg-burgundy px-3 py-2 text-[11px] uppercase tracking-[0.15em] text-ivory hover:bg-burgundy/90 sm:inline-flex"
+          >
             Sign in
           </a>
           <button
@@ -189,8 +196,20 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
                 {item.label}
               </a>
             ))}
-            <a href="/dashboard" onClick={() => setMobileOpen(false)} className="rounded-full border border-burgundy/30 bg-burgundy/10 px-3 py-1.5 text-xs uppercase tracking-[0.18em] text-burgundy">My Invites (≤3)</a>
-            <a href="/sign-in" onClick={() => setMobileOpen(false)} className="rounded-full border border-gold/30 px-3 py-1.5 text-xs uppercase tracking-[0.18em]">Sign in</a>
+            <a
+              href="/dashboard"
+              onClick={() => setMobileOpen(false)}
+              className="rounded-full border border-burgundy/30 bg-burgundy/10 px-3 py-1.5 text-xs uppercase tracking-[0.18em] text-burgundy"
+            >
+              My Invites (≤3)
+            </a>
+            <a
+              href="/sign-in"
+              onClick={() => setMobileOpen(false)}
+              className="rounded-full border border-gold/30 px-3 py-1.5 text-xs uppercase tracking-[0.18em]"
+            >
+              Sign in
+            </a>
           </motion.div>
         )}
       </AnimatePresence>
@@ -205,12 +224,14 @@ export function Preloader({
   brideName = "Simran",
   dateLine = "22–23 November 2026 · New Delhi",
   enableMusic = true,
+  backgroundImage = eidSky,
 }: {
   onDone: () => void;
   groomName?: string;
   brideName?: string;
   dateLine?: string;
   enableMusic?: boolean;
+  backgroundImage?: string;
 }) {
   const [opening, setOpening] = useState(false);
   const [show, setShow] = useState(true);
@@ -255,7 +276,7 @@ export function Preloader({
           className={`heavenly-entrance fixed inset-0 z-[100] overflow-hidden ${opening ? "is-opening" : ""}`}
         >
           <img
-            src={eidSky}
+            src={backgroundImage}
             alt=""
             aria-hidden="true"
             width={1536}
@@ -282,11 +303,15 @@ export function Preloader({
               id="gate-title"
               className={`mt-6 flex max-w-full flex-col items-center gap-2 font-serif font-medium ${enableMusic ? "text-6xl sm:flex-row sm:gap-6 sm:text-7xl lg:text-8xl" : "text-[clamp(2.75rem,6vw,6rem)] lg:flex-row lg:gap-6"}`}
             >
-              <span className={`max-w-full break-words ${enableMusic ? "" : "lg:max-w-[38vw]"}`}>{groomName}</span>
+              <span className={`max-w-full break-words ${enableMusic ? "" : "lg:max-w-[38vw]"}`}>
+                {groomName}
+              </span>
               <span className="text-gold-shimmer shrink-0 font-script text-5xl font-normal sm:text-6xl">
                 weds
               </span>
-              <span className={`max-w-full break-words ${enableMusic ? "" : "lg:max-w-[38vw]"}`}>{brideName}</span>
+              <span className={`max-w-full break-words ${enableMusic ? "" : "lg:max-w-[38vw]"}`}>
+                {brideName}
+              </span>
             </h1>
             <p className="mt-6 font-serif text-xl italic text-foreground sm:text-2xl">
               Two hearts. One beautiful beginning.
@@ -333,6 +358,8 @@ export function Hero({
   scrollTo = "#countdown",
   entranceDelay = 3,
   compactNames = false,
+  backgroundImage = eidSky,
+  portraits,
 }: {
   guestName?: string;
   groomName?: string;
@@ -342,6 +369,8 @@ export function Hero({
   scrollTo?: string;
   entranceDelay?: number;
   compactNames?: boolean;
+  backgroundImage?: string;
+  portraits?: ReactNode;
 }) {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
@@ -354,8 +383,12 @@ export function Hero({
     >
       <motion.div style={{ y }} className="absolute inset-0">
         <img
-          src={eidSky}
-          alt="Golden crescent moon and stars above luminous Eid clouds"
+          src={backgroundImage}
+          alt={
+            backgroundImage === eidSky
+              ? "Golden crescent moon and stars above luminous Eid clouds"
+              : "Decorative wedding scene"
+          }
           width={1536}
           height={1024}
           fetchPriority="high"
@@ -394,7 +427,9 @@ export function Hero({
         >
           Together with their families
         </motion.p>
-        <div className={`mt-8 flex flex-col items-center gap-2 ${compactNames ? "lg:flex-row lg:gap-8" : "md:flex-row md:gap-10"}`}>
+        <div
+          className={`mt-8 flex flex-col items-center gap-2 ${compactNames ? "lg:flex-row lg:gap-8" : "md:flex-row md:gap-10"}`}
+        >
           <motion.h1
             initial={{ opacity: 0, x: -60 }}
             animate={{ opacity: 1, x: 0 }}
@@ -428,6 +463,7 @@ export function Hero({
         >
           {dateLine}
         </motion.p>
+        {portraits}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -449,7 +485,9 @@ export function Hero({
                 <MessageCircle className="h-4 w-4" /> Ask Simran
               </a>
             </>
-          ) : actions}
+          ) : (
+            actions
+          )}
         </motion.div>
       </motion.div>
       <motion.a

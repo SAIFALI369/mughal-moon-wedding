@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiConciergeRouteImport } from './routes/ai-concierge'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as CardsIdRouteImport } from './routes/cards.$id'
@@ -30,6 +31,11 @@ const AiConciergeRoute = AiConciergeRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const SignInRoute = SignInRouteImport.update({
@@ -57,6 +63,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
+  '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/cards/$id': typeof CardsIdRoute
@@ -66,6 +73,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
+  '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/cards/$id': typeof CardsIdRoute
@@ -76,6 +84,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
+  '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
   '/cards/$id': typeof CardsIdRoute
@@ -87,6 +96,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-concierge'
     | '/dashboard'
+    | '/profile'
     | '/sign-in'
     | '/sign-up'
     | '/cards/$id'
@@ -96,6 +106,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-concierge'
     | '/dashboard'
+    | '/profile'
     | '/sign-in'
     | '/sign-up'
     | '/cards/$id'
@@ -105,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-concierge'
     | '/dashboard'
+    | '/profile'
     | '/sign-in'
     | '/sign-up'
     | '/cards/$id'
@@ -115,6 +127,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiConciergeRoute: typeof AiConciergeRoute
   DashboardRoute: typeof DashboardRoute
+  ProfileRoute: typeof ProfileRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
   CardsIdRoute: typeof CardsIdRoute
@@ -142,6 +155,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/sign-in': {
@@ -179,6 +199,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiConciergeRoute: AiConciergeRoute,
   DashboardRoute: DashboardRoute,
+  ProfileRoute: ProfileRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
   CardsIdRoute: CardsIdRoute,

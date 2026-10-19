@@ -1,4 +1,17 @@
-export type InvitationTheme = "mughal" | "eid" | "classic";
+import {
+  defaultInvitationElements,
+  invitationFrameworkIds,
+  invitationThemeIds,
+  type InvitationElements,
+  type InvitationFramework,
+  type InvitationTheme,
+} from "./invitation-options";
+
+export type {
+  InvitationTheme,
+  InvitationFramework,
+  InvitationElements,
+} from "./invitation-options";
 
 export type InvitationDetails = {
   groomName: string;
@@ -7,17 +20,39 @@ export type InvitationDetails = {
   time: string;
   venue: string;
   address: string;
+  eventType: string;
   message: string;
+  story: string;
+  hosts: string;
+  dressCode: string;
+  contactName: string;
+  contactPhone: string;
+  arrivalNotes: string;
+  rsvpDeadline: string;
+  additionalEvents: { title: string; date: string; time: string; venue: string; address: string }[];
+  groomPhoto: string | null;
+  bridePhoto: string | null;
   theme: InvitationTheme;
+  framework: InvitationFramework;
+  elements: InvitationElements;
 };
 
 export type PublishedInvitation = {
+  id: string;
   title: string;
   slug: string;
   content: unknown;
   published_at: string | null;
   expires_at: string | null;
 };
+
+// Accepted uploads are converted to small JPEG data URLs in the browser. Never render
+// arbitrary image URIs (particularly SVG or remote URLs) from public card JSON.
+export function isSafePortrait(value: string): boolean {
+  return (
+    value.length <= 240_000 && /^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]+={0,2}$/.test(value)
+  );
+}
 
 const MONTHS = [
   "january",
@@ -40,13 +75,19 @@ function stringField(content: Record<string, unknown>, field: string): string {
   return typeof content[field] === "string" ? content[field].trim() : "";
 }
 
-/** Older cards may have incomplete JSON. Never fill them with Mohsin and Simran's details. */
+/** Existing cards stay readable without filling in somebody else's wedding details. */
 export function getInvitationDetails(content: unknown): InvitationDetails {
   const data =
     content && typeof content === "object" && !Array.isArray(content)
       ? (content as Record<string, unknown>)
       : {};
-  const theme = data.theme;
+  const elements =
+    data.elements && typeof data.elements === "object" && !Array.isArray(data.elements)
+      ? (data.elements as Record<string, unknown>)
+      : {};
+  const rawEvents = Array.isArray(data.additionalEvents) ? data.additionalEvents : [];
+  const groomPhoto = stringField(data, "groomPhoto");
+  const bridePhoto = stringField(data, "bridePhoto");
   return {
     groomName: stringField(data, "groomName") || "Groom",
     brideName: stringField(data, "brideName") || "Bride",
@@ -54,8 +95,47 @@ export function getInvitationDetails(content: unknown): InvitationDetails {
     time: stringField(data, "time"),
     venue: stringField(data, "venue"),
     address: stringField(data, "address"),
+    eventType: stringField(data, "eventType") || "Wedding celebration",
     message: stringField(data, "message"),
-    theme: theme === "mughal" || theme === "classic" || theme === "eid" ? theme : "eid",
+    story: stringField(data, "story"),
+    hosts: stringField(data, "hosts"),
+    dressCode: stringField(data, "dressCode"),
+    contactName: stringField(data, "contactName"),
+    contactPhone: stringField(data, "contactPhone"),
+    arrivalNotes: stringField(data, "arrivalNotes"),
+    rsvpDeadline: stringField(data, "rsvpDeadline"),
+    additionalEvents: rawEvents
+      .filter(
+        (value): value is Record<string, unknown> =>
+          !!value && typeof value === "object" && !Array.isArray(value),
+      )
+      .map((value) => ({
+        title: stringField(value, "title"),
+        date: stringField(value, "date"),
+        time: stringField(value, "time"),
+        venue: stringField(value, "venue"),
+        address: stringField(value, "address"),
+      }))
+      .filter((event) => event.title && parseInvitationDate(event.date) && event.venue)
+      .slice(0, 4),
+    groomPhoto: groomPhoto && isSafePortrait(groomPhoto) ? groomPhoto : null,
+    bridePhoto: bridePhoto && isSafePortrait(bridePhoto) ? bridePhoto : null,
+    theme:
+      typeof data.theme === "string" &&
+      (invitationThemeIds as readonly string[]).includes(data.theme)
+        ? (data.theme as InvitationTheme)
+        : "eid",
+    framework:
+      typeof data.framework === "string" &&
+      (invitationFrameworkIds as readonly string[]).includes(data.framework)
+        ? (data.framework as InvitationFramework)
+        : "moonlit",
+    elements: Object.fromEntries(
+      Object.entries(defaultInvitationElements).map(([key, defaultValue]) => [
+        key,
+        typeof elements[key] === "boolean" ? elements[key] : defaultValue,
+      ]),
+    ) as InvitationElements,
   };
 }
 

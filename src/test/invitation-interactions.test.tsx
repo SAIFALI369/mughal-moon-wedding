@@ -1,0 +1,110 @@
+// @vitest-environment jsdom
+import { useState } from "react";
+import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { InvitationDetailsFields } from "@/components/wedding/invitation-form";
+import { emptyInvitationForm } from "@/components/wedding/invitation-form-data";
+import { InvitationRsvp } from "@/components/wedding/invitation-rsvp";
+
+const { insert, from } = vi.hoisted(() => ({
+  insert: vi.fn(async () => ({ error: null })),
+  from: vi.fn(),
+}));
+vi.mock("@/lib/db", () => ({ supabase: { from } }));
+
+function Editor() {
+  const [value, onChange] = useState(emptyInvitationForm);
+  return <InvitationDetailsFields value={value} onChange={onChange} />;
+}
+
+beforeEach(() => {
+  from.mockReturnValue({ insert });
+  insert.mockClear();
+  from.mockClear();
+  vi.stubGlobal(
+    "IntersectionObserver",
+    class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+    },
+  );
+});
+afterEach(() => {
+  cleanup();
+  vi.unstubAllGlobals();
+  vi.restoreAllMocks();
+});
+
+describe("invitation editor and guest reply", () => {
+  it("changes theme, framework and section visibility separately in the live cover", () => {
+    render(<Editor />);
+    fireEvent.click(screen.getByRole("radio", { name: /Aladin/i }));
+    fireEvent.click(screen.getByRole("radio", { name: /Cinematic Stage/i }));
+    expect(screen.getByRole("radio", { name: /Aladin/i })).toBeChecked();
+    expect(screen.getByRole("radio", { name: /Cinematic Stage/i })).toBeChecked();
+    expect(
+      document.querySelector(
+        '.personal-invite-cover[data-theme="aladin"][data-framework="cinematic-stage"]',
+      ),
+    ).not.toBeNull();
+    fireEvent.click(screen.getByRole("checkbox", { name: /Guest RSVP/i }));
+    expect(screen.getByRole("checkbox", { name: /Guest RSVP/i })).not.toBeChecked();
+    fireEvent.click(screen.getByRole("button", { name: /Add event/i }));
+    expect(screen.getByLabelText("Event name *")).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: /Remove event/i }));
+    expect(screen.queryByLabelText("Event name *")).not.toBeInTheDocument();
+  });
+
+  it("compresses an optional image before inserting its JPEG data URL into the card preview, and can remove it", async () => {
+    const jpeg = "data:image/jpeg;base64,/9j/2Q==";
+    vi.stubGlobal(
+      "Image",
+      class {
+        naturalWidth = 600;
+        naturalHeight = 800;
+        onload: null | (() => void) = null;
+        set src(_value: string) {
+          queueMicrotask(() => this.onload?.());
+        }
+      },
+    );
+    vi.stubGlobal("URL", { createObjectURL: () => "blob:preview", revokeObjectURL: () => {} });
+    vi.spyOn(HTMLCanvasElement.prototype, "getContext").mockReturnValue({
+      fillStyle: "",
+      fillRect: () => {},
+      drawImage: () => {},
+    } as never);
+    vi.spyOn(HTMLCanvasElement.prototype, "toDataURL").mockReturnValue(jpeg);
+    render(<Editor />);
+    const photo = new File(["image-bytes"], "portrait.png", { type: "image/png" });
+    fireEvent.change(screen.getByLabelText("Choose groom photo"), { target: { files: [photo] } });
+    expect(await screen.findByAltText("Groom portrait preview")).toHaveAttribute("src", jpeg);
+    fireEvent.click(screen.getByRole("button", { name: "Remove photo" }));
+    expect(screen.queryByAltText("Groom portrait preview")).not.toBeInTheDocument();
+  });
+
+  it("sends only the current guest's validated RSVP as an insert, never a SELECT", async () => {
+    const cardId = "c0000000-0000-4000-8000-000000000001";
+    render(<InvitationRsvp cardId={cardId} />);
+    fireEvent.change(screen.getByLabelText("Your name *"), { target: { value: "  A Guest  " } });
+    fireEvent.change(screen.getByLabelText("Email or phone (optional)"), {
+      target: { value: "guest@example.invalid" },
+    });
+    fireEvent.click(screen.getByText("Regretfully declines"));
+    fireEvent.click(screen.getByRole("button", { name: /Send my reply/i }));
+    await waitFor(() => expect(insert).toHaveBeenCalledOnce());
+    expect(from).toHaveBeenCalledWith("invitation_rsvps");
+    expect(insert).toHaveBeenCalledWith(
+      expect.objectContaining({
+        card_id: cardId,
+        name: "A Guest",
+        attending: false,
+        guests: 0,
+        contact: "guest@example.invalid",
+        dietary: "",
+      }),
+    );
+    expect(screen.getByText(/Thank you for replying/)).toBeInTheDocument();
+  });
+});

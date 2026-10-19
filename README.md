@@ -164,7 +164,9 @@ This prompt will produce a **far more polished, animated, and feature-rich** car
 
 This project was built with [Lovable](https://lovable.dev).
 
-**Live app**: https://mughal-moon-wedding.lovable.app
+**Live app**: https://mughal-moon-wedding.vercel.app
+
+**Personal invitation builder and private RSVPs**: See [the creator and migration guide](docs/personal-invitations.md). The original moonlit invitation is the default, with independent theme and layout choices. Database migrations are verified separately from the UI deployment.
 
 ## Build with Lovable
 

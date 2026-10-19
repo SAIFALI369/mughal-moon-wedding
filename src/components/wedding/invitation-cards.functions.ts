@@ -135,7 +135,7 @@ export const getInvitationCardBySlug = createServerFn({ method: "GET" })
     });
     const { data: card, error } = await client
       .from("invitation_cards")
-      .select("title, slug, content, published_at, expires_at")
+      .select("id, title, slug, content, published_at, expires_at")
       .eq("slug", data.slug)
       .eq("status", "published")
       .maybeSingle();

@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getInvitationCardBySlug } from "@/components/wedding/invitation-cards.functions";
 import { getInvitationDetails } from "@/components/wedding/invitation-details";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
-import eidSky from "@/assets/eid-sky.webp";
+import { invitationArt } from "@/components/wedding/invitation-art";
 
 export const Route = createFileRoute("/invite/$slug")({
   loader: async ({ params }) => {
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/invite/$slug")({
         { property: "og:description", content: description },
         ...(card
           ? [
-              { property: "og:image", content: `${base}${eidSky}` },
+              { property: "og:image", content: `${base}${invitationArt[details!.theme]}` },
               { property: "og:image:alt", content: heading },
               { name: "twitter:card", content: "summary_large_image" },
             ]
@@ -71,5 +71,5 @@ function InviteView() {
     );
   }
 
-  return <PersonalInvitation title={card.title} content={card.content} />;
+  return <PersonalInvitation title={card.title} content={card.content} cardId={card.id} />;
 }

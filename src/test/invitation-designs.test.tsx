@@ -1,0 +1,215 @@
+// @vitest-environment node
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it } from "vitest";
+import { invitationContentSchema } from "@/components/wedding/invitation-schema";
+import { InvitationCover, PersonalInvitation } from "@/components/wedding/invitation-template";
+import {
+  invitationThemeIds,
+  invitationFrameworkIds,
+  defaultInvitationElements,
+} from "@/components/wedding/invitation-options";
+import {
+  invitationFormForCard,
+  emptyInvitationForm,
+} from "@/components/wedding/invitation-form-data";
+import { getInvitationDetails, isSafePortrait } from "@/components/wedding/invitation-details";
+import { invitationRsvpSchema } from "@/components/wedding/invitation-rsvp-schema";
+
+const basics = {
+  groomName: "Ayaan",
+  brideName: "Zara",
+  date: "15 December 2030",
+  time: "4:00 PM IST",
+  venue: "Garden Pavilion",
+  address: "Patna, Bihar",
+  eventType: "Nikah ceremony",
+  hosts: "Our families",
+  message: "Join us for this joyful day",
+};
+
+describe("creator invitation design and input", () => {
+  it("renders every theme with every independently chosen framework, never the homepage couple's details", () => {
+    for (const theme of invitationThemeIds) {
+      for (const framework of invitationFrameworkIds) {
+        const card = { ...basics, theme, framework };
+        const cover = renderToStaticMarkup(<InvitationCover content={card} />);
+        const page = renderToStaticMarkup(
+          <PersonalInvitation title="Our Day" content={card} preview showGate={false} />,
+        );
+        expect(cover).toContain(`data-theme="${theme}"`);
+        expect(cover).toContain(`data-framework="${framework}"`);
+        expect(page).toContain(`data-theme="${theme}"`);
+        expect(page).toContain(`data-framework="${framework}"`);
+        expect(page).toContain("Ayaan");
+        expect(page).toContain("Zara");
+        expect(page).toContain("Patna, Bihar");
+        expect(page).toContain('id="celebration"');
+        expect(page).not.toContain("Mohsin");
+        expect(page).not.toContain("Simran");
+        if (framework === "moonlit") expect(page).toContain("eid-hero");
+        else expect(page).toContain("invitation-stage");
+      }
+    }
+  });
+
+  it("always keeps essential wedding details but honours every optional visibility choice", () => {
+    const jpeg = `data:image/jpeg;base64,${Buffer.from([0xff, 0xd8, 0xff, 0xd9]).toString("base64")}`;
+    const extra = [
+      {
+        title: "Sangeet",
+        date: "14 December 2030",
+        time: "6:00 PM IST",
+        venue: "City Hall",
+        address: "East Wing",
+      },
+    ];
+    const content = {
+      ...basics,
+      theme: "aladin",
+      framework: "cinematic-stage",
+      story: "We met at sunrise",
+      groomPhoto: jpeg,
+      bridePhoto: jpeg,
+      additionalEvents: extra,
+      dressCode: "Festive gold",
+      contactName: "Host A",
+      contactPhone: "+91 90000 00000",
+      arrivalNotes: "Use the front gate",
+      elements: Object.fromEntries(
+        Object.keys(defaultInvitationElements).map((key) => [key, false]),
+      ),
+    };
+    const hidden = renderToStaticMarkup(
+      <PersonalInvitation
+        title="Our Day"
+        content={content}
+        cardId="c0000000-0000-4000-8000-000000000001"
+      />,
+    );
+    for (const section of [
+      "gate-title",
+      "countdown",
+      "message",
+      "story",
+      "schedule",
+      "venue",
+      "dress-code",
+      "contact",
+      "rsvp",
+    ]) {
+      expect(hidden).not.toContain(`id="${section}"`);
+    }
+    expect(hidden).not.toContain("Portrait of Ayaan");
+    for (const required of [
+      "Ayaan",
+      "Zara",
+      "15 December 2030",
+      "4:00 PM IST",
+      "Garden Pavilion",
+      "Patna, Bihar",
+    ]) {
+      expect(hidden).toContain(required);
+    }
+
+    const shown = renderToStaticMarkup(
+      <PersonalInvitation
+        title="Our Day"
+        content={{ ...content, elements: defaultInvitationElements }}
+        preview
+        showGate={false}
+      />,
+    );
+    for (const section of [
+      "countdown",
+      "message",
+      "story",
+      "schedule",
+      "venue",
+      "dress-code",
+      "contact",
+      "rsvp",
+    ]) {
+      expect(shown).toContain(`id="${section}"`);
+    }
+    expect(shown).toContain("Portrait of Ayaan");
+    expect(shown).toContain("Portrait of Zara");
+    expect(shown).toContain("This is a private preview");
+    expect(shown).not.toContain("guest-name"); // a draft preview cannot write RSVPs
+  });
+
+  it("requires all essentials, real dates, safe portraits and valid event details", () => {
+    const complete = { ...emptyInvitationForm(), ...basics };
+    expect(invitationContentSchema.safeParse(complete).success).toBe(true);
+    for (const key of [
+      "groomName",
+      "brideName",
+      "date",
+      "time",
+      "venue",
+      "address",
+      "eventType",
+    ] as const) {
+      expect(invitationContentSchema.safeParse({ ...complete, [key]: " " }).success).toBe(false);
+    }
+    expect(invitationContentSchema.safeParse({ ...complete, date: "2030-02-30" }).success).toBe(
+      false,
+    );
+    expect(
+      invitationContentSchema.safeParse({ ...complete, rsvpDeadline: "tomorrow" }).success,
+    ).toBe(false);
+    expect(
+      invitationContentSchema.safeParse({
+        ...complete,
+        additionalEvents: [{ title: "Party", date: "", time: "", venue: "" }],
+      }).success,
+    ).toBe(false);
+    expect(
+      invitationContentSchema.safeParse({
+        ...complete,
+        groomPhoto: "data:image/svg+xml;base64,PHN2Zz4=",
+      }).success,
+    ).toBe(false);
+    expect(isSafePortrait("data:image/jpeg;base64,/9j/2Q==")).toBe(true);
+    expect(isSafePortrait("https://example.invalid/portrait.jpg")).toBe(false);
+  });
+
+  it("loads existing cards with safe defaults while preserving their theme, layout and toggles", () => {
+    const form = invitationFormForCard("Old Card", {
+      theme: "futuristic",
+      framework: "modern-mosaic",
+      elements: { rsvp: false },
+      groomName: "G",
+    });
+    expect(form.theme).toBe("futuristic");
+    expect(form.framework).toBe("modern-mosaic");
+    expect(form.elements.rsvp).toBe(false);
+    expect(form.elements.countdown).toBe(true);
+    expect(form.brideName).toBe("");
+    expect(
+      getInvitationDetails({
+        theme: "not-a-theme",
+        framework: "unknown",
+        groomPhoto: "javascript:alert(1)",
+      }).groomPhoto,
+    ).toBeNull();
+  });
+
+  it("validates the insert-only RSVP payload, including attendance and guest count", () => {
+    const reply = {
+      card_id: "c0000000-0000-4000-8000-000000000001",
+      name: " Guest ",
+      attending: true,
+      guests: 2,
+      contact: "",
+      dietary: "",
+      message: "",
+    };
+    expect(invitationRsvpSchema.parse(reply).name).toBe("Guest");
+    expect(invitationRsvpSchema.safeParse({ ...reply, guests: 11 }).success).toBe(false);
+    expect(invitationRsvpSchema.safeParse({ ...reply, attending: false, guests: 1 }).success).toBe(
+      false,
+    );
+    expect(invitationRsvpSchema.safeParse({ ...reply, card_id: "not-an-id" }).success).toBe(false);
+    expect(invitationRsvpSchema.safeParse({ ...reply, name: " " }).success).toBe(false);
+  });
+});

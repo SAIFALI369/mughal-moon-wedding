@@ -1,17 +1,92 @@
 import { z } from "zod";
+import {
+  defaultInvitationElements,
+  invitationFrameworkIds,
+  invitationThemeIds,
+} from "./invitation-options";
+import { isSafePortrait, parseInvitationDate } from "./invitation-details";
+
+const portraitSchema = z
+  .string()
+  .refine(isSafePortrait, "Use a compressed JPEG portrait under 180 KB")
+  .nullable()
+  .default(null);
+
+const extraEventSchema = z.object({
+  title: z.string().trim().min(1, "Event name is required").max(100),
+  date: z
+    .string()
+    .trim()
+    .min(1)
+    .max(100)
+    .refine((value) => !!parseInvitationDate(value), "Use a real event date"),
+  time: z.string().trim().min(1, "Event time is required").max(100),
+  venue: z.string().trim().min(1, "Event venue is required").max(120),
+  address: z.string().trim().max(200).default(""),
+});
+
+const elementsSchema = z.object({
+  gate: z.boolean().default(defaultInvitationElements.gate),
+  countdown: z.boolean().default(defaultInvitationElements.countdown),
+  message: z.boolean().default(defaultInvitationElements.message),
+  portraits: z.boolean().default(defaultInvitationElements.portraits),
+  story: z.boolean().default(defaultInvitationElements.story),
+  schedule: z.boolean().default(defaultInvitationElements.schedule),
+  venueMap: z.boolean().default(defaultInvitationElements.venueMap),
+  dressCode: z.boolean().default(defaultInvitationElements.dressCode),
+  contact: z.boolean().default(defaultInvitationElements.contact),
+  rsvp: z.boolean().default(defaultInvitationElements.rsvp),
+});
 
 export const invitationContentSchema = z.object({
-  groomName: z.string().trim().min(1).max(80),
-  brideName: z.string().trim().min(1).max(80),
-  date: z.string().trim().min(1).max(100),
-  time: z.string().trim().max(100).default(""),
-  venue: z.string().trim().min(1).max(120),
-  address: z.string().trim().max(200).default(""),
+  groomName: z.string().trim().min(1, "Groom's name is required").max(80),
+  brideName: z.string().trim().min(1, "Bride's name is required").max(80),
+  date: z
+    .string()
+    .trim()
+    .min(1, "Wedding date is required")
+    .max(100)
+    .refine(
+      (value) => !!parseInvitationDate(value),
+      "Use a real date, like 15 December 2026 or 2026-12-15",
+    ),
+  time: z.string().trim().min(1, "Wedding time is required").max(100),
+  venue: z.string().trim().min(1, "Venue is required").max(120),
+  address: z.string().trim().min(1, "Venue address or city is required").max(200),
+  eventType: z
+    .string()
+    .trim()
+    .min(1, "Name the main ceremony")
+    .max(80)
+    .default("Wedding celebration"),
   message: z.string().trim().max(2000).default(""),
-  theme: z.enum(["mughal", "eid", "classic"]).default("eid"),
+  story: z.string().trim().max(2000).default(""),
+  hosts: z.string().trim().max(160).default(""),
+  dressCode: z.string().trim().max(160).default(""),
+  contactName: z.string().trim().max(100).default(""),
+  contactPhone: z
+    .string()
+    .trim()
+    .max(50)
+    .regex(/^[+0-9().\s-]*$/, "Use a phone number with digits, spaces or +")
+    .default(""),
+  arrivalNotes: z.string().trim().max(500).default(""),
+  rsvpDeadline: z
+    .string()
+    .trim()
+    .max(100)
+    .refine((value) => !value || !!parseInvitationDate(value), "Use a real RSVP date")
+    .default(""),
+  additionalEvents: z.array(extraEventSchema).max(4, "Add at most four extra events").default([]),
+  groomPhoto: portraitSchema,
+  bridePhoto: portraitSchema,
+  theme: z.enum(invitationThemeIds).default("eid"),
+  framework: z.enum(invitationFrameworkIds).default("moonlit"),
+  elements: elementsSchema.default(defaultInvitationElements),
 });
 
 export type InvitationContent = z.infer<typeof invitationContentSchema>;
+export type ExtraEvent = InvitationContent["additionalEvents"][number];
 
 export const invitationCardSchema = z.object({
   title: z.string().trim().min(1, "Title is required").max(120),
@@ -37,9 +112,7 @@ export function slugify(input: string): string {
 export function generateSlug(title: string): string {
   const base = slugify(title) || "invitation";
   const random = Math.random().toString(36).slice(2, 8).toLowerCase();
-  // ensure 8-64 chars and matches ^[a-z0-9-]+$
   const slug = `${base}-${random}`.replace(/^-+/, "").slice(0, 64);
-  // pad if too short
   if (slug.length < 8) return `${slug}-${Math.random().toString(36).slice(2, 10)}`.slice(0, 8);
   return slug;
 }
