@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogDescription, DialogTitle } from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -15,7 +16,9 @@ import {
 } from "@/components/ui/select";
 import { useAuth, getUsernameFromUser } from "@/lib/auth-context";
 import { toast } from "sonner";
-import { generateSlug } from "@/components/wedding/invitation-schema";
+import { generateSlug, invitationContentSchema, type InvitationContent } from "@/components/wedding/invitation-schema";
+import { getInvitationDetails, invitationExpiry, parseInvitationDate } from "@/components/wedding/invitation-details";
+import { InvitationCover, PersonalInvitation } from "@/components/wedding/invitation-template";
 import { Copy, ExternalLink, Trash2, Edit3, Share2, Eye, LogOut, Brain } from "lucide-react";
 import { SimranMemoryBar } from "@/components/wedding/simran-memory-bar";
 import { cleanupExpiredMemories, deleteSimranMemory } from "@/lib/simran-memory";
@@ -33,6 +36,19 @@ type InvitationCard = {
   expires_at?: string | null;
 };
 
+type InvitationForm = InvitationContent & { title: string };
+const emptyForm: InvitationForm = {
+  title: "",
+  groomName: "",
+  brideName: "",
+  date: "",
+  time: "",
+  venue: "",
+  address: "",
+  message: "",
+  theme: "eid",
+};
+
 export const Route = createFileRoute("/dashboard")({
   component: Dashboard,
 });
@@ -43,18 +59,9 @@ function Dashboard() {
   const [cards, setCards] = useState<InvitationCard[]>([]);
   const [fetching, setFetching] = useState(true);
   const [creating, setCreating] = useState(false);
-  const [form, setForm] = useState({
-    title: "",
-    groomName: "Mohsin",
-    brideName: "Simran",
-    date: "22 November 2026",
-    time: "4:00 PM IST",
-    venue: "Jama Masjid Hall, Old Delhi",
-    address: "Chandni Chowk, New Delhi",
-    message: "Bismillah — You’re invited to celebrate our Nikah. Your presence is our blessing.",
-    theme: "mughal" as "mughal" | "eid" | "classic",
-  });
+  const [form, setForm] = useState<InvitationForm>({ ...emptyForm });
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [previewCard, setPreviewCard] = useState<InvitationCard | null>(null);
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -71,7 +78,9 @@ function Dashboard() {
     // auto-delete expired cards (client-side, server also has RPC)
     try {
       await supabase.rpc("delete_expired_invitations");
-    } catch {}
+    } catch {
+      // Cleanup can fail offline; the dashboard and public route also hide expired cards.
+    }
     // Defense in depth: RLS already restricts rows to the owner;
     // always scope queries by owner_id so no other row can leak.
     const { data, error } = await supabase
@@ -103,6 +112,23 @@ function Dashboard() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
+  function validContent(): InvitationContent | null {
+    const result = invitationContentSchema.safeParse(form);
+    if (!result.success) {
+      const message = result.error.issues[0]?.message || "Please fill in the couple, date and venue.";
+      setError(message);
+      toast.error(message);
+      return null;
+    }
+    if (!parseInvitationDate(result.data.date)) {
+      const message = "Use a real wedding date, such as 22 November 2026 or 2026-11-22.";
+      setError(message);
+      toast.error(message);
+      return null;
+    }
+    return result.data;
+  }
+
   async function handleCreate(e: React.FormEvent) {
     e.preventDefault();
     if (cards.length >= 3) {
@@ -117,31 +143,14 @@ function Dashboard() {
       setError("Title is required");
       return;
     }
+    const content = validContent();
+    if (!content) return;
     setCreating(true);
     setError("");
     try {
       const slug = generateSlug(title);
-      const content = {
-        groomName: form.groomName,
-        brideName: form.brideName,
-        date: form.date,
-        time: form.time,
-        venue: form.venue,
-        address: form.address,
-        message: form.message,
-        theme: form.theme,
-      };
-      // expiry: wedding date +1 day 23:59; local memory also expires then
-      let expires_at: string | undefined;
-      try {
-        const parsed = new Date(form.date);
-        if (!isNaN(parsed.getTime())) {
-          const exp = new Date(parsed);
-          exp.setDate(exp.getDate() + 1);
-          exp.setHours(23, 59, 59, 999);
-          expires_at = exp.toISOString();
-        }
-      } catch {}
+      // Store a new expiry based on this card's date, not the homepage date.
+      const expires_at = invitationExpiry(content.date);
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
       const { data, error } = await supabase
@@ -167,7 +176,7 @@ function Dashboard() {
       }
       toast.success("Card created as draft (private). Only you can see it until published.");
       setCards((prev) => [data as InvitationCard, ...prev]);
-      setForm((f) => ({ ...f, title: "" }));
+      setForm({ ...emptyForm });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Create failed");
     } finally {
@@ -179,19 +188,11 @@ function Dashboard() {
     if (!editingId) return;
     setError("");
     const title = form.title.trim() || card.title;
-    const content = {
-      groomName: form.groomName,
-      brideName: form.brideName,
-      date: form.date,
-      time: form.time,
-      venue: form.venue,
-      address: form.address,
-      message: form.message,
-      theme: form.theme,
-    };
+    const content = validContent();
+    if (!content) return;
     const { error } = await supabase
       .from("invitation_cards")
-      .update({ title, content })
+      .update({ title, content, expires_at: invitationExpiry(content.date) })
       .eq("id", card.id)
       .eq("owner_id", user?.id ?? "");
     if (error) {
@@ -240,17 +241,19 @@ function Dashboard() {
 
   function startEdit(card: InvitationCard) {
     setEditingId(card.id);
-    const c = card.content as Record<string, string>;
+    const c = (card.content || {}) as Record<string, unknown>;
+    const field = (name: string) => typeof c[name] === "string" ? c[name] as string : "";
+    const theme = c.theme === "mughal" || c.theme === "eid" || c.theme === "classic" ? c.theme : "eid";
     setForm({
       title: card.title,
-      groomName: (c.groomName as string) || "Mohsin",
-      brideName: (c.brideName as string) || "Simran",
-      date: (c.date as string) || "22 November 2026",
-      time: (c.time as string) || "4:00 PM IST",
-      venue: (c.venue as string) || "",
-      address: (c.address as string) || "",
-      message: (c.message as string) || "",
-      theme: (c.theme as "mughal" | "eid" | "classic") || "mughal",
+      groomName: field("groomName"),
+      brideName: field("brideName"),
+      date: field("date"),
+      time: field("time"),
+      venue: field("venue"),
+      address: field("address"),
+      message: field("message"),
+      theme,
     });
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
@@ -314,8 +317,8 @@ function Dashboard() {
               {editingId ? "Edit card" : "Create a new card (draft)"}
             </CardTitle>
             <CardDescription>
-              Personalize groom, bride, date, venue and message. You can have up to 3 active cards.
-              Publishing makes it shareable.
+              Personalize the same moonlit invitation you see on the homepage with your own names,
+              date, venue and message. You can preview private drafts; publish to share them.
               {cards.length >= 3 && !editingId && (
                 <span className="text-destructive"> — Limit reached.</span>
               )}
@@ -341,36 +344,42 @@ function Dashboard() {
                     id="title"
                     value={form.title}
                     onChange={(e) => setForm((f) => ({ ...f, title: e.target.value }))}
-                    placeholder="e.g. Mohsin & Simran — Nikah Invite"
+                    placeholder="e.g. Our Wedding Celebration"
                     required
                     maxLength={120}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="groom">Groom name</Label>
+                  <Label htmlFor="groom">Groom name *</Label>
                   <Input
                     id="groom"
                     value={form.groomName}
                     onChange={(e) => setForm((f) => ({ ...f, groomName: e.target.value }))}
+                    placeholder="Groom's name"
+                    required
                     maxLength={80}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="bride">Bride name</Label>
+                  <Label htmlFor="bride">Bride name *</Label>
                   <Input
                     id="bride"
                     value={form.brideName}
                     onChange={(e) => setForm((f) => ({ ...f, brideName: e.target.value }))}
+                    placeholder="Bride's name"
+                    required
                     maxLength={80}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="date">Date</Label>
+                  <Label htmlFor="date">Wedding date *</Label>
                   <Input
                     id="date"
                     value={form.date}
                     onChange={(e) => setForm((f) => ({ ...f, date: e.target.value }))}
-                    placeholder="22 November 2026"
+                    placeholder="15 December 2026 or 2026-12-15"
+                    required
+                    maxLength={100}
                   />
                 </div>
                 <div className="space-y-2">
@@ -379,16 +388,19 @@ function Dashboard() {
                     id="time"
                     value={form.time}
                     onChange={(e) => setForm((f) => ({ ...f, time: e.target.value }))}
-                    placeholder="4:00 PM IST"
+                    placeholder="e.g. 4:00 PM IST (optional)"
+                    maxLength={100}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="venue">Venue</Label>
+                  <Label htmlFor="venue">Venue *</Label>
                   <Input
                     id="venue"
                     value={form.venue}
                     onChange={(e) => setForm((f) => ({ ...f, venue: e.target.value }))}
                     placeholder="Venue name"
+                    required
+                    maxLength={120}
                   />
                 </div>
                 <div className="space-y-2">
@@ -397,6 +409,7 @@ function Dashboard() {
                     id="address"
                     value={form.address}
                     onChange={(e) => setForm((f) => ({ ...f, address: e.target.value }))}
+                    maxLength={200}
                   />
                 </div>
                 <div className="space-y-2 sm:col-span-2">
@@ -426,6 +439,10 @@ function Dashboard() {
                   </Select>
                 </div>
               </div>
+              <div className="mx-auto max-w-sm">
+                <p className="mb-3 text-center text-xs uppercase tracking-[0.2em] text-muted-foreground">Live cover preview</p>
+                <InvitationCover content={form} />
+              </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex gap-2">
                 <Button
@@ -445,7 +462,7 @@ function Dashboard() {
                     variant="outline"
                     onClick={() => {
                       setEditingId(null);
-                      setForm((f) => ({ ...f, title: "" }));
+                      setForm({ ...emptyForm });
                       setError("");
                     }}
                   >
@@ -471,30 +488,27 @@ function Dashboard() {
           {error && !fetching && <p className="mt-2 text-sm text-destructive">{error}</p>}
           <div className="mt-4 grid gap-4 md:grid-cols-2 lg:grid-cols-3">
             {cards.map((card) => (
-              <Card key={card.id} className="flex flex-col">
-                <CardHeader>
-                  <CardTitle className="line-clamp-2 text-lg">{card.title}</CardTitle>
-                  <CardDescription className="flex items-center gap-2 text-xs">
+              <Card key={card.id} className="flex flex-col gap-0 overflow-hidden border-gold/40 pt-0">
+                <InvitationCover content={card.content} />
+                <CardHeader className="pt-5">
+                  <CardTitle className="line-clamp-2 font-serif text-xl">{card.title}</CardTitle>
+                  <CardDescription className="flex flex-wrap items-center gap-2 text-xs">
                     <span
                       className={`rounded-full px-2 py-1 text-[10px] uppercase tracking-widest ${card.status === "published" ? "bg-emerald-100 text-emerald-800" : "bg-muted text-muted-foreground"}`}
                     >
                       {card.status}
                     </span>
-                    <span>/{card.slug}</span>
+                    <span className="truncate">/{card.slug}</span>
                   </CardDescription>
                 </CardHeader>
-                <CardContent className="flex flex-1 flex-col gap-3">
-                  <div className="text-sm">
-                    <p className="font-medium">
-                      {(card.content as any).groomName} & {(card.content as any).brideName}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {(card.content as any).date} · {(card.content as any).time}
-                    </p>
-                    <p className="text-xs text-muted-foreground">{(card.content as any).venue}</p>
-                    <p className="mt-2 line-clamp-3 text-xs">{(card.content as any).message}</p>
-                  </div>
+                <CardContent className="flex flex-1 flex-col gap-3 pt-4">
+                  {getInvitationDetails(card.content).message && (
+                    <p className="line-clamp-2 text-sm text-muted-foreground">{getInvitationDetails(card.content).message}</p>
+                  )}
                   <div className="mt-auto flex flex-wrap gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setPreviewCard(card)}>
+                      <Eye className="mr-1 h-3 w-3" /> Preview
+                    </Button>
                     <Button size="sm" variant="outline" onClick={() => startEdit(card)}>
                       <Edit3 className="mr-1 h-3 w-3" /> Edit
                     </Button>
@@ -520,14 +534,16 @@ function Dashboard() {
                     >
                       <Copy className="mr-1 h-3 w-3" /> Copy link
                     </Button>
-                    <a
-                      href={shareUrl(card)}
-                      target="_blank"
-                      rel="noreferrer"
-                      className={`inline-flex h-8 items-center justify-center rounded-md border px-3 text-xs ${card.status !== "published" ? "pointer-events-none opacity-50" : "hover:bg-accent"}`}
-                    >
-                      <ExternalLink className="mr-1 h-3 w-3" /> View
-                    </a>
+                    {card.status === "published" && (
+                      <a
+                        href={shareUrl(card)}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex h-8 items-center justify-center rounded-md border px-3 text-xs hover:bg-accent"
+                      >
+                        <ExternalLink className="mr-1 h-3 w-3" /> View live
+                      </a>
+                    )}
                     <Button
                       size="sm"
                       variant="outline"
@@ -566,6 +582,23 @@ function Dashboard() {
               </Card>
             )}
           </div>
+          <Dialog open={previewCard !== null} onOpenChange={(open) => { if (!open) setPreviewCard(null); }}>
+            <DialogContent className="max-h-[92dvh] w-[96vw] max-w-[1100px] gap-0 overflow-y-auto p-0 sm:max-w-[1100px]">
+              {previewCard && (
+                <>
+                  <div className="bg-background px-6 py-5">
+                    <DialogTitle className="font-serif text-2xl">{previewCard.title} — preview</DialogTitle>
+                    <DialogDescription className="mt-1">
+                      {previewCard.status === "draft"
+                        ? "Private draft: only you can see this preview. Publish to share a live link."
+                        : "This is what guests see at your published link."}
+                    </DialogDescription>
+                  </div>
+                  <PersonalInvitation title={previewCard.title} content={previewCard.content} showGate={false} preview />
+                </>
+              )}
+            </DialogContent>
+          </Dialog>
           {cards.map((card) => (
             <div key={`mem-${card.id}`} className="mt-6">
               <SimranMemoryBar

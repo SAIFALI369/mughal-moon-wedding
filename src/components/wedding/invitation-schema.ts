@@ -8,7 +8,7 @@ export const invitationContentSchema = z.object({
   venue: z.string().trim().min(1).max(120),
   address: z.string().trim().max(200).default(""),
   message: z.string().trim().max(2000).default(""),
-  theme: z.enum(["mughal", "eid", "classic"]).default("mughal"),
+  theme: z.enum(["mughal", "eid", "classic"]).default("eid"),
 });
 
 export type InvitationContent = z.infer<typeof invitationContentSchema>;

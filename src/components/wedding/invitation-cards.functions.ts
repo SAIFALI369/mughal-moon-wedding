@@ -109,20 +109,38 @@ export const getMyInvitationCards = createServerFn({ method: "GET" })
   });
 
 export const getInvitationCardBySlug = createServerFn({ method: "GET" })
-  .inputValidator((input: unknown) => z.object({ slug: z.string() }).parse(input))
+  .inputValidator((input: unknown) =>
+    z.object({ slug: z.string().min(8).max(64).regex(/^[a-z0-9-]+$/) }).parse(input),
+  )
   .handler(async ({ data }) => {
-    // Public read uses publishable key; we use service-less client via publishable env
+    // Always use an anonymous client, never the owner's session or a service-role key.
+    // The query and the database's RLS must both require a published card.
     const { createClient } = await import("@supabase/supabase-js");
-    const url = process.env["SUPABASE_URL"]!;
-    const key = process.env["SUPABASE_PUBLISHABLE_KEY"]!;
-    const client = createClient(url, key);
+    const url = process.env["SUPABASE_URL"];
+    const key = process.env["SUPABASE_PUBLISHABLE_KEY"];
+    if (!url || !key) throw new Error("Invitation service is unavailable");
+    const client = createClient(url, key, {
+      auth: { persistSession: false, autoRefreshToken: false },
+      global: {
+        // Opaque publishable keys belong in `apikey`, not in a Bearer token.
+        // This matches the public wishes loader and works with Lovable's Supabase proxy.
+        fetch: (input, init) => {
+          const headers = new Headers(init?.headers);
+          if (key.startsWith("sb_") && headers.get("Authorization") === `Bearer ${key}`)
+            headers.delete("Authorization");
+          headers.set("apikey", key);
+          return fetch(input, { ...init, headers, signal: init?.signal ?? AbortSignal.timeout(5_000) });
+        },
+      },
+    });
     const { data: card, error } = await client
       .from("invitation_cards")
-      .select("*")
+      .select("title, slug, content, published_at, expires_at")
       .eq("slug", data.slug)
-      .single();
+      .eq("status", "published")
+      .maybeSingle();
     if (error) throw new Error(error.message);
-    // Only published cards are readable publicly via RLS; drafts would fail
-    if ((card as any)?.status !== "published") throw new Error("Card is not published");
+    // Match the dashboard's expiry behavior even if cleanup has not run yet.
+    if (!card || (card.expires_at && new Date(card.expires_at).getTime() < Date.now())) return null;
     return card;
   });

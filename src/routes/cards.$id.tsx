@@ -8,6 +8,12 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { toast } from "sonner";
+import { invitationContentSchema } from "@/components/wedding/invitation-schema";
+import { getInvitationDetails, invitationExpiry, parseInvitationDate } from "@/components/wedding/invitation-details";
+import { InvitationCover } from "@/components/wedding/invitation-template";
+import type { Database } from "@/integrations/supabase/types";
+
+type InvitationCard = Database["public"]["Tables"]["invitation_cards"]["Row"];
 
 export const Route = createFileRoute("/cards/$id")({
   component: CardEditor,
@@ -17,7 +23,7 @@ function CardEditor() {
   const { id } = Route.useParams();
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [card, setCard] = useState<any>(null);
+  const [card, setCard] = useState<InvitationCard | null>(null);
   const [form, setForm] = useState({
     title: "",
     groomName: "",
@@ -54,17 +60,19 @@ function CardEditor() {
         setError("You can only edit your own cards.");
         return;
       }
-      setCard(data);
-      const c = data.content as any;
+      setCard(data as InvitationCard);
+      const c = data.content && typeof data.content === "object" && !Array.isArray(data.content)
+        ? data.content as Record<string, unknown> : {};
+      const field = (name: string) => typeof c[name] === "string" ? c[name] as string : "";
       setForm({
         title: data.title,
-        groomName: c.groomName || "",
-        brideName: c.brideName || "",
-        date: c.date || "",
-        time: c.time || "",
-        venue: c.venue || "",
-        address: c.address || "",
-        message: c.message || "",
+        groomName: field("groomName"),
+        brideName: field("brideName"),
+        date: field("date"),
+        time: field("time"),
+        venue: field("venue"),
+        address: field("address"),
+        message: field("message"),
       });
     }
     if (user) load();
@@ -75,19 +83,21 @@ function CardEditor() {
     setBusy(true);
     setError("");
     try {
-      const content = {
-        groomName: form.groomName,
-        brideName: form.brideName,
-        date: form.date,
-        time: form.time,
-        venue: form.venue,
-        address: form.address,
-        message: form.message,
-        theme: (card?.content as any)?.theme || "mughal",
-      };
+      const parsed = invitationContentSchema.safeParse({
+        ...form,
+        theme: getInvitationDetails(card?.content).theme,
+      });
+      if (!parsed.success) throw new Error(parsed.error.issues[0]?.message || "Complete the invitation details.");
+      if (!parseInvitationDate(parsed.data.date)) {
+        throw new Error("Use a real wedding date, such as 22 November 2026 or 2026-11-22.");
+      }
       const { error } = await supabase
         .from("invitation_cards")
-        .update({ title: form.title, content })
+        .update({
+          title: form.title.trim(),
+          content: parsed.data,
+          expires_at: invitationExpiry(parsed.data.date),
+        })
         .eq("id", id)
         .eq("owner_id", user?.id ?? "");
       if (error) throw error;
@@ -119,7 +129,7 @@ function CardEditor() {
           <CardHeader>
             <CardTitle>Edit — {card.title}</CardTitle>
             <CardDescription>
-              Only you can edit this private draft. Publish from dashboard to share.
+              Only you can edit this card. Preview private drafts on the dashboard; publish there to share.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -135,24 +145,31 @@ function CardEditor() {
               </div>
               <div className="grid sm:grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Groom</Label>
+                  <Label>Groom *</Label>
                   <Input
                     value={form.groomName}
                     onChange={(e) => setForm({ ...form, groomName: e.target.value })}
+                    required
+                    maxLength={80}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Bride</Label>
+                  <Label>Bride *</Label>
                   <Input
                     value={form.brideName}
                     onChange={(e) => setForm({ ...form, brideName: e.target.value })}
+                    required
+                    maxLength={80}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Date</Label>
+                  <Label>Wedding date *</Label>
                   <Input
                     value={form.date}
                     onChange={(e) => setForm({ ...form, date: e.target.value })}
+                    placeholder="15 December 2026 or 2026-12-15"
+                    required
+                    maxLength={100}
                   />
                 </div>
                 <div className="space-y-2">
@@ -160,13 +177,17 @@ function CardEditor() {
                   <Input
                     value={form.time}
                     onChange={(e) => setForm({ ...form, time: e.target.value })}
+                    placeholder="e.g. 4:00 PM IST (optional)"
+                    maxLength={100}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label>Venue</Label>
+                  <Label>Venue *</Label>
                   <Input
                     value={form.venue}
                     onChange={(e) => setForm({ ...form, venue: e.target.value })}
+                    required
+                    maxLength={120}
                   />
                 </div>
                 <div className="space-y-2">
@@ -174,6 +195,7 @@ function CardEditor() {
                   <Input
                     value={form.address}
                     onChange={(e) => setForm({ ...form, address: e.target.value })}
+                    maxLength={200}
                   />
                 </div>
               </div>
@@ -183,7 +205,12 @@ function CardEditor() {
                   value={form.message}
                   onChange={(e) => setForm({ ...form, message: e.target.value })}
                   rows={4}
+                  maxLength={2000}
                 />
+              </div>
+              <div className="mx-auto max-w-sm">
+                <p className="mb-3 text-center text-xs uppercase tracking-[0.2em] text-muted-foreground">Live cover preview</p>
+                <InvitationCover content={{ ...form, theme: getInvitationDetails(card.content).theme }} />
               </div>
               {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex gap-2">
@@ -197,13 +224,15 @@ function CardEditor() {
                 >
                   Cancel
                 </Button>
-                <Link
-                  to="/invite/$slug"
-                  params={{ slug: card.slug }}
-                  className="ml-auto text-sm underline"
-                >
-                  Preview public link
-                </Link>
+                {card.status === "published" && (
+                  <Link
+                    to="/invite/$slug"
+                    params={{ slug: card.slug }}
+                    className="ml-auto text-sm underline"
+                  >
+                    View published invitation
+                  </Link>
+                )}
               </div>
             </form>
           </CardContent>
