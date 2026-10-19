@@ -124,7 +124,7 @@ Project build settings already configured:
 
 ### Automatic via GitHub
 
-The Vercel project is linked to `SAIFALI369/mughal-moon-wedding` with production branch `main`. Pushing/merging to `main` produces a production deployment, provided Git deployments are enabled for the project.
+The Vercel project is linked to `SAIFALI369/mughal-moon-wedding` with production branch `main`, but Git-triggered deployments are currently **disabled** on the project (`gitProviderOptions.createDeployments = "disabled"`). Pushing to `main` therefore does not create a deployment. Enable Git deployments in **Vercel → Project → Settings → Git** if you want pushes to deploy automatically.
 
 ### Manual from this repository
 
