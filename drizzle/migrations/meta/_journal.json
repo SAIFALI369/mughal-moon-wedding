@@ -43,6 +43,13 @@
       "when": 1792336000000,
       "tag": "0005_username_password_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1792370375171,
+      "tag": "0006_apply_pending_repo_migrations",
+      "breakpoints": true
     }
   ]
 }

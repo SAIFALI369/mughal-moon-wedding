@@ -1,0 +1,1 @@
+COMMENT ON TABLE public.wedding_rsvps IS 'Private guest RSVPs; insert-only for visitors.';
