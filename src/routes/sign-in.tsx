@@ -32,7 +32,10 @@ function SignIn() {
     }
     setBusy(true);
     try {
-      const { data: email, error: lookupError } = await supabase.rpc("username_login_address", { requested_username: raw, requested_password: password });
+      const { data: email, error: lookupError } = await supabase.rpc("username_login_address", {
+        requested_username: raw,
+        requested_password: password,
+      });
       if (lookupError || !email) {
         setError("Invalid username or password");
         return;
@@ -59,8 +62,10 @@ function SignIn() {
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <p className="font-arabic text-lg text-gold">بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ</p>
-          <CardTitle className="font-serif text-3xl">Sign in</CardTitle>
-          <CardDescription>Use your username and password to manage your wedding invitations.</CardDescription>
+          <CardTitle className="font-serif text-3xl">Partner sign in</CardTitle>
+          <CardDescription>
+            Exclusive access for printing-shop partners. Use the login issued to your shop.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
@@ -88,22 +93,28 @@ function SignIn() {
               />
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
-            <Button type="submit" disabled={busy} className="w-full bg-burgundy text-ivory hover:bg-burgundy/90">
+            <Button
+              type="submit"
+              disabled={busy}
+              className="w-full bg-burgundy text-ivory hover:bg-burgundy/90"
+            >
               {busy ? "Signing in…" : "Sign in"}
             </Button>
           </form>
-          <div className="mt-4 text-center text-sm">
-            Forgot your password? There is no password recovery. Create a new account with a different username.
-          </div>
-          <div className="mt-4 text-center text-sm">
-            No account yet?{" "}
-            <Link to="/sign-up" className="text-burgundy underline">
-              Create account
-            </Link>
+          <div className="mt-5 rounded-lg border border-gold/20 bg-muted/40 p-4 text-sm leading-relaxed">
+            <p className="font-medium">By invitation. For your printing business.</p>
+            <p className="mt-2 text-muted-foreground">
+              ₹1,000 in cash includes 10 digital card credits. Your account is created personally by
+              InvitingYou after payment—there is no online registration or checkout.
+            </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Need access, more credits, or a password reset? Contact the InvitingYou representative
+              who visited your shop. Do not create a replacement account.
+            </p>
           </div>
           <div className="mt-2 text-center text-sm">
             <Link to="/" className="text-muted-foreground underline">
-              ← Back to invitation
+              ← Back to partner portal
             </Link>
           </div>
         </CardContent>

@@ -12,9 +12,9 @@ const { insert, from } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/db", () => ({ supabase: { from } }));
 
-function Editor() {
+function Editor({ compact = false }: { compact?: boolean }) {
   const [value, onChange] = useState(emptyInvitationForm);
-  return <InvitationDetailsFields value={value} onChange={onChange} />;
+  return <InvitationDetailsFields compact={compact} value={value} onChange={onChange} />;
 }
 
 beforeEach(() => {
@@ -37,6 +37,22 @@ afterEach(() => {
 });
 
 describe("invitation editor and guest reply", () => {
+  it("shows one compact editor section at a time and preserves entries between sections", () => {
+    render(<Editor compact />);
+    fireEvent.change(screen.getByLabelText("Groom's name *"), { target: { value: "Ayaan" } });
+    expect(screen.queryByRole("radio", { name: /Aladin/i })).not.toBeInTheDocument();
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Design" }), { button: 0, ctrlKey: false });
+    expect(screen.queryByLabelText("Groom's name *")).not.toBeInTheDocument();
+    fireEvent.click(screen.getByRole("radio", { name: /Aladin/i }));
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Details" }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    expect(screen.getByLabelText("Groom's name *")).toHaveValue("Ayaan");
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Design" }), { button: 0, ctrlKey: false });
+    expect(screen.getByRole("radio", { name: /Aladin/i })).toBeChecked();
+  });
+
   it("changes theme, framework and section visibility separately in the live cover", () => {
     render(<Editor />);
     fireEvent.click(screen.getByRole("radio", { name: /Aladin/i }));

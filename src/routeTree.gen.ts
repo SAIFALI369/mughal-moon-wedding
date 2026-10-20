@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiConciergeRouteImport } from './routes/ai-concierge'
 import { Route as DashboardRouteImport } from './routes/dashboard'
+import { Route as DemoRouteImport } from './routes/demo'
 import { Route as InvitePreviewRouteImport } from './routes/invite-preview'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SignInRouteImport } from './routes/sign-in'
@@ -32,6 +33,11 @@ const AiConciergeRoute = AiConciergeRouteImport.update({
 const DashboardRoute = DashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoRoute = DemoRouteImport.update({
+  id: '/demo',
+  path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvitePreviewRoute = InvitePreviewRouteImport.update({
@@ -69,6 +75,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
+  '/demo': typeof DemoRoute
   '/invite-preview': typeof InvitePreviewRoute
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
@@ -80,6 +87,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
+  '/demo': typeof DemoRoute
   '/invite-preview': typeof InvitePreviewRoute
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
@@ -92,6 +100,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
+  '/demo': typeof DemoRoute
   '/invite-preview': typeof InvitePreviewRoute
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
@@ -105,6 +114,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-concierge'
     | '/dashboard'
+    | '/demo'
     | '/invite-preview'
     | '/profile'
     | '/sign-in'
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-concierge'
     | '/dashboard'
+    | '/demo'
     | '/invite-preview'
     | '/profile'
     | '/sign-in'
@@ -127,6 +138,7 @@ export interface FileRouteTypes {
     | '/'
     | '/ai-concierge'
     | '/dashboard'
+    | '/demo'
     | '/invite-preview'
     | '/profile'
     | '/sign-in'
@@ -139,6 +151,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiConciergeRoute: typeof AiConciergeRoute
   DashboardRoute: typeof DashboardRoute
+  DemoRoute: typeof DemoRoute
   InvitePreviewRoute: typeof InvitePreviewRoute
   ProfileRoute: typeof ProfileRoute
   SignInRoute: typeof SignInRoute
@@ -168,6 +181,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof DashboardRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo': {
+      id: '/demo'
+      path: '/demo'
+      fullPath: '/demo'
+      preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite-preview': {
@@ -219,6 +239,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiConciergeRoute: AiConciergeRoute,
   DashboardRoute: DashboardRoute,
+  DemoRoute: DemoRoute,
   InvitePreviewRoute: InvitePreviewRoute,
   ProfileRoute: ProfileRoute,
   SignInRoute: SignInRoute,
