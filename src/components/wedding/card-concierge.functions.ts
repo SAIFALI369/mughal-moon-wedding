@@ -171,6 +171,10 @@ export const askCardConcierge = createServerFn({ method: "POST" })
         contactPhone: details.contactPhone,
         arrivalNotes: details.arrivalNotes,
         rsvpDeadline: details.rsvpDeadline,
+        endTime: details.endTime,
+        hashtag: details.hashtag,
+        giftsNote: details.giftsNote,
+        livestreamUrl: details.livestreamUrl,
         extraEvents: details.additionalEvents,
         songs: details.songs.map((song) => ({ title: song.title })),
       };

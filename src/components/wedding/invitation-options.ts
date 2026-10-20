@@ -14,6 +14,9 @@ export const invitationThemeIds = [
   "riad-noor",
   "kashi-ghat",
   "mehndi-night",
+  "jharokha-dawn",
+  "haldi-baag",
+  "vows-in-ink",
 ] as const;
 export type InvitationTheme = (typeof invitationThemeIds)[number];
 
@@ -27,10 +30,32 @@ export const invitationFrameworkIds = [
 export type InvitationFramework = (typeof invitationFrameworkIds)[number];
 
 /**
+ * A layout is the *structure* of the card: what the opening is made of, how the
+ * cover is framed and how the sections between are decorated. Frameworks are the
+ * guest's choice of structure; three themes ship their own signature layout so
+ * they are not a recolour of the shared one.
+ */
+export const invitationLayoutIds = [
+  "moonlit",
+  "curtain-call",
+  "mandap",
+  "chhatri-dawn",
+  "baag",
+  "single-stroke",
+  "folio",
+] as const;
+export type InvitationLayout = (typeof invitationLayoutIds)[number];
+
+/**
  * Themes are grouped so a partner can find one without scrolling a wall of
  * swatches. Order here is the order shown in the studio and the editor.
  */
 export const invitationThemeCategories = [
+  {
+    id: "signature",
+    label: "Signature Structures",
+    description: "Three one-of-a-kind layouts, not recolours",
+  },
   {
     id: "islamic",
     label: "Islamic & Mughal",
@@ -72,6 +97,8 @@ export const invitationThemes: {
   category: InvitationThemeCategory;
   /** True when the artwork carries the page from hero to footer. */
   immersive?: boolean;
+  /** Signature structure, used unless the host chooses the Grand Curtain. */
+  layout?: InvitationLayout;
 }[] = [
   {
     id: "eid",
@@ -185,7 +212,53 @@ export const invitationThemes: {
     category: "festive",
     immersive: true,
   },
+  {
+    id: "jharokha-dawn",
+    label: "Jharokha Dawn",
+    description: "A rose-sandstone balcony and two doves at first light",
+    swatch: "#d79a86",
+    category: "signature",
+    immersive: true,
+    layout: "chhatri-dawn",
+  },
+  {
+    id: "haldi-baag",
+    label: "Haldi Baag",
+    description: "A marigold courtyard, brass bowls and turmeric sunshine",
+    swatch: "#e8b53c",
+    category: "signature",
+    immersive: true,
+    layout: "baag",
+  },
+  {
+    id: "vows-in-ink",
+    label: "Vows in Ink",
+    description: "One brushstroke, one red thread, handmade paper",
+    swatch: "#e7e0d2",
+    category: "signature",
+    immersive: true,
+    layout: "single-stroke",
+  },
 ];
+
+const mandapThemes = new Set<string>(["diya-utsav", "sacred-mandap", "kashi-ghat"]);
+
+/**
+ * The opening structure a card actually uses. The theme's signature layout wins
+ * over the shared frameworks so the three new designs are never a recolour; the
+ * Grand Curtain stays opt-in on top of any theme, exactly as before.
+ */
+export function invitationLayoutFor(
+  theme: InvitationTheme,
+  framework: InvitationFramework,
+): InvitationLayout {
+  if (framework === "curtain-call") return "curtain-call";
+  const signature = invitationThemes.find((value) => value.id === theme)?.layout;
+  if (signature) return signature;
+  if (framework === "moonlit") return "moonlit";
+  if (mandapThemes.has(theme)) return "mandap";
+  return "folio";
+}
 
 export const invitationFrameworks: {
   id: InvitationFramework;
@@ -232,6 +305,8 @@ export const defaultInvitationElements = {
   contact: true,
   rsvp: true,
   wishes: true,
+  gifts: true,
+  livestream: true,
 };
 export type InvitationElements = typeof defaultInvitationElements;
 export type InvitationElement = keyof InvitationElements;
@@ -269,4 +344,52 @@ export const invitationElementOptions: {
     label: "Wishes wall",
     description: "Let guests leave a public blessing beside your invitation",
   },
+  {
+    id: "gifts",
+    label: "Gifts & blessings",
+    description: "A short note about gifts, shagun or a registry",
+  },
+  {
+    id: "livestream",
+    label: "Live stream",
+    description: "A link for family who cannot travel to the celebration",
+  },
+];
+
+/**
+ * One-tap ceremony presets. A printing partner hears "nikah at 4" far more
+ * often than a ceremony name, so each preset sets the words that shape the
+ * whole card — and the couple can still edit every one of them.
+ */
+export const invitationCeremonyPresets: {
+  id: string;
+  label: string;
+  eventType: string;
+  riteLine: string;
+}[] = [
+  { id: "nikah", label: "Nikah", eventType: "Nikah ceremony", riteLine: "" },
+  { id: "shubh-vivah", label: "Shubh Vivah", eventType: "Shubh Vivah", riteLine: "॥ शुभ विवाह ॥" },
+  { id: "mehndi", label: "Mehndi", eventType: "Mehndi ceremony", riteLine: "A henna evening" },
+  { id: "sangeet", label: "Sangeet", eventType: "Sangeet night", riteLine: "An evening of music" },
+  {
+    id: "reception",
+    label: "Reception",
+    eventType: "Wedding reception",
+    riteLine: "An evening of celebration",
+  },
+  {
+    id: "engagement",
+    label: "Engagement",
+    eventType: "Engagement ceremony",
+    riteLine: "The beginning of forever",
+  },
+];
+
+export const invitationDressCodePresets = [
+  "Festive traditional attire",
+  "Indian formal",
+  "Black tie",
+  "Pastel garden party",
+  "Emerald & gold",
+  "Ivory & marigold",
 ];

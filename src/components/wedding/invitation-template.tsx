@@ -8,6 +8,7 @@ import {
   Clock3,
   Copy,
   ExternalLink,
+  Gift,
   Heart,
   MapPin,
   Music2,
@@ -15,6 +16,7 @@ import {
   Quote,
   Share2,
   Sparkles as SparklesIcon,
+  Video,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Countdown, Hero, Preloader } from "./sections";
@@ -35,7 +37,21 @@ import { CouplePortraits, InvitationStage } from "./invitation-stage";
 import { CurtainStage } from "./invitation-curtain";
 import { LivingScene, MandapStage, riteBlessing } from "./invitation-rite";
 import { InvitationRsvp } from "./invitation-rsvp";
-import { invitationFrameworks, invitationThemes, type InvitationTheme } from "./invitation-options";
+import {
+  invitationFrameworks,
+  invitationLayoutFor,
+  invitationThemes,
+  type InvitationTheme,
+} from "./invitation-options";
+import {
+  BaagCover,
+  BaagStage,
+  ChhatriDawnCover,
+  ChhatriDawnStage,
+  InkCover,
+  LayoutInterlude,
+  SingleStrokeStage,
+} from "./invitation-layouts";
 import {
   ArchOutline,
   InvitationCorners,
@@ -79,6 +95,7 @@ export function InvitationCover({ content }: { content: unknown }) {
   const details = getInvitationDetails(content);
   const framework = invitationFrameworks.find((value) => value.id === details.framework);
   const theme = invitationThemes.find((value) => value.id === details.theme);
+  const layout = invitationLayoutFor(details.theme, details.framework);
   const monogram = getInvitationMonogram(details);
   const plate = datePlate(details.date);
   const blessing = details.theme === "mecca_madinah" || details.framework === "moonlit";
@@ -87,6 +104,7 @@ export function InvitationCover({ content }: { content: unknown }) {
     <div
       data-theme={details.theme}
       data-framework={details.framework}
+      data-layout={layout}
       className="personal-invite-cover relative isolate overflow-hidden text-center text-foreground"
     >
       <img
@@ -106,79 +124,87 @@ export function InvitationCover({ content }: { content: unknown }) {
         aria-hidden="true"
       />
       <InvitationCorners />
-      <div className="cover-inner relative flex min-h-[23rem] flex-col items-center justify-center px-7 py-9">
-        <div className="cover-blessing flex w-full items-center justify-center gap-2 text-gold">
-          <span className="cover-hairline" aria-hidden="true" />
-          {riteBlessing(details.theme) ? (
-            <p
-              dir={riteBlessing(details.theme)?.script === "arabic" ? "rtl" : "ltr"}
-              className={`${
-                riteBlessing(details.theme)?.script === "arabic" ? "font-arabic" : "font-sanskrit"
-              } text-lg leading-none text-gold`}
-            >
-              {riteBlessing(details.theme)?.text}
-            </p>
-          ) : blessing ? (
-            <p dir="rtl" className="font-arabic text-lg leading-none text-gold">
-              بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-            </p>
-          ) : (
-            <p className="cover-emblem text-lg leading-none" aria-hidden="true">
-              ✧
-            </p>
-          )}
-          <span className="cover-hairline" aria-hidden="true" />
-        </div>
-        <p className="cover-kicker mt-4 text-[9px] uppercase tracking-[0.26em] text-gold">
-          {details.hosts || "Together with their families"}
-        </p>
-
-        <InviteMonogram
-          left={monogram.left}
-          right={monogram.right}
-          size="sm"
-          className="cover-monogram mt-4"
-        />
-
-        <h3 className="cover-names mt-4 flex max-w-full flex-col items-center font-serif leading-tight">
-          <span className="max-w-full break-words text-3xl sm:text-4xl">{details.groomName}</span>
-          <span className="cover-amp text-gold-shimmer font-script text-2xl">
-            {details.framework === "moonlit" ? "weds" : "&"}
-          </span>
-          <span className="max-w-full break-words text-3xl sm:text-4xl">{details.brideName}</span>
-        </h3>
-
-        <CouplePortraits details={details} compact />
-
-        <div className="cover-date-plate mt-4">
-          {plate ? (
-            <>
-              <span className="cover-date-day">{plate.day}</span>
-              <span className="cover-date-divider" aria-hidden="true" />
-              <span className="cover-date-copy">
-                <span className="cover-date-month">
-                  {plate.month} {plate.year}
-                </span>
-                {details.time && <span className="cover-date-time">{details.time}</span>}
-              </span>
-            </>
-          ) : (
-            <span className="cover-date-fallback">{details.date || "Date to be announced"}</span>
-          )}
-        </div>
-        {plate && <span className="sr-only">{details.date}</span>}
-
-        {details.venue && (
-          <p className="cover-venue mt-3 flex items-center gap-1.5 font-serif text-sm italic">
-            <MapPin className="h-3 w-3 text-gold" aria-hidden="true" />
-            <span className="line-clamp-2">{details.venue}</span>
+      {layout === "chhatri-dawn" ? (
+        <ChhatriDawnCover details={details} />
+      ) : layout === "baag" ? (
+        <BaagCover details={details} />
+      ) : layout === "single-stroke" ? (
+        <InkCover details={details} />
+      ) : (
+        <div className="cover-inner relative flex min-h-[23rem] flex-col items-center justify-center px-7 py-9">
+          <div className="cover-blessing flex w-full items-center justify-center gap-2 text-gold">
+            <span className="cover-hairline" aria-hidden="true" />
+            {riteBlessing(details.theme) ? (
+              <p
+                dir={riteBlessing(details.theme)?.script === "arabic" ? "rtl" : "ltr"}
+                className={`${
+                  riteBlessing(details.theme)?.script === "arabic" ? "font-arabic" : "font-sanskrit"
+                } text-lg leading-none text-gold`}
+              >
+                {riteBlessing(details.theme)?.text}
+              </p>
+            ) : blessing ? (
+              <p dir="rtl" className="font-arabic text-lg leading-none text-gold">
+                بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
+              </p>
+            ) : (
+              <p className="cover-emblem text-lg leading-none" aria-hidden="true">
+                ✧
+              </p>
+            )}
+            <span className="cover-hairline" aria-hidden="true" />
+          </div>
+          <p className="cover-kicker mt-4 text-[9px] uppercase tracking-[0.26em] text-gold">
+            {details.hosts || "Together with their families"}
           </p>
-        )}
 
-        <span className="cover-label mt-5 text-[9px] uppercase tracking-[0.2em] text-gold">
-          {theme?.label} · {framework?.label}
-        </span>
-      </div>
+          <InviteMonogram
+            left={monogram.left}
+            right={monogram.right}
+            size="sm"
+            className="cover-monogram mt-4"
+          />
+
+          <h3 className="cover-names mt-4 flex max-w-full flex-col items-center font-serif leading-tight">
+            <span className="max-w-full break-words text-3xl sm:text-4xl">{details.groomName}</span>
+            <span className="cover-amp text-gold-shimmer font-script text-2xl">
+              {details.framework === "moonlit" ? "weds" : "&"}
+            </span>
+            <span className="max-w-full break-words text-3xl sm:text-4xl">{details.brideName}</span>
+          </h3>
+
+          <CouplePortraits details={details} compact />
+
+          <div className="cover-date-plate mt-4">
+            {plate ? (
+              <>
+                <span className="cover-date-day">{plate.day}</span>
+                <span className="cover-date-divider" aria-hidden="true" />
+                <span className="cover-date-copy">
+                  <span className="cover-date-month">
+                    {plate.month} {plate.year}
+                  </span>
+                  {details.time && <span className="cover-date-time">{details.time}</span>}
+                </span>
+              </>
+            ) : (
+              <span className="cover-date-fallback">{details.date || "Date to be announced"}</span>
+            )}
+          </div>
+          {plate && <span className="sr-only">{details.date}</span>}
+
+          {details.venue && (
+            <p className="cover-venue mt-3 flex items-center gap-1.5 font-serif text-sm italic">
+              <MapPin className="h-3 w-3 text-gold" aria-hidden="true" />
+              <span className="line-clamp-2">{details.venue}</span>
+            </p>
+          )}
+
+          <span className="cover-label mt-5 text-[9px] uppercase tracking-[0.2em] text-gold">
+            {theme?.label} · {framework?.label}
+          </span>
+        </div>
+      )}
       <span className="cover-sheen" aria-hidden="true" />
     </div>
   );
@@ -260,10 +286,11 @@ export function PersonalInvitation({
   const details = getInvitationDetails(content);
   const countdownDate = getInvitationCountdownDate(details);
   const calendarUrl = buildInvitationCalendarUrl(details);
-  const mapUrl = directionsUrl(details.venue, details.address);
+  const mapUrl = details.mapUrl || directionsUrl(details.venue, details.address);
   const dateLine = [details.date, details.time].filter(Boolean).join(" · ");
   const gateDateLine = [details.date, details.venue].filter(Boolean).join(" · ");
   const art = invitationArt[details.theme];
+  const layout = invitationLayoutFor(details.theme, details.framework);
   const monogram = getInvitationMonogram(details);
   const assistantName = getInvitationAssistantName(details);
   const plate = datePlate(details.date);
@@ -303,6 +330,7 @@ export function PersonalInvitation({
     <div
       data-theme={details.theme}
       data-framework={details.framework}
+      data-layout={layout}
       className="personal-invite min-h-screen overflow-x-hidden bg-background text-foreground"
     >
       <ThemeBackdrop theme={details.theme} art={art} />
@@ -374,7 +402,31 @@ export function PersonalInvitation({
         </header>
       )}
 
-      {details.framework === "moonlit" ? (
+      {layout === "chhatri-dawn" ? (
+        <ChhatriDawnStage
+          details={details}
+          backgroundImage={art}
+          actions={actions}
+          scrollTo={scrollTo}
+          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+        />
+      ) : layout === "baag" ? (
+        <BaagStage
+          details={details}
+          backgroundImage={art}
+          actions={actions}
+          scrollTo={scrollTo}
+          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+        />
+      ) : layout === "single-stroke" ? (
+        <SingleStrokeStage
+          details={details}
+          backgroundImage={art}
+          actions={actions}
+          scrollTo={scrollTo}
+          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+        />
+      ) : layout === "moonlit" ? (
         <div id="invitation-top" className="invite-hero-wrap">
           <Hero
             theme={details.theme}
@@ -394,7 +446,7 @@ export function PersonalInvitation({
             <span className="invite-hero-star invite-hero-star-right">✦</span>
           </div>
         </div>
-      ) : details.framework === "curtain-call" ? (
+      ) : layout === "curtain-call" ? (
         <CurtainStage
           details={details}
           backgroundImage={art}
@@ -402,9 +454,7 @@ export function PersonalInvitation({
           scrollTo={scrollTo}
           entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
         />
-      ) : details.theme === "diya-utsav" ||
-        details.theme === "sacred-mandap" ||
-        details.theme === "kashi-ghat" ? (
+      ) : layout === "mandap" ? (
         <MandapStage
           details={details}
           backgroundImage={art}
@@ -433,6 +483,8 @@ export function PersonalInvitation({
           />
         </div>
       )}
+
+      <LayoutInterlude layout={layout} details={details} />
 
       {details.elements.message && (
         <section
@@ -725,6 +777,48 @@ export function PersonalInvitation({
         </section>
       )}
 
+      {details.elements.gifts && details.giftsNote && (
+        <section
+          id="gifts"
+          className="invite-section invite-suite invite-suite-gifts relative overflow-hidden px-6 py-20 sm:py-24"
+        >
+          <SuiteHeading eyebrow="With gratitude">Gifts &amp; Blessings</SuiteHeading>
+          <motion.div {...fadeUp} className="invite-gift-card mx-auto max-w-2xl">
+            <InvitationCorners />
+            <Gift className="invite-gift-icon h-6 w-6" aria-hidden="true" />
+            <p className="invite-gift-text whitespace-pre-wrap">{details.giftsNote}</p>
+            <p className="invite-gift-signoff">
+              {details.groomName} &amp; {details.brideName}
+            </p>
+          </motion.div>
+        </section>
+      )}
+
+      {details.elements.livestream && details.livestreamUrl && (
+        <section
+          id="livestream"
+          className="invite-section invite-suite invite-suite-live relative overflow-hidden px-6 py-20 text-center sm:py-24"
+        >
+          <SuiteHeading eyebrow="From anywhere">Join the Live Stream</SuiteHeading>
+          <motion.div {...fadeUp} className="invite-live-card mx-auto max-w-lg">
+            <span className="invite-live-dot" aria-hidden="true" />
+            <p className="invite-live-title">The ceremony, live</p>
+            <p className="invite-live-copy">
+              For family who cannot travel, the celebration will be streamed here. The link opens
+              the host&rsquo;s own room — nothing is recorded by us.
+            </p>
+            <a
+              href={details.livestreamUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="btn-shimmer bg-gold-gradient mt-6 inline-flex items-center gap-2 rounded-full px-6 py-3 text-xs uppercase tracking-[0.18em] text-burgundy-deep transition hover:scale-105"
+            >
+              <Video className="h-4 w-4" aria-hidden="true" /> Join the live stream
+            </a>
+          </motion.div>
+        </section>
+      )}
+
       {details.elements.contact && (details.contactName || details.contactPhone) && (
         <section
           id="contact"
@@ -781,6 +875,11 @@ export function PersonalInvitation({
             Hosted with love by <span>{hostLine}</span>
           </p>
         )}
+        {details.hashtag && (
+          <p className="invite-footer-hashtag" aria-label="Wedding hashtag">
+            {details.hashtag}
+          </p>
+        )}
         <div className="invite-footer-rule" aria-hidden="true">
           <span />
           <span className="invite-footer-diamond" />
@@ -808,6 +907,7 @@ function InvitationVenueMap({ details }: { details: InvitationDetails }) {
       time: details.time,
       venue: details.venue,
       address: details.address,
+      mapUrl: details.mapUrl,
     },
     ...details.additionalEvents.map((event) => ({
       label: event.title,
@@ -815,6 +915,7 @@ function InvitationVenueMap({ details }: { details: InvitationDetails }) {
       time: event.time,
       venue: event.venue,
       address: event.address,
+      mapUrl: "",
     })),
   ].filter((location) => location.venue.trim().length > 0);
   const [active, setActive] = useState(0);
@@ -822,7 +923,7 @@ function InvitationVenueMap({ details }: { details: InvitationDetails }) {
   if (locations.length === 0) return null;
   const current = locations[Math.min(active, locations.length - 1)];
   const embed = invitationMapEmbedUrl([current.venue, current.address].filter(Boolean).join(", "));
-  const external = directionsUrl(current.venue, current.address);
+  const external = current.mapUrl || directionsUrl(current.venue, current.address);
 
   return (
     <motion.div {...fadeUp} className="invite-venue-map mx-auto mt-10 max-w-3xl">
@@ -899,7 +1000,7 @@ function InvitationShare({ details, slug }: { details: InvitationDetails; slug: 
   function whatsapp() {
     const name = guest.trim();
     const greeting = name ? `Dear ${name}, ` : "";
-    const message = `${greeting}you are warmly invited to celebrate with ${details.groomName} & ${details.brideName}${details.date ? ` on ${details.date}` : ""}${details.venue ? ` at ${details.venue}` : ""}. View the invitation and reply here: ${buildLink()}`;
+    const message = `${greeting}you are warmly invited to celebrate with ${details.groomName} & ${details.brideName}${details.date ? ` on ${details.date}` : ""}${details.venue ? ` at ${details.venue}` : ""}. View the invitation and reply here: ${buildLink()}${details.hashtag ? ` ${details.hashtag}` : ""}`;
     window.open(
       `https://wa.me/?text=${encodeURIComponent(message)}`,
       "_blank",

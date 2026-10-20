@@ -43,7 +43,7 @@ describe("storybook themes", () => {
     for (const theme of invitationThemeIds) {
       expect(invitationArt[theme]).toBeTruthy();
     }
-    expect(invitationThemeIds).toHaveLength(15);
+    expect(invitationThemeIds).toHaveLength(18);
   });
 
   it("keeps both new themes light and readable", () => {

@@ -4,7 +4,7 @@ import {
   invitationFrameworkIds,
   invitationThemeIds,
 } from "./invitation-options";
-import { isSafePortrait, parseInvitationDate } from "./invitation-details";
+import { isSafePortrait, isSafeWebUrl, parseInvitationDate } from "./invitation-details";
 import { INVITATION_SONG_LIMIT, isSafeSongUrl } from "./invitation-music";
 
 /**
@@ -67,7 +67,16 @@ const elementsSchema = z.object({
   contact: z.boolean().default(defaultInvitationElements.contact),
   rsvp: z.boolean().default(defaultInvitationElements.rsvp),
   wishes: z.boolean().default(defaultInvitationElements.wishes),
+  gifts: z.boolean().default(defaultInvitationElements.gifts),
+  livestream: z.boolean().default(defaultInvitationElements.livestream),
 });
+
+const optionalWebUrl = z
+  .string()
+  .trim()
+  .max(500)
+  .refine((value) => !value || isSafeWebUrl(value), "Use a full https:// link")
+  .default("");
 
 export const invitationContentSchema = z.object({
   groomName: z.string().trim().min(1, "Groom's name is required").max(80),
@@ -110,6 +119,12 @@ export const invitationContentSchema = z.object({
     .max(100)
     .refine((value) => !value || !!parseInvitationDate(value), "Use a real RSVP date")
     .default(""),
+  /** Optional end of the ceremony; improves the calendar block. */
+  endTime: z.string().trim().max(100).default(""),
+  mapUrl: optionalWebUrl,
+  livestreamUrl: optionalWebUrl,
+  hashtag: z.string().trim().max(60).default(""),
+  giftsNote: z.string().trim().max(300).default(""),
   additionalEvents: z.array(extraEventSchema).max(4, "Add at most four extra events").default([]),
   songs: z.array(songSchema).max(INVITATION_SONG_LIMIT, "Add at most five songs").default([]),
   groomPhoto: portraitSchema,

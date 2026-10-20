@@ -34,6 +34,16 @@ export type InvitationDetails = {
   contactPhone: string;
   arrivalNotes: string;
   rsvpDeadline: string;
+  /** When the ceremony is expected to end, used for calendar events. */
+  endTime: string;
+  /** A host-supplied directions link, used instead of a Google query. */
+  mapUrl: string;
+  /** A custom link for guests who cannot attend in person. */
+  livestreamUrl: string;
+  /** Wedding hashtag, shown in the footer and the share text. */
+  hashtag: string;
+  /** A short note about gifts, shagun or a registry. */
+  giftsNote: string;
   additionalEvents: { title: string; date: string; time: string; venue: string; address: string }[];
   groomPhoto: string | null;
   bridePhoto: string | null;
@@ -57,6 +67,18 @@ export function isSafePortrait(value: string): boolean {
   return (
     value.length <= 240_000 && /^data:image\/jpeg;base64,\/9j\/[A-Za-z0-9+/]+={0,2}$/.test(value)
   );
+}
+
+/**
+ * Only absolute web links belong on a public card. This keeps a mistyped or
+ * hostile value out of `href` and out of the map iframe.
+ */
+export function isSafeWebUrl(value: string): boolean {
+  return /^https?:\/\/[^\s"'<>]{4,500}$/i.test(value.trim());
+}
+
+function safeWebUrl(value: string): string {
+  return isSafeWebUrl(value) ? value.trim() : "";
 }
 
 const MONTHS = [
@@ -112,6 +134,11 @@ export function getInvitationDetails(content: unknown): InvitationDetails {
     contactPhone: stringField(data, "contactPhone"),
     arrivalNotes: stringField(data, "arrivalNotes"),
     rsvpDeadline: stringField(data, "rsvpDeadline"),
+    endTime: stringField(data, "endTime"),
+    mapUrl: safeWebUrl(stringField(data, "mapUrl")),
+    livestreamUrl: safeWebUrl(stringField(data, "livestreamUrl")),
+    hashtag: stringField(data, "hashtag").slice(0, 60),
+    giftsNote: stringField(data, "giftsNote"),
     additionalEvents: rawEvents
       .filter(
         (value): value is Record<string, unknown> =>
@@ -273,6 +300,8 @@ type CalendarEvent = {
   venue: string;
   address: string;
   notes?: string;
+  /** Optional stated end, so the calendar block covers the real ceremony. */
+  endTime?: string;
 };
 
 function googleCalendarUrl(event: CalendarEvent): string | null {
@@ -282,7 +311,13 @@ function googleCalendarUrl(event: CalendarEvent): string | null {
   let dates: string;
   if (time?.zone) {
     const start = eventInstant(date, time);
-    dates = `${calendarDate(start)}/${calendarDate(new Date(start.getTime() + 2 * 60 * 60_000))}`;
+    const statedEnd = event.endTime ? parseInvitationTime(event.endTime) : null;
+    const statedInstant = statedEnd ? eventInstant(date, statedEnd) : null;
+    const end =
+      statedInstant && statedInstant.getTime() > start.getTime()
+        ? statedInstant
+        : new Date(start.getTime() + 2 * 60 * 60_000);
+    dates = `${calendarDate(start)}/${calendarDate(end)}`;
   } else {
     // An unqualified time has no known time zone. Use an all-day event, preserving
     // the host's written time in the details rather than guessing the guest's zone.
@@ -310,6 +345,7 @@ export function buildInvitationCalendarUrl(details: InvitationDetails): string |
     venue: details.venue,
     address: details.address,
     notes: details.message,
+    endTime: details.endTime,
   });
 }
 

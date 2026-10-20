@@ -74,6 +74,10 @@ export function cardConciergeFacts(content: unknown): CardConciergeFacts {
     contactPhone: text(data, "contactPhone"),
     arrivalNotes: text(data, "arrivalNotes"),
     rsvpDeadline: text(data, "rsvpDeadline"),
+    endTime: text(data, "endTime"),
+    hashtag: text(data, "hashtag"),
+    giftsNote: text(data, "giftsNote"),
+    livestreamUrl: text(data, "livestreamUrl"),
     extraEvents: rawEvents
       .map(record)
       .map((event) => ({

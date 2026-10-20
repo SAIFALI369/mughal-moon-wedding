@@ -29,6 +29,7 @@ function CardEditor() {
   const [form, setForm] = useState<InvitationForm>(emptyInvitationForm);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [simran, setSimran] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/sign-in" });
@@ -58,6 +59,23 @@ function CardEditor() {
     }
     if (user) load();
   }, [id, user]);
+
+  useEffect(() => {
+    if (!user) return;
+    let cancelled = false;
+    // RLS limits this row to the signed-in owner; a print partner is an admin.
+    supabase
+      .from("print_partners")
+      .select("active")
+      .eq("owner_id", user.id)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!cancelled) setSimran(!!data?.active);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   async function save(e: React.FormEvent) {
     e.preventDefault();
@@ -112,7 +130,12 @@ function CardEditor() {
           </CardHeader>
           <CardContent>
             <form onSubmit={save} className="space-y-4">
-              <InvitationDetailsFields value={form} onChange={setForm} cardId={card.id} />
+              <InvitationDetailsFields
+                value={form}
+                onChange={setForm}
+                cardId={card.id}
+                simran={simran}
+              />
               {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex gap-2">
                 <Button type="submit" disabled={busy} className="bg-burgundy text-ivory">

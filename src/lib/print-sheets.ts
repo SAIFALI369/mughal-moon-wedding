@@ -107,6 +107,27 @@ const PALETTES: Record<string, PrintPalette> = {
     soft: "#5f7a6d",
     tint: "#e6f2ea",
   },
+  "jharokha-dawn": {
+    paper: "#fdf6f1",
+    ink: "#4a2b28",
+    accent: "#b0604a",
+    soft: "#8a6a60",
+    tint: "#f8e4d9",
+  },
+  "haldi-baag": {
+    paper: "#fefaef",
+    ink: "#4a3410",
+    accent: "#b8871a",
+    soft: "#8a7440",
+    tint: "#faedc4",
+  },
+  "vows-in-ink": {
+    paper: "#f7f3e9",
+    ink: "#1d1c1a",
+    accent: "#b3352a",
+    soft: "#6f6a5e",
+    tint: "#ebe5d6",
+  },
 };
 
 export function paletteForTheme(theme: string): PrintPalette {
