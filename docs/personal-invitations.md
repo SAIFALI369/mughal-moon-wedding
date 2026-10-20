@@ -4,7 +4,7 @@
 
 1. Sign in and open **Your invitations** (`/dashboard`). A new card starts as a **private draft**; each account can have up to three active cards.
 2. Fill in both names, a real wedding date, the time, venue, address/city and main ceremony. All six essential wedding details always appear on the invitation. Add a message, story, hosting families, host contact, arrival notes, RSVP-by date and up to four extra events if you wish. The **host name** field names your card's own AI assistant; if it is blank, the host contact, family line and finally the groom's first name are used.
-3. Choose a **theme** (Eid Light, Mughal Night, Classic, Aladin, Bihari Vibe, Mecca–Madinah, Luxury or Futuristic) and separately a **framework** (Moonlit Journey, Royal Folio, Cinematic Stage or Modern Mosaic). The cover and full preview update immediately. The original moonlit gate/hero remains the default.
+3. Choose a **theme** (Eid Light, Mughal Night, Classic, Aladin, Bihari Vibe, Mecca–Madinah, Luxury, Futuristic, Fairytale Castle or Grand Ballroom) and separately a **framework** (Moonlit Journey, Royal Folio, Cinematic Stage, Modern Mosaic or Grand Curtain). The cover and full preview update immediately. The original moonlit gate/hero remains the default.
 4. Add up to five songs (title + an `https://` audio link or a bundled `/audio/` file). Guests get a private soundtrack panel; nothing auto-plays. Quick-add buttons offer the six local instrumentals. Only share audio you have permission to distribute.
 5. Optionally upload groom and bride portraits. JPEG, PNG and WebP files up to 8 MB are resized and converted locally in the browser to JPEG data URLs under 180 KB each. Remove a photo at any time. In the same **Photos** panel, add up to twelve shared gallery photos. **Only you can add or remove gallery photos**; guests get a read-only gallery with the lightbox. Choose which optional sections are visible, including the opening gate, portraits, gallery, wishes wall and RSVP.
 6. Preview before publishing. Only published, unexpired cards have public links. Publish and share the card's `/invite/:slug` link. To see guest replies, visit **My profile & RSVPs** (`/profile`) or the **RSVPs** link on a card. Only you can see replies for cards you own. Unpublishing stops new submissions while preserving existing replies for you; deleting a card removes its replies too.
@@ -19,6 +19,29 @@ Every theme and framework now carries the same celebration features as the main 
 - A **share panel** that builds a personalised `/invite/:slug?guest=Name` link, copies it, or opens WhatsApp with the card's own names, date and venue. The `guest` parameter greets the visitor by name and prefills their RSVP.
 
 The main Mohsin–Simran invitation, gallery, wishes and RSVP are separate from every creator's card. Your card never borrows their couple portraits or event story.
+
+## Storybook themes and the Grand Curtain scroll
+
+Two themes join the collection, both light and type-safe so long names stay readable:
+
+- **Fairytale Castle** — a painterly kingdom at dusk, with fireworks over the towers, a lake and a lantern-lit garden path.
+- **Grand Ballroom** — chandeliers, candlelight and champagne gold under arches that open onto a starry sky.
+
+Both themes flow through every surface: the card cover, the gate, the section ornaments, the print package palettes and the QR inserts, exactly like the older themes. There is no reduced feature set.
+
+**Grand Curtain** is the fifth framework, and it turns the top of the invitation into one continuous camera move:
+
+- The hero is taller than the screen and its stage is **sticky**, so a scroll gesture reads as a single shot rather than a page jumping.
+- Two **velvet drapes** hang in a gilded proscenium. Scrolling swings them apart in 3D (`rotateY` plus a lateral slide) while the artwork behind pushes forward and drifts, as though the guest is walking into the scene.
+- The couple's names sit in the window and glide past the camera at the end of the move; the "Enter the celebration" link skips straight to the first section.
+- After the hero, every section **flies in from depth** using CSS scroll timelines (`animation-timeline: view()`), and a hairline of gold runs along the top of the screen as a scroll/film progress bar.
+- For this layout the opening gate is dressed as **velvet curtains** instead of lacquered doors.
+
+Practical notes:
+
+- The effect is CSS transform and opacity only — no video file, no autoplay, no sound. It works offline and downloads nothing extra.
+- `prefers-reduced-motion` visitors get a still, fully readable hero with no curtains, and the scroll timelines are skipped in browsers that do not support them (the sections simply appear in place).
+- Phones get a shorter hero and slightly wider drapes so the names keep a clear channel.
 
 ## Print package: QR, inserts and A5 artwork
 
@@ -109,6 +132,6 @@ Identical SQL lives in `drizzle/migrations/0009_private_card_rsvps_and_portraits
 
 ## Local verification
 
-`npm test` includes all 8 × 4 theme/framework combinations (including gallery, wishes, map and share sections in every one), required-field and element-selection tests, a browser-form mock for portrait compression and RSVP insertion, and PGlite policy tests for anonymous insert, owner-only reads, the twelve-photo limit, gallery and wishes toggles, expired or draft cards, refused anonymous gallery uploads and rejected invalid RSVP names. The print package is covered separately: `src/test/guest-list.test.ts` (CSV quoting, header detection, dedupe, rejected rows, the 300-guest cap), `src/test/rsvp-export.test.ts` (totals, dietary grouping, CSV BOM/CRLF and the formula guard), `src/test/print-sheets.test.ts` (eight inserts per A4 sheet, escaping, palette per theme, A5 front and back) and `src/test/profile-rsvps.test.tsx` (per-card stats and both CSV downloads). `src/test/card-qr.test.ts` still decodes a generated QR back to the invitation link.
+`npm test` includes all 10 × 5 theme/framework combinations (including gallery, wishes, map and share sections in every one), required-field and element-selection tests, a browser-form mock for portrait compression and RSVP insertion, and PGlite policy tests for anonymous insert, owner-only reads, the twelve-photo limit, gallery and wishes toggles, expired or draft cards, refused anonymous gallery uploads and rejected invalid RSVP names. The print package is covered separately: `src/test/guest-list.test.ts` (CSV quoting, header detection, dedupe, rejected rows, the 300-guest cap), `src/test/rsvp-export.test.ts` (totals, dietary grouping, CSV BOM/CRLF and the formula guard), `src/test/print-sheets.test.ts` (eight inserts per A4 sheet, escaping, palette per theme, A5 front and back) and `src/test/profile-rsvps.test.tsx` (per-card stats and both CSV downloads). `src/test/card-qr.test.ts` still decodes a generated QR back to the invitation link, and `src/test/invitation-curtain.test.tsx` covers the storybook themes and the Grand Curtain stage and gate (no video, no remote asset, the card's own details only).
 
 Run `npx tsc --noEmit` and `npm run build` as well. For a visual check of the print output, open the dialog, print to PDF, and confirm the page size is **A5** (artwork) or **A4** (insert sheets) before sending anything to a shop. These tests do **not** replace checking the live database after deployment.

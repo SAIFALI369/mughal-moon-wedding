@@ -58,6 +58,20 @@ const PALETTES: Record<string, PrintPalette> = {
     soft: "#5f7286",
     tint: "#e8f0f7",
   },
+  fairytale: {
+    paper: "#fdf6f7",
+    ink: "#48222f",
+    accent: "#a8496a",
+    soft: "#8b6d78",
+    tint: "#fbeaee",
+  },
+  ballroom: {
+    paper: "#fdf9ef",
+    ink: "#3a2a17",
+    accent: "#9a7433",
+    soft: "#846f52",
+    tint: "#f8eed6",
+  },
 };
 
 export function paletteForTheme(theme: string): PrintPalette {

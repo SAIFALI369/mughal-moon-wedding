@@ -32,6 +32,7 @@ import {
 } from "./invitation-details";
 import { invitationArt } from "./invitation-art";
 import { CouplePortraits, InvitationStage } from "./invitation-stage";
+import { CurtainStage } from "./invitation-curtain";
 import { InvitationRsvp } from "./invitation-rsvp";
 import { invitationFrameworks, invitationThemes } from "./invitation-options";
 import {
@@ -284,6 +285,7 @@ export function PersonalInvitation({
           dateLine={gateDateLine}
           enableMusic={false}
           backgroundImage={art}
+          curtain={details.framework === "curtain-call"}
         />
       )}
       {!preview && (
@@ -361,6 +363,14 @@ export function PersonalInvitation({
             <span className="invite-hero-star invite-hero-star-right">✦</span>
           </div>
         </div>
+      ) : details.framework === "curtain-call" ? (
+        <CurtainStage
+          details={details}
+          backgroundImage={art}
+          actions={actions}
+          scrollTo={scrollTo}
+          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+        />
       ) : (
         <InvitationStage
           details={details}

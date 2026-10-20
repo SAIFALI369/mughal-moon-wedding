@@ -226,6 +226,7 @@ export function Preloader({
   dateLine = "22–23 November 2026 · New Delhi",
   enableMusic = true,
   backgroundImage = eidSky,
+  curtain = false,
 }: {
   onDone: () => void;
   groomName?: string;
@@ -233,6 +234,8 @@ export function Preloader({
   dateLine?: string;
   enableMusic?: boolean;
   backgroundImage?: string;
+  /** Grand Curtain hosts open onto velvet drapes instead of lacquered doors. */
+  curtain?: boolean;
 }) {
   const [opening, setOpening] = useState(false);
   const [show, setShow] = useState(true);
@@ -274,7 +277,7 @@ export function Preloader({
           aria-labelledby="gate-title"
           exit={{ opacity: 0 }}
           transition={{ duration: 0.5 }}
-          className={`heavenly-entrance fixed inset-0 z-[100] overflow-hidden ${opening ? "is-opening" : ""}`}
+          className={`heavenly-entrance fixed inset-0 z-[100] overflow-hidden ${opening ? "is-opening" : ""} ${curtain ? "is-curtain" : ""}`}
         >
           <img
             src={backgroundImage}

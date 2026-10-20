@@ -167,7 +167,10 @@ describe("Profile RSVPs", () => {
 
     render(<Profile />);
     await screen.findByText("Guest RSVPs");
-    fireEvent.click(screen.getByRole("button", { name: /Export all replies/ }));
+    // The export waits for replies to load; click only once it is enabled.
+    const exportAll = screen.getByRole("button", { name: /Export all replies/ });
+    await waitFor(() => expect(exportAll).toBeEnabled());
+    fireEvent.click(exportAll);
 
     await waitFor(() => expect(blobs).toHaveLength(1));
     const csv = await readBlob(blobs[0]);
