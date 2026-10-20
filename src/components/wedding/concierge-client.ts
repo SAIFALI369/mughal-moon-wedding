@@ -85,7 +85,7 @@ export function getInstantConciergeReply(question: string, language: string): st
         (e) => `${e.title}: ${e.date}, ${e.time} IST. ${e.venue}.`,
       ).join("\n"),
       "how do i rsvp":
-        "Please use the RSVP form on the invitation to confirm your attendance: /#rsvp. I cannot submit it for you. Keep private guest and dietary details out of chat.",
+        "Please use the RSVP form on the invitation to confirm your attendance: /demo#rsvp. I cannot submit it for you. Keep private guest and dietary details out of chat.",
       "where are the venues": EVENTS.map(
         (e) =>
           `${e.title}: ${e.venue}, ${e.address}.\nhttps://www.google.com/maps/search/?api=1&query=${encodeURIComponent(e.mapQuery)}`,
@@ -95,13 +95,13 @@ export function getInstantConciergeReply(question: string, language: string): st
     },
     हिन्दी: {
       "rsvp कैसे करें":
-        "अपनी उपस्थिति निमंत्रण के RSVP फ़ॉर्म में दर्ज करें: /#rsvp। मैं आपकी ओर से फ़ॉर्म जमा नहीं कर सकती। निजी जानकारी चैट में न भेजें।",
+        "अपनी उपस्थिति निमंत्रण के RSVP फ़ॉर्म में दर्ज करें: /demo#rsvp। मैं आपकी ओर से फ़ॉर्म जमा नहीं कर सकती। निजी जानकारी चैट में न भेजें।",
       "कार्यक्रम क्या है":
         "निकाह: 22 नवंबर 2026, शाम 4:00 बजे।\nबारात: 22 नवंबर 2026, शाम 7:30 बजे।\nवलीमा: 23 नवंबर 2026, रात 8:00 बजे। सभी समय IST हैं।",
     },
     اردو: {
       "rsvp کیسے کریں":
-        "دعوت نامے کے RSVP فارم میں اپنی شرکت کی تصدیق کریں: /#rsvp۔ میں آپ کی طرف سے فارم جمع نہیں کر سکتی۔ نجی معلومات چیٹ میں نہ بھیجیں۔",
+        "دعوت نامے کے RSVP فارم میں اپنی شرکت کی تصدیق کریں: /demo#rsvp۔ میں آپ کی طرف سے فارم جمع نہیں کر سکتی۔ نجی معلومات چیٹ میں نہ بھیجیں۔",
       "تقریبات کا شیڈول کیا ہے":
         "نکاح: 22 نومبر 2026، شام 4:00 بجے۔\nبارات: 22 نومبر 2026، شام 7:30 بجے۔\nولیمہ: 23 نومبر 2026، رات 8:00 بجے۔ تمام اوقات IST ہیں۔",
     },

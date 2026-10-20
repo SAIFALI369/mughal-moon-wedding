@@ -27,14 +27,7 @@ export const createInvitationCard = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { supabase, userId } = context;
     const slug = data.slug?.trim() ? data.slug.trim().toLowerCase() : generateSlug(data.title);
-    const { data: existing, error: countError } = await supabase
-      .from("invitation_cards")
-      .select("id", { count: "exact" })
-      .eq("owner_id", userId);
-    if (countError) throw new Error(countError.message);
-    if ((existing?.length ?? 0) >= 3) {
-      throw new Error("You may have at most 3 active cards. Delete one before creating another.");
-    }
+    // The atomic database credit trigger is authoritative on every create path.
     const { data: inserted, error } = await supabase
       .from("invitation_cards")
       .insert({

@@ -14,7 +14,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "partner:account": "node scripts/partner-account.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1",

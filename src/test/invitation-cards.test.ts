@@ -158,12 +158,14 @@ describe("username-only authentication UI", () => {
   it("uses username RPC registration/login without email or recovery forms", () => {
     const signUp = readFileSync(new URL("../routes/sign-up.tsx", import.meta.url), "utf8");
     const signIn = readFileSync(new URL("../routes/sign-in.tsx", import.meta.url), "utf8");
-    expect(signUp).toContain('rpc("register_username"');
+    expect(signUp).toContain('redirect({ to: "/sign-in"');
+    expect(signUp).not.toContain('rpc("register_username"');
     expect(signUp).not.toContain('type="email"');
     expect(signUp).not.toContain('auth.signUp');
     expect(signIn).toContain('rpc("username_login_address"');
     expect(signIn).toContain("signInWithPassword");
     expect(signIn).not.toContain('to="/recover"');
-    expect(signUp).toContain("no password reset or recovery");
+    expect(signIn).toContain("Contact the InvitingYou representative");
+    expect(signIn).not.toContain('to="/sign-up"');
   });
 });

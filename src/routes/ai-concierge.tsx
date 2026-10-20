@@ -309,7 +309,7 @@ function AiConcierge() {
             <button onClick={clearHistory} className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-ivory/20 px-3 py-2 text-xs text-ivory/80 hover:bg-ivory/10">
               <Trash2 size={14} /> Clear
             </button>
-            <Link to="/" className="flex flex-1 items-center justify-center rounded-xl bg-ivory px-3 py-2 text-xs font-medium text-burgundy-deep hover:bg-ivory/90 text-center">
+            <Link to="/demo" className="flex flex-1 items-center justify-center rounded-xl bg-ivory px-3 py-2 text-xs font-medium text-burgundy-deep hover:bg-ivory/90 text-center">
               {text.back}
             </Link>
           </div>
@@ -384,7 +384,7 @@ function AiConcierge() {
                       {m.role === "assistant" && (
                         <div className="mt-3 flex gap-2">
                           <button onClick={() => navigator.clipboard.writeText(m.text)} className="rounded-full border border-gold/20 px-3 py-1 text-xs hover:bg-gold/10">Copy</button>
-                          <Link to="/" hash="rsvp" className="rounded-full bg-burgundy px-3 py-1 text-xs text-ivory hover:bg-burgundy/90">{text.rsvp}</Link>
+                          <Link to="/demo" hash="rsvp" className="rounded-full bg-burgundy px-3 py-1 text-xs text-ivory hover:bg-burgundy/90">{text.rsvp}</Link>
                         </div>
                       )}
                     </div>
@@ -461,7 +461,7 @@ function AiConcierge() {
                 </button>
               </div>
             </form>
-            <p className="mt-2 text-center text-xs text-muted-foreground">Simran can make mistakes. Verify dates: 22–23 Nov 2026. <Link to="/" className="underline">Invitation</Link> • <a href="#rsvp" className="underline">RSVP</a></p>
+            <p className="mt-2 text-center text-xs text-muted-foreground">Simran can make mistakes. Verify dates: 22–23 Nov 2026. <Link to="/demo" className="underline">Invitation</Link> • <a href="/demo#rsvp" className="underline">RSVP</a></p>
           </div>
         </div>
       </div>
