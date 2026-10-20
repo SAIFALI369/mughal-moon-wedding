@@ -18,7 +18,11 @@ import {
   invitationMapEmbedUrl,
   isSafePortrait,
 } from "@/components/wedding/invitation-details";
-import { invitationRsvpSchema } from "@/components/wedding/invitation-rsvp-schema";
+import {
+  guestNameError,
+  invitationRsvpSchema,
+  normalizeGuestName,
+} from "@/components/wedding/invitation-rsvp-schema";
 
 const basics = {
   groomName: "Ayaan",
@@ -179,6 +183,7 @@ describe("creator invitation design and input", () => {
             content={card}
             showGate={false}
             slug="ayaan-weds-zara"
+            cardId="c0000000-0000-4000-8000-000000000001"
           />,
         );
         expect(markup).toContain('id="gallery"');
@@ -191,6 +196,10 @@ describe("creator invitation design and input", () => {
         expect(markup).toContain("output=embed");
         expect(markup).toContain("/invite/ayaan-weds-zara");
         expect(markup).toContain("City Hall");
+        // Guests may look at the gallery, never upload to it.
+        expect(markup).not.toContain("invite-gallery-add");
+        expect(markup).not.toContain('type="file"');
+        expect(markup).toContain("View only");
         expect(markup).not.toContain("Mohsin");
         expect(markup).not.toContain("Simran");
         expect(markup).not.toContain("20261122");
@@ -280,17 +289,66 @@ describe("creator invitation design and input", () => {
     expect(invitationMapEmbedUrl("  ")).toBeNull();
   });
 
+  it("requires a real guest name and rejects placeholders, numbers and initials", () => {
+    expect(normalizeGuestName("  Ayesha\u00A0  Khan  ")).toBe("Ayesha Khan");
+    for (const good of [
+      "Ayesha Khan",
+      "Mohammad Obaidullah",
+      "A. R. Rahman",
+      "Jean-Luc Picard",
+      "O'Brien",
+      "रेशम बेगम",
+    ]) {
+      expect(guestNameError(good)).toBeNull();
+    }
+    for (const bad of [
+      "",
+      "   ",
+      "A",
+      "1234",
+      "A2",
+      "test",
+      "guest",
+      "a guest",
+      "A B",
+      "aaaaaaaa",
+      "someone@example.com",
+      "https://example.com",
+      "Ahmed 😀",
+      "Ahmed 2",
+    ]) {
+      expect(guestNameError(bad)).not.toBeNull();
+    }
+    const base = {
+      card_id: "c0000000-0000-4000-8000-000000000001",
+      attending: true,
+      guests: 1,
+      contact: "",
+      dietary: "",
+      message: "",
+    };
+    expect(invitationRsvpSchema.safeParse({ ...base, name: "  Ayesha   Khan " }).success).toBe(
+      true,
+    );
+    expect(invitationRsvpSchema.parse({ ...base, name: "  Ayesha   Khan " }).name).toBe(
+      "Ayesha Khan",
+    );
+    for (const bad of ["", "A", "1234", "test"]) {
+      expect(invitationRsvpSchema.safeParse({ ...base, name: bad }).success).toBe(false);
+    }
+  });
+
   it("validates the insert-only RSVP payload, including attendance and guest count", () => {
     const reply = {
       card_id: "c0000000-0000-4000-8000-000000000001",
-      name: " Guest ",
+      name: " Ayesha Khan ",
       attending: true,
       guests: 2,
       contact: "",
       dietary: "",
       message: "",
     };
-    expect(invitationRsvpSchema.parse(reply).name).toBe("Guest");
+    expect(invitationRsvpSchema.parse(reply).name).toBe("Ayesha Khan");
     expect(invitationRsvpSchema.safeParse({ ...reply, guests: 11 }).success).toBe(false);
     expect(invitationRsvpSchema.safeParse({ ...reply, attending: false, guests: 1 }).success).toBe(
       false,

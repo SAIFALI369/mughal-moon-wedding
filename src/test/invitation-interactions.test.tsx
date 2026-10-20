@@ -18,6 +18,7 @@ function Editor({ compact = false }: { compact?: boolean }) {
 }
 
 beforeEach(() => {
+  window.localStorage.clear();
   from.mockReturnValue({ insert });
   insert.mockClear();
   from.mockClear();
@@ -103,7 +104,9 @@ describe("invitation editor and guest reply", () => {
   it("sends only the current guest's validated RSVP as an insert, never a SELECT", async () => {
     const cardId = "c0000000-0000-4000-8000-000000000001";
     render(<InvitationRsvp cardId={cardId} />);
-    fireEvent.change(screen.getByLabelText("Your name *"), { target: { value: "  A Guest  " } });
+    fireEvent.change(screen.getByLabelText("Your full name *"), {
+      target: { value: "  Ayesha   Khan  " },
+    });
     fireEvent.change(screen.getByLabelText("Email or phone (optional)"), {
       target: { value: "guest@example.invalid" },
     });
@@ -114,7 +117,7 @@ describe("invitation editor and guest reply", () => {
     expect(insert).toHaveBeenCalledWith(
       expect.objectContaining({
         card_id: cardId,
-        name: "A Guest",
+        name: "Ayesha Khan",
         attending: false,
         guests: 0,
         contact: "guest@example.invalid",
@@ -122,5 +125,33 @@ describe("invitation editor and guest reply", () => {
       }),
     );
     expect(screen.getByText(/Thank you for replying/)).toBeInTheDocument();
+  });
+
+  it("accepts only one reply per device and remembers it after a reload", async () => {
+    const cardId = "c0000000-0000-4000-8000-000000000002";
+    const first = render(<InvitationRsvp cardId={cardId} />);
+    fireEvent.change(screen.getByLabelText("Your full name *"), {
+      target: { value: "Ayesha Khan" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Send my reply/i }));
+    await waitFor(() => expect(insert).toHaveBeenCalledOnce());
+    first.unmount();
+
+    render(<InvitationRsvp cardId={cardId} />);
+    expect(await screen.findByText(/already with the host/i)).toBeInTheDocument();
+    expect(screen.queryByLabelText("Your full name *")).not.toBeInTheDocument();
+    expect(insert).toHaveBeenCalledOnce();
+  });
+
+  it("refuses numbers, initials and placeholder names before writing anything", async () => {
+    const cardId = "c0000000-0000-4000-8000-000000000003";
+    render(<InvitationRsvp cardId={cardId} />);
+    for (const bad of ["12345", "A", "test", "guest"]) {
+      fireEvent.change(screen.getByLabelText("Your full name *"), { target: { value: bad } });
+      fireEvent.click(screen.getByRole("button", { name: /Send my reply/i }));
+      await waitFor(() => expect(insert).not.toHaveBeenCalled());
+      expect(screen.getAllByRole("alert").length).toBeGreaterThan(0);
+    }
+    expect(insert).not.toHaveBeenCalled();
   });
 });

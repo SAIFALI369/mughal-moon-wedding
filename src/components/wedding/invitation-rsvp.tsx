@@ -1,13 +1,40 @@
-import { useEffect, useState, type FormEvent } from "react";
+import { useEffect, useRef, useState, type FormEvent } from "react";
 import confetti from "canvas-confetti";
-import { CheckCircle2, HeartHandshake } from "lucide-react";
-import { invitationRsvpSchema } from "./invitation-rsvp-schema";
+import { Ban, CheckCircle2, HeartHandshake } from "lucide-react";
+import { guestNameError, invitationRsvpSchema, normalizeGuestName } from "./invitation-rsvp-schema";
 import { supabase } from "@/lib/db";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { SectionTitle } from "./ornaments";
+
+const REPLY_STORAGE_PREFIX = "invitation-rsvp:";
+
+/**
+ * One reply per device. Only a marker is stored — never the guest's name or
+ * contact details — so a shared phone or tablet reveals nothing to the next
+ * person who opens the invitation.
+ */
+function hasStoredReply(cardId?: string): boolean {
+  if (!cardId || typeof window === "undefined") return false;
+  try {
+    return window.localStorage.getItem(`${REPLY_STORAGE_PREFIX}${cardId}`) !== null;
+  } catch {
+    return false;
+  }
+}
+
+function rememberReply(cardId: string) {
+  try {
+    window.localStorage.setItem(
+      `${REPLY_STORAGE_PREFIX}${cardId}`,
+      JSON.stringify({ at: new Date().toISOString() }),
+    );
+  } catch {
+    // Storage can be unavailable (private mode); the in-flight guard still applies.
+  }
+}
 
 export function InvitationRsvp({
   cardId,
@@ -28,20 +55,39 @@ export function InvitationRsvp({
   const [busy, setBusy] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [error, setError] = useState("");
+  const [nameError, setNameError] = useState("");
   const [invitedGuest, setInvitedGuest] = useState("");
+  const [alreadyReplied, setAlreadyReplied] = useState(false);
+  const submitting = useRef(false);
 
   // Personalised links (/invite/slug?guest=Name) greet the guest and prefill RSVP.
   useEffect(() => {
     if (preview) return;
     const invited = new URLSearchParams(window.location.search).get("guest")?.trim();
     if (!invited) return;
-    const clean = invited.replace(/[\r\n\t]+/g, " ").slice(0, 100);
+    const clean = normalizeGuestName(invited).slice(0, 100);
     setInvitedGuest(clean);
-    setName((current) => current || clean);
+    // Only prefill a name that would pass validation; a messy link must not
+    // put a guest in front of an error they cannot see.
+    if (!guestNameError(clean)) setName((current) => current || clean);
   }, [preview]);
 
+  // A device that already replied never gets a second form.
+  useEffect(() => {
+    if (preview) return;
+    setAlreadyReplied(hasStoredReply(cardId));
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === `${REPLY_STORAGE_PREFIX}${cardId}`)
+        setAlreadyReplied(hasStoredReply(cardId));
+    };
+    window.addEventListener("storage", onStorage);
+    return () => window.removeEventListener("storage", onStorage);
+  }, [cardId, preview]);
+
   function canCelebrate(): boolean {
-    if (typeof document === "undefined") return false;
+    if (typeof document === "undefined" || typeof window === "undefined") return false;
+    // jsdom has no 2D canvas; skip the animation instead of logging noise.
+    if (typeof window.CanvasRenderingContext2D === "undefined") return false;
     try {
       // A headless test browser has no 2D canvas; skip the animation there.
       const context = document.createElement("canvas").getContext("2d");
@@ -71,13 +117,27 @@ export function InvitationRsvp({
 
   async function submit(event: FormEvent) {
     event.preventDefault();
+    if (submitting.current) return;
+    if (alreadyReplied) {
+      setError("A reply was already sent from this device.");
+      return;
+    }
     if (website) {
       setSubmitted(true);
       return;
     } // honeypot: no guest data stored
+    const trimmedName = normalizeGuestName(name);
+    const nameIssue = guestNameError(trimmedName);
+    if (nameIssue) {
+      setNameError(nameIssue);
+      setError(nameIssue);
+      return;
+    }
+    setNameError("");
+    setError("");
     const parsed = invitationRsvpSchema.safeParse({
       card_id: cardId,
-      name,
+      name: trimmedName,
       attending,
       guests: attending ? guests : 0,
       contact,
@@ -89,12 +149,15 @@ export function InvitationRsvp({
       return;
     }
     setBusy(true);
+    submitting.current = true;
     setError("");
     try {
       // Insert only. Visitors cannot read other guests' replies; RLS also blocks
       // submissions to drafts, expired cards, or cards whose host disabled RSVP.
       const { error: insertError } = await supabase.from("invitation_rsvps").insert(parsed.data);
       if (insertError) throw insertError;
+      rememberReply(cardId!);
+      setAlreadyReplied(true);
       setSubmitted(true);
       celebrate();
     } catch (err: unknown) {
@@ -104,6 +167,7 @@ export function InvitationRsvp({
           : "Your reply could not be saved. Please try again in a moment.";
       setError(message);
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -127,6 +191,18 @@ export function InvitationRsvp({
             This is a private preview. Guest replies appear here when you publish and share your
             card.
           </p>
+        ) : alreadyReplied && !submitted ? (
+          <div role="status" className="text-center">
+            <Ban className="mx-auto h-11 w-11 text-gold" aria-hidden="true" />
+            <h3 className="mt-5 font-serif text-3xl">Your reply is already with the host</h3>
+            <p className="mt-3 text-sm text-muted-foreground">
+              One reply per device is accepted, and this device has already replied to this
+              invitation.
+            </p>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Need to change your answer? Please contact the host directly.
+            </p>
+          </div>
         ) : submitted ? (
           <div role="status" className="text-center">
             <CheckCircle2 className="mx-auto h-12 w-12 text-gold" aria-hidden="true" />
@@ -138,15 +214,30 @@ export function InvitationRsvp({
         ) : (
           <form onSubmit={submit} className="space-y-6">
             <div className="space-y-2">
-              <Label htmlFor="guest-name">Your name *</Label>
+              <Label htmlFor="guest-name">Your full name *</Label>
               <Input
                 id="guest-name"
                 value={name}
-                onChange={(e) => setName(e.target.value)}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  if (nameError) setNameError(guestNameError(e.target.value) ?? "");
+                }}
+                onBlur={() => setNameError(name ? (guestNameError(name) ?? "") : "")}
                 maxLength={100}
                 required
-                placeholder="Your full name"
+                autoComplete="name"
+                aria-invalid={nameError ? true : undefined}
+                aria-describedby="guest-name-hint"
+                placeholder="Your full name, as written on the invitation"
               />
+              <p
+                id="guest-name-hint"
+                className={nameError ? "text-xs text-destructive" : "text-xs text-muted-foreground"}
+                role={nameError ? "alert" : undefined}
+              >
+                {nameError ||
+                  "Required. Use your real name — letters only, no initials, numbers or emoji."}
+              </p>
             </div>
             <fieldset>
               <legend className="mb-3 text-sm font-medium">Will you join us? *</legend>

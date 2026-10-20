@@ -1,10 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from "react";
-import { Camera, ChevronLeft, ChevronRight, ImagePlus, Loader2, Trash2, X } from "lucide-react";
+import { useCallback, useEffect, useState } from "react";
+import { Camera, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { supabase } from "@/lib/db";
-import { useAuth } from "@/lib/auth-context";
 import type { InvitationDetails } from "./invitation-details";
-import { compressPhoto, GUEST_PHOTO_LIMIT } from "./photo-utils";
-import { toast } from "sonner";
 import { SuiteHeading } from "./invitation-ornaments";
 
 type GalleryPhoto = {
@@ -14,12 +11,11 @@ type GalleryPhoto = {
   source: "host" | "guest" | "portrait";
 };
 
-const HOST_PHOTO_LIMIT = 12;
-
 /**
  * The card's shared gallery. The first two frames are the couple's own
- * portraits (when supplied); guests and the host can add photos afterwards.
- * Everything is scoped to this one card, so links never leak between weddings.
+ * portraits (when supplied); every other photo is added by the host from the
+ * card editor. Guests can look, open the lightbox and nothing more — the
+ * database rejects anonymous uploads even if somebody calls it directly.
  */
 export function InvitationGallery({
   cardId,
@@ -30,13 +26,10 @@ export function InvitationGallery({
   details: InvitationDetails;
   preview?: boolean;
 }) {
-  const { user } = useAuth();
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
   const [loading, setLoading] = useState(false);
-  const [busy, setBusy] = useState(false);
   const [status, setStatus] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const portraits: GalleryPhoto[] = [];
   if (details.elements.portraits) {
@@ -110,85 +103,6 @@ export function InvitationGallery({
     return () => window.removeEventListener("keydown", onKey);
   }, [selected, items.length]);
 
-  async function upload(files: FileList | null) {
-    if (!files?.length || busy) return;
-    if (!cardId) {
-      setStatus("Publish the invitation before adding photos.");
-      return;
-    }
-    const guestCount = photos.filter((photo) => photo.source === "guest").length;
-    const remainingGuest = Math.max(0, GUEST_PHOTO_LIMIT - guestCount);
-    const remainingHost = Math.max(0, HOST_PHOTO_LIMIT - photos.length);
-    const remaining = user ? remainingHost : Math.min(remainingGuest, remainingHost);
-    if (remaining === 0) {
-      setStatus(
-        user
-          ? "This gallery already holds twelve photos."
-          : `Only ${GUEST_PHOTO_LIMIT} guest photos are allowed for this invitation.`,
-      );
-      return;
-    }
-    const chosen = Array.from(files).slice(0, remaining);
-    setBusy(true);
-    setStatus("");
-    let saved = 0;
-    try {
-      for (const file of chosen) {
-        const image = await compressPhoto(file);
-        const { error } = await supabase.rpc("add_invitation_photo", {
-          p_card_id: cardId,
-          photo_data: image,
-          photo_caption: user
-            ? `${details.groomName} & ${details.brideName}`
-            : "A memory shared with love",
-        });
-        if (error) {
-          throw new Error(
-            error.message.includes("five guest photos")
-              ? "All five guest photo slots are filled."
-              : error.message.includes("twelve photos")
-                ? "This gallery already holds twelve photos."
-                : error.message.includes("2 MB")
-                  ? "Photo exceeds the 2 MB limit."
-                  : "Photo could not be saved. Try a smaller JPEG.",
-          );
-        }
-        saved += 1;
-      }
-      await load();
-      setStatus(`${saved} photo${saved === 1 ? "" : "s"} added. Thank you!`);
-      toast.success(`${saved} photo${saved === 1 ? "" : "s"} added`);
-    } catch (error) {
-      setStatus(
-        `${saved ? `${saved} saved. ` : ""}${error instanceof Error ? error.message : "Upload failed."}`,
-      );
-      toast.error(error instanceof Error ? error.message : "Upload failed");
-    } finally {
-      setBusy(false);
-      if (inputRef.current) inputRef.current.value = "";
-    }
-  }
-
-  async function remove(photo: GalleryPhoto) {
-    if (!cardId) return;
-    if (!confirm("Remove this photo from the gallery?")) return;
-    setBusy(true);
-    try {
-      const { error } = await supabase.rpc("delete_invitation_photo", {
-        p_card_id: cardId,
-        target_slot: photo.slot,
-      });
-      if (error) throw error;
-      await load();
-      setSelected(null);
-      toast.success("Photo removed");
-    } catch {
-      toast.error("Only the host can remove this photo.");
-    } finally {
-      setBusy(false);
-    }
-  }
-
   const current = selected !== null ? items[selected] : undefined;
 
   return (
@@ -198,7 +112,7 @@ export function InvitationGallery({
     >
       <SuiteHeading eyebrow="Gallery">Moments of Us</SuiteHeading>
       <p className="invite-suite-sub">
-        Portraits, celebration frames and photos shared by guests — all in one place.
+        Portraits and celebration frames, shared by the hosts — tap any photo to see it larger.
       </p>
 
       {items.length > 0 ? (
@@ -235,44 +149,17 @@ export function InvitationGallery({
           </div>
           <p className="invite-gallery-empty">
             {preview || !cardId
-              ? "This is where your shared gallery appears. Publish the card, then add portraits above and let guests add their own frames."
-              : "Be the first to add a photo from the celebration."}
+              ? "This is where the hosts' gallery appears. Add portraits and gallery photos in the Photos panel, then publish the card."
+              : "The hosts haven't added photos yet. Please check back soon."}
           </p>
         </div>
       )}
 
-      {!preview && cardId && (
-        <div className="invite-gallery-actions">
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/jpeg,image/png,image/webp"
-            multiple
-            className="sr-only"
-            aria-label="Choose photos for the gallery"
-            onChange={(event) => void upload(event.target.files)}
-          />
-          <button
-            type="button"
-            className="invite-gallery-add"
-            disabled={busy}
-            onClick={() => inputRef.current?.click()}
-          >
-            {busy ? (
-              <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
-            ) : (
-              <ImagePlus className="h-4 w-4" aria-hidden="true" />
-            )}
-            {busy ? "Adding photo…" : "Add a photo"}
-          </button>
-          <p className="invite-gallery-note">
-            <Camera className="h-3.5 w-3.5" aria-hidden="true" />
-            {user
-              ? "Host upload · up to twelve photos per invitation"
-              : "Guest upload · five shared slots per invitation"}
-          </p>
-        </div>
-      )}
+      <p className="invite-gallery-note invite-gallery-note-readonly">
+        <Camera className="h-3.5 w-3.5" aria-hidden="true" />
+        View only · photos are added by the hosts
+      </p>
+
       {loading && (
         <p className="invite-gallery-status" role="status">
           Loading shared photos…
@@ -314,16 +201,6 @@ export function InvitationGallery({
                 <p className="invite-lightbox-caption">{current.caption}</p>
               </div>
               <div className="invite-lightbox-controls">
-                {user && current.source !== "portrait" && (
-                  <button
-                    type="button"
-                    aria-label="Remove photo"
-                    disabled={busy}
-                    onClick={() => void remove(current)}
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
-                )}
                 <button
                   type="button"
                   aria-label="Previous photo"
