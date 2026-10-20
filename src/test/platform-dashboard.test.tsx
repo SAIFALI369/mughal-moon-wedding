@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { Dashboard } from "@/routes/dashboard";
@@ -129,6 +129,58 @@ describe("Personal invitation workspace", () => {
     });
     expect(screen.getByRole("button", { name: /Mughal Night/ })).toBeDisabled();
   });
+  it("shows a printable QR code for each card", async () => {
+    mocks.rows = [
+      {
+        id: "card-qr",
+        title: "Ayesha & Imran",
+        slug: "ayesha-imran",
+        status: "published",
+        content: {
+          groomName: "Imran",
+          brideName: "Ayesha",
+          date: "12 December 2026",
+          venue: "Pearl Hall",
+        },
+        created_at: "2026-10-19",
+        updated_at: "2026-10-19",
+      },
+    ];
+    render(<Dashboard />);
+    await screen.findByText("1 active invitations");
+    fireEvent.click(screen.getByRole("button", { name: "QR" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/\/invite\/ayesha-imran/)).toBeInTheDocument();
+    expect(dialog.querySelector("svg path")).not.toBeNull();
+    expect(within(dialog).getByRole("button", { name: /SVG for print/ })).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: /Print insert/ })).toBeInTheDocument();
+
+    // A personalised QR embeds the guest greeting.
+    fireEvent.change(within(dialog).getByLabelText(/Guest name on the QR/), {
+      target: { value: "Uncle Ahmed" },
+    });
+    expect(within(dialog).getByText(/guest=Uncle%20Ahmed/)).toBeInTheDocument();
+  });
+
+  it("warns that a draft QR will not work until publishing", async () => {
+    mocks.rows = [
+      {
+        id: "card-draft",
+        title: "Draft Card",
+        slug: "draft-card",
+        status: "draft",
+        content: {},
+        created_at: "2026-10-19",
+        updated_at: "2026-10-19",
+      },
+    ];
+    render(<Dashboard />);
+    await screen.findByText("1 active invitations");
+    fireEvent.click(screen.getByRole("button", { name: "QR" }));
+    const dialog = await screen.findByRole("dialog");
+    expect(within(dialog).getByText(/still a draft/i)).toBeInTheDocument();
+  });
+
   it("keeps package details and templates off the default invitation screen", async () => {
     render(<Dashboard />);
     await screen.findByText("Your next customer’s story starts here.");
