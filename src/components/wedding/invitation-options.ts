@@ -9,6 +9,8 @@ export const invitationThemeIds = [
   "futuristic",
   "fairytale",
   "ballroom",
+  "diya-utsav",
+  "sacred-mandap",
 ] as const;
 export type InvitationTheme = (typeof invitationThemeIds)[number];
 
@@ -86,6 +88,18 @@ export const invitationThemes: {
     label: "Grand Ballroom",
     description: "Crystal chandeliers, candlelight and champagne gold",
     swatch: "#e8d3a8",
+  },
+  {
+    id: "diya-utsav",
+    label: "Diya Utsav",
+    description: "A hundred lamps, rangoli and fireworks for a Hindu wedding night",
+    swatch: "#f0a24a",
+  },
+  {
+    id: "sacred-mandap",
+    label: "Sacred Mandap",
+    description: "A sunlit flower mandap with a living havan fire",
+    swatch: "#e9c98a",
   },
 ];
 

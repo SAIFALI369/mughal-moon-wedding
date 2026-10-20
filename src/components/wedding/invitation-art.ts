@@ -6,6 +6,8 @@ import luxury from "@/assets/themes/luxury.webp";
 import futuristic from "@/assets/themes/futuristic.webp";
 import fairytale from "@/assets/themes/fairytale.webp";
 import ballroom from "@/assets/themes/ballroom.webp";
+import diyaUtsav from "@/assets/themes/diya-utsav.webp";
+import sacredMandap from "@/assets/themes/sacred-mandap.webp";
 import type { InvitationTheme } from "./invitation-options";
 
 export const invitationArt: Record<InvitationTheme, string> = {
@@ -19,4 +21,6 @@ export const invitationArt: Record<InvitationTheme, string> = {
   futuristic,
   fairytale,
   ballroom,
+  "diya-utsav": diyaUtsav,
+  "sacred-mandap": sacredMandap,
 };

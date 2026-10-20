@@ -17,6 +17,7 @@ export function emptyInvitationForm(): InvitationForm {
     story: "",
     hosts: "",
     hostName: "",
+    riteLine: "",
     dressCode: "",
     contactName: "",
     contactPhone: "",

@@ -72,6 +72,20 @@ const PALETTES: Record<string, PrintPalette> = {
     soft: "#846f52",
     tint: "#f8eed6",
   },
+  "diya-utsav": {
+    paper: "#fdf6ec",
+    ink: "#3a1c12",
+    accent: "#c2601c",
+    soft: "#8a6a55",
+    tint: "#fbe7d2",
+  },
+  "sacred-mandap": {
+    paper: "#fdf9ef",
+    ink: "#3b2416",
+    accent: "#a8541f",
+    soft: "#87705a",
+    tint: "#f9efdc",
+  },
 };
 
 export function paletteForTheme(theme: string): PrintPalette {

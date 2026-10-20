@@ -9,6 +9,8 @@ import {
 } from "./concierge-ui";
 import { getInstantConciergeReply, requestConcierge } from "./concierge-client";
 import { getAiVisitorId } from "@/lib/ai-visitor";
+import { LivingScene, riteBlessing } from "./invitation-rite";
+import type { InvitationTheme } from "./invitation-options";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import confetti from "canvas-confetti";
@@ -227,6 +229,7 @@ export function Preloader({
   enableMusic = true,
   backgroundImage = eidSky,
   curtain = false,
+  theme,
 }: {
   onDone: () => void;
   groomName?: string;
@@ -236,10 +239,17 @@ export function Preloader({
   backgroundImage?: string;
   /** Grand Curtain hosts open onto velvet drapes instead of lacquered doors. */
   curtain?: boolean;
+  /** Drives the tradition's blessing and the living fire/firework layer. */
+  theme?: InvitationTheme;
 }) {
   const [opening, setOpening] = useState(false);
   const [show, setShow] = useState(true);
   const enterButton = useRef<HTMLButtonElement>(null);
+  const gateBlessing = theme
+    ? (riteBlessing(theme) ?? (enableMusic ? null : riteBlessing("eid")))
+    : riteBlessing("eid");
+  const gateReduced =
+    typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   useEffect(() => {
     if (!show) return;
@@ -289,6 +299,7 @@ export function Preloader({
             className="gate-sky absolute inset-0 h-full w-full object-cover object-right"
           />
           <div className="gate-radiance" aria-hidden="true" />
+          {theme && <LivingScene theme={theme} variant="gate" reduce={gateReduced} />}
           <div className="heavenly-gate gate-left" aria-hidden="true">
             <div className="gate-arch" />
           </div>
@@ -297,9 +308,16 @@ export function Preloader({
           </div>
           <Sparkles count={45} />
           <div className="gate-welcome relative z-10 flex h-full flex-col items-center justify-center overflow-y-auto px-6 py-10 text-center text-foreground">
-            <p dir="rtl" className="font-arabic text-2xl text-gold-light sm:text-3xl">
-              بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-            </p>
+            {gateBlessing && (
+              <p
+                dir={gateBlessing.script === "arabic" ? "rtl" : "ltr"}
+                className={`${
+                  gateBlessing.script === "arabic" ? "font-arabic" : "font-sanskrit"
+                } text-2xl text-gold-light sm:text-3xl`}
+              >
+                {gateBlessing.text}
+              </p>
+            )}
             <p className="mt-6 text-[10px] uppercase tracking-[0.3em] text-gold sm:tracking-[0.5em]">
               Together with their families
             </p>
@@ -364,6 +382,7 @@ export function Hero({
   compactNames = false,
   backgroundImage = eidSky,
   portraits,
+  theme,
 }: {
   guestName?: string;
   groomName?: string;
@@ -375,6 +394,8 @@ export function Hero({
   compactNames?: boolean;
   backgroundImage?: string;
   portraits?: ReactNode;
+  /** Adds the theme's living fire / firework layer above the hero art. */
+  theme?: InvitationTheme;
 }) {
   const ref = useRef<HTMLElement>(null);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
@@ -399,6 +420,16 @@ export function Hero({
           className="h-full w-full object-cover object-right"
         />
       </motion.div>
+      {theme && (
+        <LivingScene
+          theme={theme}
+          variant="hero"
+          reduce={
+            typeof window !== "undefined" &&
+            window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          }
+        />
+      )}
       <Sparkles count={85} />
       <GlimmeringButterflies />
       <motion.div style={{ opacity: fade }} className="relative z-10 px-6 pt-12 text-center">

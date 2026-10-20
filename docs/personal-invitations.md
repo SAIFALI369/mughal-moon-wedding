@@ -4,7 +4,7 @@
 
 1. Sign in and open **Your invitations** (`/dashboard`). A new card starts as a **private draft**; each account can have up to three active cards.
 2. Fill in both names, a real wedding date, the time, venue, address/city and main ceremony. All six essential wedding details always appear on the invitation. Add a message, story, hosting families, host contact, arrival notes, RSVP-by date and up to four extra events if you wish. The **host name** field names your card's own AI assistant; if it is blank, the host contact, family line and finally the groom's first name are used.
-3. Choose a **theme** (Eid Light, Mughal Night, Classic, Aladin, Bihari Vibe, Mecca–Madinah, Luxury, Futuristic, Fairytale Castle or Grand Ballroom) and separately a **framework** (Moonlit Journey, Royal Folio, Cinematic Stage, Modern Mosaic or Grand Curtain). The cover and full preview update immediately. The original moonlit gate/hero remains the default.
+3. Choose a **theme** (Eid Light, Mughal Night, Classic, Aladin, Bihari Vibe, Mecca–Madinah, Luxury, Futuristic, Fairytale Castle, Grand Ballroom, Diya Utsav or Sacred Mandap) and separately a **framework** (Moonlit Journey, Royal Folio, Cinematic Stage, Modern Mosaic or Grand Curtain). The cover and full preview update immediately. The original moonlit gate/hero remains the default.
 4. Add up to five songs (title + an `https://` audio link or a bundled `/audio/` file). Guests get a private soundtrack panel; nothing auto-plays. Quick-add buttons offer the six local instrumentals. Only share audio you have permission to distribute.
 5. Optionally upload groom and bride portraits. JPEG, PNG and WebP files up to 8 MB are resized and converted locally in the browser to JPEG data URLs under 180 KB each. Remove a photo at any time. In the same **Photos** panel, add up to twelve shared gallery photos. **Only you can add or remove gallery photos**; guests get a read-only gallery with the lightbox. Choose which optional sections are visible, including the opening gate, portraits, gallery, wishes wall and RSVP.
 6. Preview before publishing. Only published, unexpired cards have public links. Publish and share the card's `/invite/:slug` link. To see guest replies, visit **My profile & RSVPs** (`/profile`) or the **RSVPs** link on a card. Only you can see replies for cards you own. Unpublishing stops new submissions while preserving existing replies for you; deleting a card removes its replies too.
@@ -42,6 +42,25 @@ Practical notes:
 - The effect is CSS transform and opacity only — no video file, no autoplay, no sound. It works offline and downloads nothing extra.
 - `prefers-reduced-motion` visitors get a still, fully readable hero with no curtains, and the scroll timelines are skipped in browsers that do not support them (the sections simply appear in place).
 - Phones get a shorter hero and slightly wider drapes so the names keep a clear channel.
+
+## Hindu themes, Sanskrit and living fire
+
+Two Hindu themes join the collection. Both are full members of the suite — cover, gate, ornaments, print palettes and QR inserts included.
+
+- **Diya Utsav** — a Hindu wedding night: hundreds of clay lamps along a marble courtyard, a marigold rangoli, garlanded temple pillars and fireworks over a distant shikhara.
+- **Sacred Mandap** — a sunlit flower mandap with carved pillars, marigold garlands, brass kalash and a havan kund in the centre.
+
+**Sanskrit.** Cards on these themes show **॥ श्री गणेशाय नमः ॥** above the names and on the opening gate, set in *Tiro Devanagari Sanskrit* (loaded from Google Fonts alongside Amiri). A second line is yours: the **Blessing or opening line** field accepts anything up to 80 characters, such as `॥ शुभ विवाह ॥` or `सर्वे भवन्तु सुखिनः`. Starting a Diya Utsav or Sacred Mandap card also defaults the ceremony to **Shubh Vivah** and the line to `॥ शुभ विवाह ॥`; both are editable. Cards on the Muslim themes keep the Bismillah, and the neutral themes keep the star ornament.
+
+**Mandap stage.** On these themes the top of the card becomes a *Mandap Aarti* stage instead of the generic hero: a taller sticky section where scrolling walks the guest under a swinging flower canopy (hanging bells sway) while the artwork pushes forward and a **living havan fire** — three flame tongues plus rising embers — burns at the foot of the stage.
+
+**Living fire in every theme.** All twelve themes now carry a `LivingScene` layer over their artwork:
+
+- **Fireworks** — four repeating CSS bursts in warm gold, rose and ice-blue, each on its own long, offset cycle, so the sky is always changing; light themes get a softer subset.
+- **Diyas** — five clay lamps with flickering flames and breathing glows along the floor of the hero and the gate (Hindu themes and the gate of every card can show them).
+- **Bokeh and embers** — slow golden haze and sparks drifting upward for depth.
+
+It is all CSS gradients and keyframes: no video file, no canvas, no audio, nothing fetched. That means it also works offline and never blocks the card, and it costs no bandwidth on a phone. `prefers-reduced-motion` freezes everything into a single still frame.
 
 ## Print package: QR, inserts and A5 artwork
 
@@ -132,6 +151,6 @@ Identical SQL lives in `drizzle/migrations/0009_private_card_rsvps_and_portraits
 
 ## Local verification
 
-`npm test` includes all 10 × 5 theme/framework combinations (including gallery, wishes, map and share sections in every one), required-field and element-selection tests, a browser-form mock for portrait compression and RSVP insertion, and PGlite policy tests for anonymous insert, owner-only reads, the twelve-photo limit, gallery and wishes toggles, expired or draft cards, refused anonymous gallery uploads and rejected invalid RSVP names. The print package is covered separately: `src/test/guest-list.test.ts` (CSV quoting, header detection, dedupe, rejected rows, the 300-guest cap), `src/test/rsvp-export.test.ts` (totals, dietary grouping, CSV BOM/CRLF and the formula guard), `src/test/print-sheets.test.ts` (eight inserts per A4 sheet, escaping, palette per theme, A5 front and back) and `src/test/profile-rsvps.test.tsx` (per-card stats and both CSV downloads). `src/test/card-qr.test.ts` still decodes a generated QR back to the invitation link, and `src/test/invitation-curtain.test.tsx` covers the storybook themes and the Grand Curtain stage and gate (no video, no remote asset, the card's own details only).
+`npm test` includes all 12 × 5 theme/framework combinations (including gallery, wishes, map and share sections in every one), required-field and element-selection tests, a browser-form mock for portrait compression and RSVP insertion, and PGlite policy tests for anonymous insert, owner-only reads, the twelve-photo limit, gallery and wishes toggles, expired or draft cards, refused anonymous gallery uploads and rejected invalid RSVP names. The print package is covered separately: `src/test/guest-list.test.ts` (CSV quoting, header detection, dedupe, rejected rows, the 300-guest cap), `src/test/rsvp-export.test.ts` (totals, dietary grouping, CSV BOM/CRLF and the formula guard), `src/test/print-sheets.test.ts` (eight inserts per A4 sheet, escaping, palette per theme, A5 front and back) and `src/test/profile-rsvps.test.tsx` (per-card stats and both CSV downloads). `src/test/card-qr.test.ts` still decodes a generated QR back to the invitation link, `src/test/invitation-curtain.test.tsx` covers the storybook themes and the Grand Curtain stage and gate (no video, no remote asset, the card's own details only), and `src/test/hindu-themes.test.tsx` covers the two Hindu themes, the rite map, the Sanskrit blessing, the mandap stage, the havan fire and the living-scene layers (fires, diyas, fireworks, reduced-motion).
 
 Run `npx tsc --noEmit` and `npm run build` as well. For a visual check of the print output, open the dialog, print to PDF, and confirm the page size is **A5** (artwork) or **A4** (insert sheets) before sending anything to a shop. These tests do **not** replace checking the live database after deployment.

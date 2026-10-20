@@ -57,6 +57,8 @@ describe("creator invitation design and input", () => {
         expect(page).not.toContain("Simran");
         if (framework === "moonlit") expect(page).toContain("eid-hero");
         else if (framework === "curtain-call") expect(page).toContain("curtain-stage");
+        else if (theme === "diya-utsav" || theme === "sacred-mandap")
+          expect(page).toContain("mandap-stage");
         else expect(page).toContain("invitation-stage");
       }
     }
@@ -154,6 +156,26 @@ describe("creator invitation design and input", () => {
     expect(shown).toContain("invite-map-tabs");
     expect(shown).toContain("Add to calendar");
     expect(shown).toContain("Wishes open once this invitation is published.");
+  });
+
+  it("lays the Hindu themes over the mandap stage with a Sanskrit blessing and no Arabic one", () => {
+    for (const theme of ["diya-utsav", "sacred-mandap"] as const) {
+      const page = renderToStaticMarkup(
+        <PersonalInvitation
+          title="Shubh Vivah"
+          content={{ ...basics, theme, framework: "royal-folio", riteLine: "॥ शुभ विवाह ॥" }}
+          preview
+          showGate={false}
+        />,
+      );
+      expect(page).toContain("mandap-stage");
+      expect(page).toContain("॥ श्री गणेशाय नमः ॥");
+      expect(page).toContain("॥ शुभ विवाह ॥");
+      expect(page).toContain("living-scene");
+      expect(page).toContain("havan-flame");
+      expect(page).not.toContain("بِسْمِ");
+      expect(page).toContain('data-theme="' + theme + '"');
+    }
   });
 
   it("gives every theme and framework the same gallery, map, wishes and sharing features", () => {

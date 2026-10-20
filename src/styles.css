@@ -9,6 +9,7 @@
   --font-sans: "DM Sans", system-ui, sans-serif;
   --font-script: "Great Vibes", cursive;
   --font-arabic: "Amiri", serif;
+  --font-sanskrit: "Tiro Devanagari Sanskrit", "Noto Serif Devanagari", serif;
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
@@ -673,6 +674,36 @@
   --shadow-gold: 0 22px 60px -22px oklch(0.62 0.11 80 / .38);
   --gradient-gold: linear-gradient(110deg, #a3792f, #d7b25f 32%, #f6e2ad 50%, #d7b25f 68%, #a3792f);
 }
+.personal-invite[data-theme="diya-utsav"], .personal-invite-cover[data-theme="diya-utsav"] {
+  --background: oklch(0.165 0.045 35); --foreground: oklch(0.97 0.018 80);
+  --muted: oklch(0.215 0.05 38); --muted-foreground: oklch(0.79 0.04 78);
+  --card: oklch(0.21 0.045 36 / .8); --burgundy: oklch(0.84 0.11 72);
+  --burgundy-deep: oklch(0.15 0.04 33); --gold: oklch(0.8 0.13 74);
+  --gold-light: oklch(0.9 0.1 82); --border: oklch(0.78 0.12 74 / .42);
+  --shadow-gold: 0 22px 62px -20px oklch(0.8 0.13 74 / .45);
+  --gradient-gold: linear-gradient(110deg, #b8641f, #efac4e 32%, #ffe0a0 50%, #efac4e 68%, #b8641f);
+  --living-fire: #ffb545; --living-warm: #ff7a2f;
+}
+.personal-invite[data-theme="sacred-mandap"], .personal-invite-cover[data-theme="sacred-mandap"] {
+  --background: oklch(0.978 0.018 84); --foreground: oklch(0.32 0.06 45);
+  --muted: oklch(0.948 0.027 82); --muted-foreground: oklch(0.49 0.05 55);
+  --card: oklch(1 0 0 / .8); --burgundy: oklch(0.46 0.14 35);
+  --burgundy-deep: oklch(0.29 0.07 38); --gold: oklch(0.55 0.12 62);
+  --gold-light: oklch(0.66 0.1 68); --border: oklch(0.7 0.11 62 / .45);
+  --shadow-gold: 0 20px 55px -20px oklch(0.56 0.12 50 / .35);
+  --gradient-gold: linear-gradient(110deg, #a84a1c, #d98a34 32%, #f7d79a 50%, #d98a34 68%, #a84a1c);
+  --living-fire: #ffb04a; --living-warm: #e8662a;
+}
+.personal-invite-cover[data-theme="diya-utsav"] .invite-cover-wash {
+  background: radial-gradient(ellipse at 50% 78%, oklch(0.5 0.13 55 / .38), transparent 62%),
+    radial-gradient(ellipse at center, oklch(0.17 0.045 35 / .9) 4%, oklch(0.17 0.045 35 / .55) 72%, transparent 100%);
+}
+.personal-invite-cover[data-theme="sacred-mandap"] .invite-cover-wash {
+  background: radial-gradient(ellipse at center, oklch(0.984 0.02 84 / .9) 4%, oklch(0.984 0.02 84 / .48) 73%, transparent 100%);
+}
+.personal-invite[data-theme="diya-utsav"] .curtain-scene-art,
+.personal-invite-cover[data-theme="diya-utsav"] img { filter: brightness(.82) saturate(1.1); }
+
 .personal-invite-cover[data-theme="fairytale"] .invite-cover-wash {
   background: radial-gradient(ellipse at center, oklch(0.975 0.017 345 / .93) 4%, oklch(0.975 0.017 345 / .52) 73%, transparent 100%);
 }
@@ -732,6 +763,8 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner { 
   background: radial-gradient(ellipse at 50% 55%, color-mix(in oklch, var(--background) 87%, transparent), color-mix(in oklch, var(--background) 59%, transparent) 53%, color-mix(in oklch, var(--background) 18%, transparent) 100%);
 }
 .personal-invite[data-theme="bihari-vibe"] .stage-shade { background: radial-gradient(ellipse at center, oklch(0.97 0.025 85 / .9), oklch(0.97 0.025 85 / .59) 53%, transparent 90%); }
+.personal-invite[data-theme="diya-utsav"] .stage-shade { background: radial-gradient(ellipse at 50% 46%, color-mix(in oklch, var(--background) 90%, transparent), color-mix(in oklch, var(--background) 68%, transparent) 56%, color-mix(in oklch, var(--background) 26%, transparent) 100%); }
+.personal-invite[data-theme="sacred-mandap"] .stage-shade { background: radial-gradient(ellipse at 50% 46%, oklch(0.99 0.012 88 / .86), oklch(0.99 0.012 88 / .6) 56%, oklch(0.99 0.012 88 / .18) 100%); }
 .personal-invite .stage-frame { border-radius: 45% 45% .5rem .5rem / 20% 20% .5rem .5rem; }
 .personal-invite .stage-content { text-align: center; transform-style: preserve-3d; }
 .personal-invite .stage-copy {
@@ -745,6 +778,11 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner { 
 .personal-invite .stage-amp { display: block; font-size: clamp(4rem, 8vw, 7rem); line-height: .75; margin: .6rem 0 1rem; }
 .personal-invite .stage-orbit, .personal-invite .stage-light { display: none; }
 .personal-invite .stage-kicker { line-height: 1.8; overflow-wrap: anywhere; }
+.personal-invite .stage-shloka {
+  margin: 0; font-family: var(--font-sanskrit); color: var(--gold-light); letter-spacing: .02em;
+  text-shadow: 0 2px 16px color-mix(in oklch, var(--gold) 45%, transparent);
+}
+.personal-invite .stage-shloka[dir="rtl"] { font-family: var(--font-arabic); }
 .personal-invite .stage-scroll { transition: transform .25s ease; }
 .personal-invite .stage-scroll:hover { transform: translate(-50%, 4px); }
 .personal-invite .invite-portraits { display: flex; justify-content: center; gap: 1.2rem; margin: 1.8rem auto 0; }
@@ -756,6 +794,7 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner { 
 .personal-invite .invite-portraits figcaption { margin-top: .4rem; font-family: var(--font-serif); font-size: 1rem; }
 .personal-invite-cover .invite-portraits { display: flex; gap: .5rem; margin-top: .8rem; }
 .personal-invite-cover .invite-portraits img { width: 2.5rem; height: 2.5rem; border-radius: 50%; border: 1px solid var(--gold); object-fit: cover; }
+.personal-invite[data-theme="diya-utsav"] .stage-copy { background: color-mix(in oklch, var(--background) 72%, transparent); }
 .personal-invite .invite-section { scroll-margin-top: 6rem; }
 .personal-invite .invitation-stage { scroll-margin-top: 6rem; }
 
@@ -974,6 +1013,304 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner { 
 .heavenly-entrance.is-curtain .gate-arch { display: none; }
 .heavenly-entrance.is-curtain .gate-left { border-right: 1px solid #d4a94f66; }
 .heavenly-entrance.is-curtain .gate-right { border-left: 1px solid #d4a94f66; }
+
+
+/* ── Living scenes: fire, flames and fireworks drawn only in CSS ─────────
+   These run continuously, so a card feels like a short film rather than a
+   photograph. No video file, no audio, no network. */
+.living-scene { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.living-hero, .living-gate { mix-blend-mode: normal; }
+.living-sky { position: absolute; inset: 0; }
+.living-marigold-glow {
+  position: absolute; inset: auto -10% -12% -10%; height: 62%;
+  background: radial-gradient(ellipse at 50% 100%, color-mix(in oklch, var(--living-warm, #ff8a3d) 42%, transparent), transparent 68%);
+  animation: living-breathe 5.5s ease-in-out infinite alternate;
+}
+.living-chandelier-glow {
+  position: absolute; inset: 0;
+  background:
+    radial-gradient(circle at 50% 18%, #ffe6a766, transparent 34%),
+    radial-gradient(circle at 26% 40%, #ffd98a3d, transparent 28%),
+    radial-gradient(circle at 74% 40%, #ffd98a3d, transparent 28%);
+  animation: living-breathe 6s ease-in-out infinite alternate;
+}
+@keyframes living-breathe { from { opacity: .55; } to { opacity: 1; } }
+
+/* Slow golden bokeh behind the fireworks, so the air always has depth. */
+.living-bokeh { position: absolute; inset: 0; }
+.bokeh {
+  position: absolute; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in oklch, var(--gold) 62%, transparent) 0 22%, transparent 70%);
+  filter: blur(1px); opacity: .0;
+  animation: living-bokeh 16s ease-in-out infinite;
+}
+.bokeh-0 { width: 110px; height: 110px; left: 8%; top: 58%; animation-delay: -1s; }
+.bokeh-1 { width: 64px; height: 64px; left: 19%; top: 34%; animation-delay: -5s; animation-duration: 19s; }
+.bokeh-2 { width: 150px; height: 150px; left: 33%; top: 68%; animation-delay: -9s; animation-duration: 22s; }
+.bokeh-3 { width: 78px; height: 78px; left: 47%; top: 26%; animation-delay: -3s; animation-duration: 18s; }
+.bokeh-4 { width: 120px; height: 120px; left: 61%; top: 60%; animation-delay: -12s; animation-duration: 24s; }
+.bokeh-5 { width: 54px; height: 54px; left: 72%; top: 38%; animation-delay: -7s; animation-duration: 15s; }
+.bokeh-6 { width: 96px; height: 96px; left: 84%; top: 66%; animation-delay: -14s; animation-duration: 21s; }
+.bokeh-7 { width: 40px; height: 40px; left: 27%; top: 78%; animation-delay: -6s; animation-duration: 13s; }
+.bokeh-8 { width: 68px; height: 68px; left: 55%; top: 80%; animation-delay: -11s; animation-duration: 17s; }
+@keyframes living-bokeh {
+  0% { opacity: 0; transform: translate3d(0, 18px, 0) scale(.8); }
+  30% { opacity: .75; }
+  70% { opacity: .35; }
+  100% { opacity: 0; transform: translate3d(0, -46px, 0) scale(1.12); }
+}
+
+/* Fireworks: each burst is a ring of sparks with a bright core, blooming on a
+   long, offset cycle so the sky keeps changing. */
+.living-fireworks { position: absolute; inset: 0; }
+.burst {
+  position: absolute; width: 4px; height: 4px; border-radius: 50%;
+  background: transparent;
+  box-shadow:
+    0 0 0 0 #fff0,
+    18px 0 0 1px #ffd27a, -18px 0 0 1px #ffd27a, 0 18px 0 1px #ffd27a, 0 -18px 0 1px #ffd27a,
+    13px 13px 0 1px #ff9f5a, -13px 13px 0 1px #ff9f5a, 13px -13px 0 1px #ff9f5a, -13px -13px 0 1px #ff9f5a,
+    26px 0 0 0 #ffe9b8, -26px 0 0 0 #ffe9b8, 0 26px 0 0 #ffe9b8, 0 -26px 0 0 #ffe9b8,
+    19px 19px 0 0 #ffc46b, -19px 19px 0 0 #ffc46b, 19px -19px 0 0 #ffc46b, -19px -19px 0 0 #ffc46b;
+  opacity: 0; transform: scale(.35);
+  animation: living-burst 7.4s ease-out infinite;
+}
+.burst-a { top: 16%; left: 22%; }
+.burst-b { top: 11%; left: 62%; animation-delay: 2.1s; animation-duration: 8.6s;
+  box-shadow: 0 0 0 0 #fff0, 20px 0 0 1px #ffc7de, -20px 0 0 1px #ffc7de, 0 20px 0 1px #ffc7de, 0 -20px 0 1px #ffc7de,
+    14px 14px 0 1px #f2a0c4, -14px 14px 0 1px #f2a0c4, 14px -14px 0 1px #f2a0c4, -14px -14px 0 1px #f2a0c4,
+    28px 0 0 0 #fff0f6, -28px 0 0 0 #fff0f6, 0 28px 0 0 #fff0f6, 0 -28px 0 0 #fff0f6; }
+.burst-c { top: 26%; left: 44%; animation-delay: 4.4s; animation-duration: 9.2s; }
+.burst-d { top: 8%; left: 84%; animation-delay: 5.8s; animation-duration: 8.2s;
+  box-shadow: 0 0 0 0 #fff0, 16px 0 0 1px #b7e6ff, -16px 0 0 1px #b7e6ff, 0 16px 0 1px #b7e6ff, 0 -16px 0 1px #b7e6ff,
+    11px 11px 0 1px #8fd3ff, -11px 11px 0 1px #8fd3ff, 11px -11px 0 1px #8fd3ff, -11px -11px 0 1px #8fd3ff,
+    23px 0 0 0 #e6f6ff, -23px 0 0 0 #e6f6ff, 0 23px 0 0 #e6f6ff, 0 -23px 0 0 #e6f6ff; }
+@keyframes living-burst {
+  0% { opacity: 0; transform: scale(.2); }
+  6% { opacity: 1; transform: scale(.9); }
+  30% { opacity: .85; transform: scale(1.6); }
+  55% { opacity: 0; transform: scale(2.4); }
+  100% { opacity: 0; transform: scale(2.4); }
+}
+/* Fireworks read best in a dark sky; the light themes get a softer, warmer set. */
+.living-scene[data-tone="day"] .burst-a,
+.living-scene[data-tone="day"] .burst-c { opacity: 0; animation-duration: 9.6s; }
+.living-scene[data-tone="day"] .living-fireworks { opacity: .55; }
+.living-stage .living-fireworks { opacity: .5; }
+
+/* Diyas along the floor of the hero and the gate. */
+.living-diya-row {
+  position: absolute; left: 0; right: 0; bottom: 5%; z-index: 2;
+  display: flex; justify-content: center; gap: clamp(1.6rem, 7vw, 6rem);
+}
+.living-gate .living-diya-row { bottom: 9%; }
+.diya { position: relative; display: block; width: 34px; height: 46px; }
+.diya-bowl {
+  position: absolute; left: 0; right: 0; bottom: 0; height: 13px;
+  border-radius: 0 0 50% 50% / 0 0 100% 100%;
+  background: linear-gradient(180deg, #d98a45, #7b3a17 68%, #54240c);
+  box-shadow: inset 0 2px 3px #ffce8a88, 0 3px 8px #0007;
+}
+.diya-flame {
+  position: absolute; left: 50%; bottom: 11px; width: 9px; height: 17px;
+  margin-left: -4.5px; border-radius: 50% 50% 46% 46% / 62% 62% 38% 38%;
+  background: radial-gradient(circle at 50% 72%, #fffbe0 0 18%, #ffd166 42%, #ff8a1f 72%, #e3541a 100%);
+  transform-origin: 50% 100%;
+  animation: diya-flicker 1.9s ease-in-out infinite alternate;
+  box-shadow: 0 0 12px 3px #ffb34799;
+}
+.diya-glow {
+  position: absolute; left: 50%; bottom: -2px; width: 74px; height: 40px; margin-left: -37px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #ffc46b66, #ff9a3c22 55%, transparent 74%);
+  animation: diya-glow 3.1s ease-in-out infinite alternate;
+}
+.diya-1 .diya-flame { animation-delay: -.5s; }
+.diya-2 .diya-flame { animation-delay: -1.1s; }
+.diya-3 .diya-flame { animation-delay: -.8s; }
+.diya-4 .diya-flame { animation-delay: -1.4s; }
+.diya-1 .diya-glow { animation-delay: -.9s; }
+.diya-2 .diya-glow { animation-delay: -1.7s; }
+.diya-3 .diya-glow { animation-delay: -2.3s; }
+.diya-4 .diya-glow { animation-delay: -.4s; }
+@keyframes diya-flicker {
+  0% { transform: rotate(-4deg) scale(.94, 1.02); opacity: .88; }
+  35% { transform: rotate(2deg) scale(1.02, .96); opacity: 1; }
+  70% { transform: rotate(-2deg) scale(.97, 1.06); opacity: .94; }
+  100% { transform: rotate(3deg) scale(1.04, .98); opacity: 1; }
+}
+@keyframes diya-glow { from { opacity: .55; transform: scale(.92); } to { opacity: 1; transform: scale(1.06); } }
+
+/* Embers drifting upward like sparks off a real fire. */
+.living-sparks { position: absolute; inset: 0; }
+.spark {
+  position: absolute; bottom: 8%; width: 3px; height: 3px; border-radius: 50%;
+  background: #ffcf7a; box-shadow: 0 0 6px 2px #ff9a3c88;
+  opacity: 0; animation: living-spark 6.2s linear infinite;
+}
+.spark:nth-child(odd) { animation-duration: 7.6s; }
+.spark:nth-child(3n) { animation-duration: 5.4s; background: #ffe9b5; }
+.spark-0 { left: 18%; animation-delay: -0.2s; }
+.spark-1 { left: 27%; animation-delay: -1.4s; }
+.spark-2 { left: 34%; animation-delay: -2.6s; }
+.spark-3 { left: 42%; animation-delay: -3.8s; }
+.spark-4 { left: 50%; animation-delay: -0.9s; }
+.spark-5 { left: 57%; animation-delay: -2.1s; }
+.spark-6 { left: 64%; animation-delay: -3.3s; }
+.spark-7 { left: 72%; animation-delay: -4.5s; }
+.spark-8 { left: 80%; animation-delay: -1.7s; }
+.spark-9 { left: 23%; animation-delay: -5.1s; }
+.spark-10 { left: 38%; animation-delay: -4.2s; }
+.spark-11 { left: 59%; animation-delay: -5.6s; }
+.spark-12 { left: 68%; animation-delay: -6.1s; }
+.spark-13 { left: 86%; animation-delay: -2.9s; }
+@keyframes living-spark {
+  0% { opacity: 0; transform: translate3d(0, 0, 0) scale(.6); }
+  12% { opacity: .95; }
+  55% { opacity: .8; transform: translate3d(-14px, -46vh, 0) scale(1); }
+  100% { opacity: 0; transform: translate3d(12px, -88vh, 0) scale(.5); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .living-scene * { animation: none !important; }
+  .living-bokeh { display: none; }
+  .living-scene .burst { opacity: .5; transform: scale(1.2); }
+  .living-sparks { display: none; }
+}
+.living-scene[data-reduced="true"] * { animation: none !important; }
+.living-scene[data-reduced="true"] .living-sparks,
+.living-scene[data-reduced="true"] .living-bokeh { display: none; }
+.living-scene[data-reduced="true"] .burst { opacity: .45; transform: scale(1.15); }
+
+/* ── Mandap Aarti: a sticky Hindu ceremony stage with a living havan fire ── */
+.personal-invite .mandap-stage {
+  position: relative; height: 175svh; min-height: 880px; background: var(--background);
+}
+.personal-invite .mandap-sticky {
+  position: sticky; top: 0; height: 100svh; min-height: 620px; overflow: hidden;
+  display: grid; place-items: center;
+}
+.personal-invite .mandap-scene { position: absolute; inset: -3%; transform-origin: 50% 45%; }
+.personal-invite .mandap-scene-art { width: 100%; height: 100%; object-fit: cover; }
+.personal-invite[data-theme="diya-utsav"] .mandap-scene-art { object-position: 50% 62%; }
+.personal-invite .mandap-scene-shade {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 46%, transparent 10%, color-mix(in oklch, var(--background) 42%, transparent) 66%, color-mix(in oklch, var(--background) 88%, transparent) 100%);
+}
+.personal-invite[data-theme="sacred-mandap"] .mandap-scene-shade {
+  background: radial-gradient(ellipse at 50% 44%, transparent 14%, oklch(0.99 0.012 88 / .58) 62%, oklch(0.985 0.02 85 / .92) 100%);
+}
+.personal-invite .mandap-canopy { position: absolute; top: 0; left: 0; right: 0; height: 22%; z-index: 3; transform-origin: 50% 0; }
+.personal-invite .mandap-garland {
+  position: absolute; top: -6%; width: 46%; height: 130%;
+  background:
+    radial-gradient(circle at 8px 10px, #f6a623 0 5px, transparent 6px) 0 0 / 18px 18px repeat-y,
+    radial-gradient(circle at 12px 14px, #ffca57 0 4px, transparent 5px) 6px 4px / 16px 18px repeat-y,
+    radial-gradient(circle at 10px 8px, #2f7d3a 0 4px, transparent 5px) 2px 10px / 22px 22px repeat-y;
+  filter: drop-shadow(0 6px 10px #0006);
+}
+.personal-invite .mandap-garland-left { left: -4%; transform: rotate(18deg); }
+.personal-invite .mandap-garland-right { right: -4%; transform: rotate(-18deg); }
+.personal-invite .mandap-bell {
+  position: absolute; top: 24%; width: 14px; height: 22px;
+  border-radius: 50% 50% 30% 30% / 70% 70% 30% 30%;
+  background: linear-gradient(180deg, #ffe6a8, #c79634 62%, #8d641c);
+  box-shadow: 0 2px 6px #0007;
+  transform-origin: 50% 0; animation: mandap-bell 3.4s ease-in-out infinite;
+}
+.personal-invite .mandap-bell::before {
+  content: ""; position: absolute; top: -14px; left: 50%; width: 1px; height: 14px; background: #c79634aa;
+}
+.personal-invite .mandap-bell-left { left: 22%; }
+.personal-invite .mandap-bell-right { right: 22%; animation-delay: -1.7s; }
+@keyframes mandap-bell { 0%, 100% { transform: rotate(-5deg); } 50% { transform: rotate(5deg); } }
+.personal-invite .mandap-copy {
+  position: relative; z-index: 4; display: grid; place-items: center;
+  padding: clamp(5rem, 9vw, 7rem) clamp(1rem, 4vw, 3rem) clamp(9rem, 16vw, 12rem);
+  width: 100%;
+}
+.personal-invite .mandap-card {
+  max-width: min(820px, 92%);
+  border-color: color-mix(in oklch, var(--gold) 36%, transparent);
+  background: color-mix(in oklch, var(--background) 52%, transparent);
+  backdrop-filter: blur(10px) saturate(120%);
+  box-shadow: var(--shadow-gold), inset 0 0 70px color-mix(in oklch, var(--gold) 14%, transparent);
+}
+.personal-invite[data-theme="sacred-mandap"] .mandap-card { background: oklch(1 0 0 / .68); }
+.personal-invite .mandap-shloka {
+  margin: 0 0 1.1rem; color: var(--gold-light); letter-spacing: .02em;
+  font-family: var(--font-sanskrit); text-shadow: 0 2px 14px color-mix(in oklch, var(--gold) 45%, transparent);
+}
+.personal-invite .mandap-copy .stage-names { font-size: clamp(2.9rem, 6.8vw, 6.8rem); }
+/* Havan fire at the foot of the stage, in front of the artwork. */
+.personal-invite .mandap-havan { position: absolute; left: 50%; bottom: 6%; width: 150px; height: 120px; margin-left: -75px; z-index: 3; }
+.personal-invite .havan-glow {
+  position: absolute; left: 50%; bottom: 0; width: 260px; height: 150px; margin-left: -130px; border-radius: 50%;
+  background: radial-gradient(circle, #ffb04a66, #ff7a2f22 55%, transparent 76%);
+  animation: diya-glow 3.6s ease-in-out infinite alternate;
+}
+.personal-invite .havan-flame {
+  position: absolute; bottom: 16px; left: 50%; border-radius: 50% 50% 42% 42% / 68% 68% 32% 32%;
+  transform-origin: 50% 100%; filter: blur(.4px);
+}
+.personal-invite .havan-flame-a {
+  width: 46px; height: 74px; margin-left: -23px;
+  background: radial-gradient(circle at 50% 76%, #fffbe0 0 12%, #ffd166 40%, #ff8a1f 70%, #d94a12 100%);
+  animation: havan-leap 1.35s ease-in-out infinite alternate;
+  box-shadow: 0 0 32px 10px #ff9a3c66;
+}
+.personal-invite .havan-flame-b {
+  width: 26px; height: 52px; margin-left: -30px; opacity: .9;
+  background: radial-gradient(circle at 50% 70%, #fff3c4, #ffb347 60%, #f26419 100%);
+  animation: havan-leap 1.05s ease-in-out infinite alternate-reverse;
+}
+.personal-invite .havan-flame-c {
+  width: 22px; height: 44px; margin-left: 6px; opacity: .85;
+  background: radial-gradient(circle at 50% 70%, #fff8d6, #ffc46b 58%, #ef7322 100%);
+  animation: havan-leap .92s ease-in-out infinite alternate;
+}
+@keyframes havan-leap {
+  0% { transform: scale(.9, .92) rotate(-3deg); }
+  40% { transform: scale(1.04, 1.1) rotate(2deg); }
+  100% { transform: scale(.96, 1.18) rotate(-1deg); }
+}
+.personal-invite .havan-ember {
+  position: absolute; bottom: 40px; width: 3px; height: 3px; border-radius: 50%;
+  background: #ffd27a; box-shadow: 0 0 8px 2px #ff9a3c99; opacity: 0;
+  animation: havan-ember 3.4s linear infinite;
+}
+.personal-invite .havan-ember-a { left: 46%; animation-delay: -.4s; }
+.personal-invite .havan-ember-b { left: 54%; animation-delay: -1.7s; }
+.personal-invite .havan-ember-c { left: 50%; animation-delay: -2.6s; }
+@keyframes havan-ember {
+  0% { opacity: 0; transform: translate3d(0, 0, 0) scale(.7); }
+  14% { opacity: 1; }
+  100% { opacity: 0; transform: translate3d(-26px, -120px, 0) scale(.4); }
+}
+.personal-invite .mandap-scroll {
+  position: absolute; bottom: 1.2rem; left: 50%; transform: translateX(-50%); z-index: 6;
+  color: var(--gold); text-align: center; text-decoration: none;
+  font-size: .58rem; letter-spacing: .3em; text-transform: uppercase; transition: transform .25s ease;
+}
+.personal-invite .mandap-scroll:hover { transform: translate(-50%, 4px); }
+@media (max-width: 720px) {
+  .personal-invite .mandap-stage { height: 160svh; min-height: 740px; }
+  .personal-invite .mandap-copy { padding: 5.5rem .7rem 9.5rem; }
+  .personal-invite .mandap-card { max-width: 95%; padding: 2.3rem 1.15rem; }
+  .personal-invite .mandap-copy .stage-names { font-size: clamp(2.5rem, 12vw, 4.2rem); }
+  .personal-invite .mandap-havan { transform: scale(.82); transform-origin: 50% 100%; }
+  .living-diya-row { gap: 1.5rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .personal-invite .mandap-bell,
+  .personal-invite .havan-flame,
+  .personal-invite .havan-ember,
+  .personal-invite .havan-glow { animation: none; }
+  .personal-invite .mandap-stage[data-reduced="true"] { height: auto; }
+}
+.personal-invite .mandap-stage[data-reduced="true"] { height: auto; }
+.personal-invite .mandap-stage[data-reduced="true"] .mandap-sticky {
+  position: relative; height: min(920px, 100svh);
+}
 
 /* Modern Mosaic: a sharp asymmetric invitation with a floating detail tile. */
 .personal-invite[data-framework="modern-mosaic"] .stage-frame { inset: 2rem; border-radius: 0; }
