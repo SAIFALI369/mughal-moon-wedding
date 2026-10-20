@@ -59,8 +59,11 @@ vi.mock("@/lib/db", () => ({
 }));
 vi.mock("@/components/wedding/invitation-form", async (importOriginal) => ({
   ...(await importOriginal<typeof import("@/components/wedding/invitation-form")>()),
-  InvitationDetailsFields: ({ value }: { value: { theme: string } }) => (
-    <div data-testid="editor-theme">{value.theme}</div>
+  InvitationDetailsFields: ({ value }: { value: { theme: string; framework: string } }) => (
+    <>
+      <div data-testid="editor-theme">{value.theme}</div>
+      <div data-testid="editor-framework">{value.framework}</div>
+    </>
   ),
 }));
 vi.mock("@/components/wedding/invitation-template", () => ({
@@ -205,6 +208,18 @@ describe("Personal invitation workspace", () => {
     fireEvent.click(within(dialog).getByRole("tab", { name: "Print card" }));
     expect(within(dialog).getByText("A5 front & back")).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: /Print A5 artwork/ })).toBeInTheDocument();
+  });
+
+  it("starts a storybook theme on the Grand Curtain layout", async () => {
+    render(<Dashboard />);
+    await screen.findByText("Your next customer’s story starts here.");
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Templates" }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    fireEvent.click(screen.getByRole("button", { name: /Fairytale Castle/ }));
+    expect(screen.getByTestId("editor-theme")).toHaveTextContent("fairytale");
+    expect(screen.getByTestId("editor-framework")).toHaveTextContent("curtain-call");
   });
 
   it("warns that a draft QR will not work until publishing", async () => {

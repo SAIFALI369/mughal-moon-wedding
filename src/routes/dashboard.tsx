@@ -48,7 +48,7 @@ import {
   Music2,
   QrCode,
 } from "lucide-react";
-import { invitationThemes } from "@/components/wedding/invitation-options";
+import { invitationFrameworks, invitationThemes } from "@/components/wedding/invitation-options";
 import { PlatformShell } from "@/components/platform/platform-shell";
 import { CardPrintDialog } from "@/components/platform/card-print-dialog";
 import { Plus, FileHeart, Globe2, FileEdit, ArrowRight } from "lucide-react";
@@ -126,7 +126,14 @@ export function Dashboard() {
     setActiveTab(next);
   }
   function startNew(theme = emptyInvitationForm().theme) {
-    const next = { ...emptyInvitationForm(), theme };
+    // The two storybook themes open with the Grand Curtain stage by default;
+    // the layout stays a free choice in the editor.
+    const storybook = theme === "fairytale" || theme === "ballroom";
+    const next = {
+      ...emptyInvitationForm(),
+      theme,
+      ...(storybook ? { framework: "curtain-call" as const } : {}),
+    };
     editorInitial.current = JSON.stringify(next);
     setForm(next);
     setEditingId(null);
@@ -665,7 +672,9 @@ export function Dashboard() {
                   <span className="studio-eyebrow">A LOOK THAT FEELS LIKE YOU</span>
                   <h2>Find your invitation’s mood.</h2>
                 </div>
-                <span className="studio-collection-tag">8 themes · 4 layouts</span>
+                <span className="studio-collection-tag">
+                  {invitationThemes.length} themes · {invitationFrameworks.length} layouts
+                </span>
               </div>
               <div className="studio-theme-options">
                 {invitationThemes.map((theme) => (

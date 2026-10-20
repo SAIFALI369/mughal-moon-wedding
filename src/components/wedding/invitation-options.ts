@@ -7,6 +7,8 @@ export const invitationThemeIds = [
   "mecca_madinah",
   "luxury",
   "futuristic",
+  "fairytale",
+  "ballroom",
 ] as const;
 export type InvitationTheme = (typeof invitationThemeIds)[number];
 
@@ -15,6 +17,7 @@ export const invitationFrameworkIds = [
   "royal-folio",
   "cinematic-stage",
   "modern-mosaic",
+  "curtain-call",
 ] as const;
 export type InvitationFramework = (typeof invitationFrameworkIds)[number];
 
@@ -72,6 +75,18 @@ export const invitationThemes: {
     description: "Aurora, glass and holographic light",
     swatch: "#102743",
   },
+  {
+    id: "fairytale",
+    label: "Fairytale Castle",
+    description: "A storybook kingdom lit by fireworks at dusk",
+    swatch: "#e9b6c6",
+  },
+  {
+    id: "ballroom",
+    label: "Grand Ballroom",
+    description: "Crystal chandeliers, candlelight and champagne gold",
+    swatch: "#e8d3a8",
+  },
 ];
 
 export const invitationFrameworks: {
@@ -98,6 +113,11 @@ export const invitationFrameworks: {
     id: "modern-mosaic",
     label: "Modern Mosaic",
     description: "Bold asymmetric panels and contemporary typography",
+  },
+  {
+    id: "curtain-call",
+    label: "Grand Curtain",
+    description: "Scroll through parting velvet curtains into a storybook stage",
   },
 ];
 

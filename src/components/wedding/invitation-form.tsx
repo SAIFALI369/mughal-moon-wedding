@@ -286,7 +286,7 @@ export function InvitationDetailsFields({
           </div>
           <fieldset>
             <legend className="mb-3 text-sm font-medium">Theme *</legend>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {invitationThemes.map((theme) => (
                 <label
                   key={theme.id}
@@ -324,7 +324,7 @@ export function InvitationDetailsFields({
           </fieldset>
           <fieldset>
             <legend className="mb-3 text-sm font-medium">Framework / layout *</legend>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
               {invitationFrameworks.map((framework) => (
                 <label
                   key={framework.id}

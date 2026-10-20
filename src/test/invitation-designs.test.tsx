@@ -56,6 +56,7 @@ describe("creator invitation design and input", () => {
         expect(page).not.toContain("Mohsin");
         expect(page).not.toContain("Simran");
         if (framework === "moonlit") expect(page).toContain("eid-hero");
+        else if (framework === "curtain-call") expect(page).toContain("curtain-stage");
         else expect(page).toContain("invitation-stage");
       }
     }

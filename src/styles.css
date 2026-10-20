@@ -655,6 +655,40 @@
   --shadow-gold: 0 20px 65px -20px oklch(0.75 0.12 202 / .48);
   --gradient-gold: linear-gradient(110deg, #579cd2, #91dbe9 32%, #def9f5 50%, #a49cf7 72%, #579cd2);
 }
+.personal-invite[data-theme="fairytale"], .personal-invite-cover[data-theme="fairytale"] {
+  --background: oklch(0.974 0.019 350); --foreground: oklch(0.31 0.07 350);
+  --muted: oklch(0.945 0.028 345); --muted-foreground: oklch(0.48 0.05 345);
+  --card: oklch(0.995 0.012 345 / .84); --burgundy: oklch(0.44 0.13 355);
+  --burgundy-deep: oklch(0.28 0.08 350); --gold: oklch(0.53 0.1 70);
+  --gold-light: oklch(0.63 0.09 75); --border: oklch(0.68 0.1 350 / .42);
+  --shadow-gold: 0 20px 55px -20px oklch(0.55 0.12 350 / .35);
+  --gradient-gold: linear-gradient(110deg, #b06a7e, #e2a4b4 32%, #f7d5dd 50%, #e2a4b4 68%, #b06a7e);
+}
+.personal-invite[data-theme="ballroom"], .personal-invite-cover[data-theme="ballroom"] {
+  --background: oklch(0.979 0.016 85); --foreground: oklch(0.31 0.05 65);
+  --muted: oklch(0.948 0.024 83); --muted-foreground: oklch(0.49 0.045 70);
+  --card: oklch(1 0 0 / .72); --burgundy: oklch(0.48 0.11 60);
+  --burgundy-deep: oklch(0.3 0.06 60); --gold: oklch(0.58 0.11 78);
+  --gold-light: oklch(0.7 0.09 82); --border: oklch(0.74 0.1 82 / .45);
+  --shadow-gold: 0 22px 60px -22px oklch(0.62 0.11 80 / .38);
+  --gradient-gold: linear-gradient(110deg, #a3792f, #d7b25f 32%, #f6e2ad 50%, #d7b25f 68%, #a3792f);
+}
+.personal-invite-cover[data-theme="fairytale"] .invite-cover-wash {
+  background: radial-gradient(ellipse at center, oklch(0.975 0.017 345 / .93) 4%, oklch(0.975 0.017 345 / .52) 73%, transparent 100%);
+}
+.personal-invite-cover[data-theme="ballroom"] .invite-cover-wash {
+  background: radial-gradient(ellipse at center, oklch(0.98 0.014 85 / .92) 4%, oklch(0.98 0.014 85 / .48) 73%, transparent 100%);
+}
+.personal-invite-cover[data-framework="curtain-call"] .cover-inner::before,
+.personal-invite-cover[data-framework="curtain-call"] .cover-inner::after {
+  content: ""; position: absolute; top: -1rem; bottom: -1rem; width: 1.15rem; z-index: 2;
+  background: repeating-linear-gradient(90deg, #3d0a1c 0 4px, #7d1a36 5px 8px, #4a0d22 9px 13px);
+  box-shadow: 0 6px 18px #0006; pointer-events: none;
+}
+.personal-invite-cover[data-framework="curtain-call"] .cover-inner::before { left: -.4rem; border-radius: 0 0 50% 0; }
+.personal-invite-cover[data-framework="curtain-call"] .cover-inner::after { right: -.4rem; border-radius: 0 0 0 50%; }
+.personal-invite-cover[data-framework="curtain-call"] .cover-outline { border-radius: 42% 42% .6rem .6rem / 22% 22% .6rem .6rem; border-width: 2px; }
+
 .personal-invite-cover[data-theme="aladin"] .invite-cover-wash,
 .personal-invite-cover[data-theme="mecca_madinah"] .invite-cover-wash,
 .personal-invite-cover[data-theme="luxury"] .invite-cover-wash,
@@ -761,6 +795,185 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner { 
 .personal-invite[data-framework="cinematic-stage"] .stage-light-two { bottom: 7%; right: 4%; animation-delay: -4s; }
 @keyframes invite-orbit { to { transform: rotateX(66deg) rotateZ(19deg) scale(1.06); } }
 @keyframes invite-glow { to { opacity: .3; transform: translate3d(2rem, -1rem, 0); } }
+
+
+/* ── Grand Curtain: a scroll-driven camera move through velvet drapes ── */
+.personal-invite[data-framework="curtain-call"] {
+  --curtain-deep: #3b0918; --curtain-mid: #7a1832; --curtain-light: #c04a67;
+}
+.personal-invite .curtain-stage {
+  position: relative; height: 190svh; min-height: 940px; background: var(--background);
+  scroll-margin-top: 0;
+}
+.personal-invite .curtain-sticky {
+  position: sticky; top: 0; height: 100svh; min-height: 620px; overflow: hidden;
+  perspective: 1500px; perspective-origin: 50% 42%; transform-style: preserve-3d;
+}
+.personal-invite .curtain-scene {
+  position: absolute; inset: -4%; z-index: 0; transform-origin: 50% 42%; will-change: transform;
+}
+.personal-invite .curtain-scene-art { width: 100%; height: 100%; object-fit: cover; }
+.personal-invite[data-theme="mughal"] .curtain-scene-art { filter: brightness(.46) saturate(1.12); }
+.personal-invite[data-theme="fairytale"] .curtain-scene-art { object-position: 62% center; }
+.personal-invite[data-theme="classic"] .curtain-scene-art { filter: sepia(.16) saturate(.9); }
+.personal-invite .curtain-scene-glow {
+  position: absolute; inset: 0;
+  background: radial-gradient(ellipse at 50% 45%, transparent 14%, color-mix(in oklch, var(--background) 34%, transparent) 64%, color-mix(in oklch, var(--background) 82%, transparent) 100%);
+}
+.personal-invite .curtain-rays {
+  position: absolute; inset: -30% -10%; opacity: .45; mix-blend-mode: screen; pointer-events: none;
+  background: conic-gradient(from 200deg at 50% 4%, transparent 0 6deg,
+    color-mix(in oklch, var(--gold) 24%, transparent) 8deg 12deg, transparent 14deg 25deg,
+    color-mix(in oklch, var(--gold) 17%, transparent) 27deg 31deg, transparent 33deg 47deg,
+    color-mix(in oklch, var(--gold) 14%, transparent) 49deg 52deg, transparent 54deg 70deg);
+  animation: curtain-rays 12s ease-in-out infinite alternate;
+}
+@keyframes curtain-rays {
+  from { opacity: .22; transform: translate3d(-2%, 0, 0) scale(1.02); }
+  to { opacity: .55; transform: translate3d(2%, 1%, 0) scale(1.12); }
+}
+.personal-invite .curtain-motes { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.personal-invite .curtain-motes::before {
+  content: ""; position: absolute; inset: -25% -5%;
+  background-image:
+    radial-gradient(circle, color-mix(in oklch, var(--gold) 78%, transparent) 0 1.1px, transparent 1.8px),
+    radial-gradient(circle, color-mix(in oklch, var(--gold) 52%, transparent) 0 1.3px, transparent 2px);
+  background-size: 210px 210px, 330px 330px;
+  background-position: 20px 60px, 120px 180px;
+  opacity: .55; animation: curtain-motes 34s linear infinite;
+}
+@keyframes curtain-motes { to { transform: translate3d(0, -210px, 0); } }
+.personal-invite .curtain-proscenium { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.personal-invite .curtain-arch {
+  position: absolute; inset: 4.5% 5.5% 6%;
+  border: 2px solid color-mix(in oklch, var(--gold) 68%, transparent);
+  border-radius: 48% 48% 14px 14px / 26% 26% 14px 14px;
+  box-shadow:
+    0 0 0 10px color-mix(in oklch, var(--background) 22%, transparent),
+    0 0 0 12px color-mix(in oklch, var(--gold) 32%, transparent),
+    inset 0 0 90px color-mix(in oklch, var(--gold) 15%, transparent);
+}
+.personal-invite .curtain-panel {
+  position: absolute; top: -3%; bottom: -3%; width: 52%; z-index: 5;
+  transform-style: preserve-3d; backface-visibility: hidden; will-change: transform, opacity;
+  background:
+    radial-gradient(150% 60% at 32% 0%, color-mix(in oklch, var(--gold) 20%, transparent), transparent 62%),
+    repeating-linear-gradient(96deg,
+      var(--curtain-deep) 0 2%, var(--curtain-mid) 3.4% 4.6%, var(--curtain-deep) 6% 9.4%,
+      var(--curtain-light) 10.2% 10.9%, var(--curtain-deep) 12.2% 16%,
+      var(--curtain-mid) 17.4% 18.6%, var(--curtain-deep) 20% 23.6%);
+  box-shadow: inset -55px 0 110px #000a, 14px 0 54px #0006;
+}
+.personal-invite .curtain-panel-left {
+  left: -20%; transform-origin: left center;
+  border-right: 1px solid color-mix(in oklch, var(--gold) 55%, transparent);
+}
+.personal-invite .curtain-panel-right {
+  right: -20%; transform-origin: right center;
+  border-left: 1px solid color-mix(in oklch, var(--gold) 55%, transparent);
+  box-shadow: inset 55px 0 110px #000a, -14px 0 54px #0006;
+  background-position: right top;
+}
+.personal-invite .curtain-edge {
+  position: absolute; top: 0; bottom: 0; width: 11px; opacity: .82;
+  background: repeating-linear-gradient(180deg,
+    color-mix(in oklch, var(--gold) 88%, transparent) 0 7px,
+    color-mix(in oklch, var(--gold) 34%, transparent) 7px 12px);
+}
+.personal-invite .curtain-panel-left .curtain-edge { right: 0; }
+.personal-invite .curtain-panel-right .curtain-edge { left: 0; }
+.personal-invite .curtain-valance {
+  position: absolute; top: -2%; left: -2%; right: -2%; height: 12%; z-index: 6;
+  background:
+    radial-gradient(130% 110% at 50% 0%, var(--curtain-light), transparent 68%),
+    linear-gradient(180deg, var(--curtain-deep), var(--curtain-mid));
+  box-shadow: 0 22px 48px #0007;
+}
+.personal-invite .curtain-valance::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: -18px; height: 20px;
+  background: radial-gradient(circle at 24px 0, var(--curtain-mid) 0 21px, transparent 22px) 0 0 / 48px 20px repeat-x;
+}
+.personal-invite .curtain-copy {
+  position: absolute; inset: 0; z-index: 4;
+  display: flex; align-items: center; justify-content: center;
+  padding: clamp(5rem, 10vw, 8.5rem) clamp(1rem, 5vw, 4rem) clamp(4.5rem, 8vw, 7rem);
+  will-change: transform, opacity;
+}
+.personal-invite .curtain-copy .stage-copy {
+  max-width: min(860px, 88%);
+  border-color: color-mix(in oklch, var(--gold) 32%, transparent);
+  background: color-mix(in oklch, var(--background) 46%, transparent);
+  backdrop-filter: blur(9px) saturate(120%);
+  box-shadow: var(--shadow-gold), inset 0 0 70px color-mix(in oklch, var(--gold) 13%, transparent);
+}
+.personal-invite .curtain-copy .stage-names { font-size: clamp(3rem, 7.2vw, 7.4rem); }
+.personal-invite .curtain-scroll {
+  position: absolute; bottom: 1.5rem; left: 50%; transform: translateX(-50%); z-index: 7;
+  color: var(--gold); text-align: center; text-decoration: none;
+  font-size: .58rem; letter-spacing: .3em; text-transform: uppercase;
+  transition: transform .25s ease;
+}
+.personal-invite .curtain-scroll:hover { transform: translate(-50%, 4px); }
+/* The rest of the invitation keeps flying in as you scroll, like the next shots
+   of one continuous film (progressive enhancement: browsers without scroll
+   timelines simply show the sections in place). */
+@keyframes invite-progress { to { scale: 1 1; } }
+@keyframes invite-fly-through {
+  /* No transform in the final keyframe: once a section has arrived it must not
+     keep a containing block, or its fixed overlays (the gallery lightbox) would
+     be positioned against the section instead of the screen. */
+  from {
+    opacity: .3;
+    transform: perspective(1300px) translate3d(0, 5rem, -230px) rotateX(7deg) scale(.96);
+  }
+  to { opacity: 1; }
+}
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    /* A hairline of gold film running along the top while the guest scrolls. */
+    .personal-invite[data-framework="curtain-call"]::before {
+      content: ""; position: fixed; inset: 0 0 auto 0; height: 2px; z-index: 60;
+      background: var(--gradient-gold); transform-origin: 0 50%; scale: 0 1;
+      animation: invite-progress linear; animation-timeline: scroll(root block);
+      pointer-events: none;
+    }
+    /* The gallery is skipped on purpose: its lightbox is a fixed overlay. */
+    .personal-invite[data-framework="curtain-call"] .invite-section:not(.invite-suite-gallery),
+    .personal-invite[data-framework="curtain-call"] .invite-countdown-wrap,
+    .personal-invite[data-framework="curtain-call"] .invite-footer {
+      animation: invite-fly-through linear both;
+      animation-timeline: view();
+      animation-range: entry 0% cover 32%;
+      transform-origin: 50% 50%;
+    }
+  }
+}
+@media (max-width: 720px) {
+  .personal-invite .curtain-stage { height: 165svh; min-height: 760px; }
+  .personal-invite .curtain-panel { width: 58%; }
+  .personal-invite .curtain-copy { padding: 6.5rem .8rem 5.5rem; }
+  .personal-invite .curtain-copy .stage-copy { max-width: 94%; padding: 2.4rem 1.15rem; }
+  .personal-invite .curtain-copy .stage-names { font-size: clamp(2.6rem, 12vw, 4.2rem); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .personal-invite .curtain-rays, .personal-invite .curtain-motes::before { animation: none; }
+}
+.personal-invite .curtain-stage[data-reduced="true"] { height: auto; min-height: 0; }
+.personal-invite .curtain-stage[data-reduced="true"] .curtain-sticky {
+  position: relative; height: min(940px, 100svh);
+}
+.personal-invite .curtain-stage[data-reduced="true"] .curtain-panel { display: none; }
+/* Grand Curtain's opening gate uses velvet instead of lacquered doors. */
+.heavenly-entrance.is-curtain .heavenly-gate {
+  width: 52%; border: 0;
+  background:
+    radial-gradient(130% 60% at 30% 0%, #c04a6755, transparent 62%),
+    repeating-linear-gradient(96deg, #3b0918 0 26px, #7a1832 40px 52px, #4a0d22 74px 96px);
+  box-shadow: inset -60px 0 120px #000a;
+}
+.heavenly-entrance.is-curtain .gate-arch { display: none; }
+.heavenly-entrance.is-curtain .gate-left { border-right: 1px solid #d4a94f66; }
+.heavenly-entrance.is-curtain .gate-right { border-left: 1px solid #d4a94f66; }
 
 /* Modern Mosaic: a sharp asymmetric invitation with a floating detail tile. */
 .personal-invite[data-framework="modern-mosaic"] .stage-frame { inset: 2rem; border-radius: 0; }
