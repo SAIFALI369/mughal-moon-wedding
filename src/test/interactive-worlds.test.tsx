@@ -54,7 +54,7 @@ const pageFor = (theme: string) =>
 
 describe("two interactive worlds", () => {
   it("adds Chand Bagh and Mela Maidan as signature themes with artwork and print palettes", () => {
-    expect(invitationThemeIds).toHaveLength(20);
+    expect(invitationThemeIds).toHaveLength(23);
     for (const [theme, layout] of [
       ["chand-bagh", "chand-bagh"],
       ["mela-maidan", "mela-maidan"],
@@ -69,7 +69,7 @@ describe("two interactive worlds", () => {
     }
     const signatureThemes = invitationThemes.filter((theme) => theme.category === "signature");
     expect(signatureThemes).toHaveLength(5);
-    expect(invitationThemeCategories).toHaveLength(7);
+    expect(invitationThemeCategories).toHaveLength(8);
   });
 
   it("keeps a cat and a squirrel with names, one pair per world", () => {

@@ -1,3 +1,6 @@
+import royalRajmahal from "@/assets/themes/royal-rajmahal.webp";
+import lotusGoddess from "@/assets/themes/lotus-goddess.webp";
+import calligraphy from "@/assets/themes/calligraphy.webp";
 import eidSky from "@/assets/eid-sky.webp";
 import aladin from "@/assets/themes/aladin.webp";
 import bihariVibe from "@/assets/themes/bihari-vibe.webp";
@@ -19,6 +22,9 @@ import melaMaidan from "@/assets/themes/mela-maidan.webp";
 import type { InvitationTheme } from "./invitation-options";
 
 export const invitationArt: Record<InvitationTheme, string> = {
+  "royal-rajmahal": royalRajmahal,
+  "lotus-goddess": lotusGoddess,
+  calligraphy,
   eid: eidSky,
   mughal: eidSky,
   classic: eidSky,

@@ -1,3 +1,4 @@
+import { isStorybook, storySound } from "./storybook";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import confetti from "canvas-confetti";
 import { Ban, CheckCircle2, HeartHandshake } from "lucide-react";
@@ -41,7 +42,9 @@ export function InvitationRsvp({
   deadline,
   preview = false,
   heading,
+  theme,
 }: {
+  theme?: string;
   cardId?: string;
   deadline?: string;
   preview?: boolean;
@@ -103,11 +106,29 @@ export function InvitationRsvp({
   function celebrate() {
     if (!canCelebrate()) return;
     if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-    const palette = getComputedStyle(document.documentElement);
-    const gold = ["--gold", "--gold-light"]
-      .map((token) => palette.getPropertyValue(token).trim())
+    const palette = getComputedStyle(
+      document.querySelector(".personal-invite") ?? document.documentElement,
+    );
+    const gold = (
+      theme === "royal-rajmahal"
+        ? ["#a22b49", "#d58a99", "#e6b860"]
+        : theme === "lotus-goddess"
+          ? ["#c99c46", "#f6d98b", "#e5b6c4"]
+          : ["--gold", "--gold-light"]
+    )
+      .map((token) => (token.startsWith("#") ? token : palette.getPropertyValue(token).trim()))
       .filter(Boolean);
-    confetti({ particleCount: 160, spread: 90, origin: { y: 0.7 }, colors: gold });
+    const shapes =
+      theme === "royal-rajmahal"
+        ? [confetti.shapeFromPath({ path: "M0 0 C12 -12 24 0 12 20 C3 17 -4 10 0 0 Z" })]
+        : undefined;
+    confetti({
+      particleCount: 160,
+      spread: 90,
+      origin: { y: 0.7 },
+      colors: gold,
+      ...(shapes ? { shapes } : {}),
+    });
     setTimeout(
       () => confetti({ particleCount: 90, angle: 60, spread: 70, origin: { x: 0 }, colors: gold }),
       250,
@@ -138,6 +159,16 @@ export function InvitationRsvp({
     }
     setNameError("");
     setError("");
+    if (preview && theme && isStorybook(theme)) {
+      setSubmitted(true);
+      if (attending) celebrate();
+      if (
+        attending &&
+        document.querySelector(".personal-invite")?.getAttribute("data-sound") === "true"
+      )
+        storySound("chime");
+      return;
+    }
     const parsed = invitationRsvpSchema.safeParse({
       card_id: cardId,
       name: trimmedName,
@@ -162,7 +193,14 @@ export function InvitationRsvp({
       rememberReply(cardId!);
       setAlreadyReplied(true);
       setSubmitted(true);
-      celebrate();
+      if (attending) celebrate();
+      if (theme && isStorybook(theme)) {
+        if (
+          attending &&
+          document.querySelector(".personal-invite")?.getAttribute("data-sound") === "true"
+        )
+          storySound("chime");
+      }
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "code" in err && err.code === "42501"
@@ -191,7 +229,7 @@ export function InvitationRsvp({
             Please reply by {deadline}.
           </p>
         )}
-        {preview || !cardId ? (
+        {(preview || !cardId) && !(preview && theme && isStorybook(theme)) ? (
           <p className="text-center font-serif text-xl">
             This is a private preview. Guest replies appear here when you publish and share your
             card.
@@ -210,14 +248,29 @@ export function InvitationRsvp({
           </div>
         ) : submitted ? (
           <div role="status" className="text-center">
-            <CheckCircle2 className="mx-auto h-12 w-12 text-gold" aria-hidden="true" />
+            {!attending && theme && isStorybook(theme) ? (
+              <span className="sb-falling-leaf" aria-hidden="true">
+                ❧
+              </span>
+            ) : (
+              <CheckCircle2 className="mx-auto h-12 w-12 text-gold" aria-hidden="true" />
+            )}
             <h3 className="mt-5 font-serif text-3xl">Thank you for replying!</h3>
             <p className="mt-3 text-sm text-muted-foreground">
-              The host has received your response privately.
+              {preview
+                ? "Demo reaction only — no reply was sent or saved."
+                : !attending
+                  ? "You’ll be missed. Thank you for sending your love — the host has received your reply privately."
+                  : "The host has received your response privately."}
             </p>
           </div>
         ) : (
           <form onSubmit={submit} className="space-y-6">
+            {preview && (
+              <p className="sb-hint" role="note">
+                Try a demo reply. Nothing is sent or saved.
+              </p>
+            )}
             <div className="space-y-2">
               <Label htmlFor="guest-name">Your full name *</Label>
               <Input

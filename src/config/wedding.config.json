@@ -1,0 +1,62 @@
+{
+  "title": "Aarav & Meera — A new chapter",
+  "theme": "royal-rajmahal",
+  "framework": "moonlit",
+  "groomName": "Aarav",
+  "brideName": "Meera",
+  "date": "15 December 2030",
+  "time": "6:00 PM IST",
+  "endTime": "11:00 PM IST",
+  "venue": "The Palace Courtyard",
+  "address": "Patna, Bihar, India",
+  "mapUrl": "https://www.google.com/maps/search/?api=1&query=Patna%20Bihar",
+  "eventType": "Wedding ceremony",
+  "hosts": "Together with our families",
+  "hostName": "Ananya",
+  "riteLine": "॥ श्री गणेशाय नमः ॥",
+  "message": "Some stories are written in the stars. Ours will be celebrated with you. Join us for an evening of music, laughter and a lifetime of beginnings.",
+  "story": "We met over a forgotten umbrella and a cup of chai. One conversation became a thousand, and somewhere between the laughter and the long walks, we found home. Now, our favourite chapter begins.",
+  "groomPhoto": null,
+  "bridePhoto": null,
+  "dressCode": "Festive Indian wear in ivory, blush or antique gold",
+  "contactName": "Ananya",
+  "contactPhone": "+91 98765 43210",
+  "arrivalNotes": "Please arrive 30 minutes before the ceremony. Contact the host for parking and accessibility assistance.",
+  "rsvpDeadline": "1 December 2030",
+  "hashtag": "#AaravAndMeera",
+  "giftsNote": "Your presence and blessings are our greatest gifts.",
+  "livestreamUrl": "",
+  "additionalEvents": [
+    {
+      "title": "Mehndi",
+      "date": "13 December 2030",
+      "time": "4:00 PM IST",
+      "venue": "The Family Garden",
+      "address": "Patna, Bihar"
+    },
+    {
+      "title": "Sangeet",
+      "date": "14 December 2030",
+      "time": "7:00 PM IST",
+      "venue": "The Palace Courtyard",
+      "address": "Patna, Bihar"
+    }
+  ],
+  "songs": [{ "title": "Rosewater", "url": "/audio/rosewater.mp3" }],
+  "elements": {
+    "gate": true,
+    "countdown": true,
+    "message": true,
+    "portraits": true,
+    "story": true,
+    "gallery": true,
+    "schedule": true,
+    "venueMap": true,
+    "dressCode": true,
+    "contact": true,
+    "rsvp": true,
+    "wishes": true,
+    "gifts": true,
+    "livestream": false
+  }
+}
