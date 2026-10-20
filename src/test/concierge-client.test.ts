@@ -71,6 +71,23 @@ describe("concierge delivery", () => {
     expect(server).not.toHaveBeenCalled();
   });
 
+  it("reports the Edge timeout, not a missing server key, when both fail", async () => {
+    vi.useFakeTimers();
+    const result = requestConcierge(
+      (signal) => {
+        signal.addEventListener("abort", () => {});
+        return new Promise(() => {});
+      },
+      async () => {
+        throw new Error("The AI assistant is not configured yet.");
+      },
+    );
+    const assertion = expect(result).rejects.toThrow("timed out");
+    await vi.advanceTimersByTimeAsync(6_000);
+    await assertion;
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
   it("bounds the server fallback too", async () => {
     vi.useFakeTimers();
     const result = requestConcierge(

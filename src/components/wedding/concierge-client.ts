@@ -74,7 +74,19 @@ export async function requestConcierge(
     throw new Error(edgeFailure);
   }
 
-  const result = toResult(await withTimeout(() => server()));
+  let fallback: Reply;
+  try {
+    fallback = await withTimeout(() => server());
+  } catch (error) {
+    // A missing key on the app server is not the guest's concern when the Edge
+    // Function merely timed out: report the real transport failure instead.
+    if (edgeFailure && /not configured/i.test(error instanceof Error ? error.message : "")) {
+      throw new Error(edgeFailure);
+    }
+    throw error;
+  }
+
+  const result = toResult(fallback);
   if (!result.reply) throw new Error("No answer was returned");
   return result;
 }
