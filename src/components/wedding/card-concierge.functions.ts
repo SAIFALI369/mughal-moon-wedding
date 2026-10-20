@@ -109,6 +109,7 @@ export const askCardConcierge = createServerFn({ method: "POST" })
     const [
       {
         generateGeminiReply,
+        getRequestIp,
         hasGeminiConfig,
         normalizeChatMessages,
         reserveAiQuota,
@@ -123,6 +124,10 @@ export const askCardConcierge = createServerFn({ method: "POST" })
     ]);
 
     const messages = normalizeChatMessages(data.messages);
+    // Storage-blocked browsers send no id; give them their own key instead of the
+    // shared "unknown" bucket. The Edge token pattern allows letters, digits and dashes.
+    const visitor =
+      data.visitor ?? `ip-${getRequestIp().replace(/[^a-zA-Z0-9]+/g, "-")}`.slice(0, 128);
 
     // No key on this deployment? The Edge Function already holds one and charges
     // the same daily allowance, so it is the single enforcement point.
@@ -130,13 +135,13 @@ export const askCardConcierge = createServerFn({ method: "POST" })
       return askEdgeCardConcierge({
         slug: data.slug,
         language: data.language,
-        visitor: data.visitor,
+        visitor,
         messages,
       });
     }
 
     const scope = `card:${data.slug}`;
-    const { quota, hash } = await reserveAiQuota(scope, CARD_DAILY_LIMIT, data.visitor);
+    const { quota, hash } = await reserveAiQuota(scope, CARD_DAILY_LIMIT, visitor);
     if (!quota.allowed) {
       throw new Error(
         `You have used all ${quota.limit} messages for today. Please come back tomorrow.`,
