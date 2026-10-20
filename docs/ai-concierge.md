@@ -42,7 +42,7 @@ Both chat surfaces try the Edge Function first, then the app server. Each attemp
 - **Not configured:** Add the key to the backend secrets as above. An empty or dummy key cannot generate AI responses.
 - **400/404 from Gemini:** Check the configured model is supported by your account.
 - **401/403:** Check the key and API access restrictions.
-- **429:** Check Gemini quota/billing and retry later.
+- **429:** The daily allowance was used (the reply states how many answers are left). This is the app's own limit, not Google billing; it resets 24 hours after the first message. Check Gemini quota/billing only when the backend logs report an upstream 429.
 - **Browser CORS or function not found:** Deploy the function and verify `ALLOWED_ORIGIN` matches your site.
 
 After deployment, test a greeting and a schedule question from both the homepage chat and `/ai-concierge`. Also test Hindi and Urdu. Do not paste keys into chat or browser code.
@@ -61,7 +61,21 @@ The homepage hero, countdown, event cards, story milestone, and downloadable cal
 
 Creators' cards do **not** use Simran. Each published card has its own assistant, named after the host saved in the card, and a six-track-per-day limit. It is grounded server-side in that card's own content via `src/components/wedding/card-concierge.functions.ts`, which shares `gemini.server.ts` with the Simran server fallback. The shared prompt builder is `buildCardConciergeInstruction` in `supabase/functions/_shared/concierge-personality.ts`.
 
-A card's soundtrack is host-authored (up to five `https://` or `/audio/` links) and is played only after a guest presses play. Model playback markers are bounded to `play`, `pause`, `next` and a track number. The Edge Function is not used for card assistants, so no additional function deployment is required beyond a valid `GEMINI_API_KEY` on the app server; instant card answers work even without a key.
+A card's soundtrack is host-authored (up to five `https://` or `/audio/` links) and is played only after a guest presses play. Model playback markers are bounded to `play`, `pause`, `next` and a track number.
+
+Card chat works without a Gemini key on the app server: when `GEMINI_API_KEY` is absent, `askCardConcierge` forwards the question to the `wedding-concierge` Edge Function in `mode: "card"`, which loads the same published card and applies the same grounding. The app server only calls Gemini directly when it has its own key (for example local development with `supabase/.env`).
+
+## Shared daily allowance
+
+One Postgres ledger (`public.ai_message_usage`, migration `0016_shared_ai_quota.sql`) is the single source of truth for every AI surface:
+
+- `public.consume_ai_message(scope, visitor, limit, window_hours)` atomically reserves an answer and returns `allowed`, `remaining`, `limit` and `resetsAt`.
+- `public.refund_ai_message(scope, visitor)` gives the reservation back when Gemini fails, so an error never costs a guest a message.
+- Scopes are `homepage` (5 answers/day) and `card:<slug>` (6 answers/day).
+- The visitor key is a SHA-256 digest of a per-browser id stored in `localStorage` (`wedding-ai-visitor`), so guests behind one NAT, office or proxy do not share an allowance. Hosted clients that send no id fall back to the request IP.
+- The functions are `SECURITY DEFINER`, revoked from `anon`/`authenticated` and granted only to `service_role`.
+
+Both the Edge Function and the TanStack server functions call the same RPCs, so a count is never duplicated in memory and is not lost when an isolate or serverless instance recycles. If the ledger is unreachable the code fails open — chat keeps working rather than blocking guests on an infrastructure error.
 
 See [personal-invitations.md](./personal-invitations.md) for the creator flow.
 

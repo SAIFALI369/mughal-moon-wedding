@@ -113,6 +113,13 @@
       "when": 1792560000000,
       "tag": "0015_host_only_gallery_and_real_rsvp_names",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1792612800000,
+      "tag": "0016_shared_ai_quota",
+      "breakpoints": true
     }
   ]
 }
