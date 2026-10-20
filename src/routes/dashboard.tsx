@@ -689,12 +689,12 @@ export function Dashboard() {
               {!fetching && (!partner?.active || remaining === 0) && (
                 <p className="partner-credit-warning" role="status">
                   {!partner
-                    ? "Your account has not been activated as a print-shop partner."
+                    ? "This account has no shop allowance yet. Your InvitingYou representative can add one."
                     : !partner.active
                       ? "Your partner access is inactive."
                       : "You have used all your card credits."}{" "}
-                  Contact your InvitingYou representative. Accounts and additional packages are
-                  issued personally after cash payment—there is no online checkout.
+                  Every account created in Supabase starts with 10 card credits; additional packages
+                  are issued personally after cash payment—there is no online checkout.
                 </p>
               )}
             </section>
@@ -702,7 +702,9 @@ export function Dashboard() {
         </Tabs>
         {!fetching && (!partner?.active || remaining === 0) && activeTab !== "credits" && (
           <p className="dashboard-access-notice" role="status">
-            {!partner?.active ? "Partner access needs activation." : "No card credits remaining."}{" "}
+            {!partner?.active
+              ? "No active card allowance on this account."
+              : "No card credits remaining."}{" "}
             <button onClick={() => changeTab("credits")}>View credits & access →</button>
           </p>
         )}

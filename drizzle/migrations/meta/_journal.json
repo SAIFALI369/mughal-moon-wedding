@@ -92,6 +92,13 @@
       "when": 1792454400000,
       "tag": "0012_link_existing_email_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1792459200000,
+      "tag": "0013_automatic_account_access",
+      "breakpoints": true
     }
   ]
 }

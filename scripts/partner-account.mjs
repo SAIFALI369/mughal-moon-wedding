@@ -58,11 +58,14 @@ try {
   const rl = createInterface({ input: process.stdin, output: process.stdout });
   const username = (await rl.question("Shop username (3–30 letters/numbers/._-): ")).trim();
   const shop = (await rl.question("Shop name: ")).trim();
-  const confirmation = await rl.question(
-    "Have you received ₹1,000 IN CASH for this package? Type CASH RECEIVED to continue: ",
-  );
+  let confirmation = "";
+  if (mode === "topup") {
+    confirmation = await rl.question(
+      "Have you received ₹1,000 IN CASH for this package? Type CASH RECEIVED to continue: ",
+    );
+  }
   rl.close();
-  if (confirmation !== "CASH RECEIVED")
+  if (mode === "topup" && confirmation !== "CASH RECEIVED")
     throw new Error("Cancelled. No payment or credits recorded.");
   if (!/^[a-zA-Z0-9_.-]{3,30}$/.test(username) || shop.length < 2 || shop.length > 120)
     throw new Error("Invalid username or shop name.");
@@ -81,12 +84,14 @@ try {
   }
   console.log(
     mode === "create"
-      ? "Partner account created with 10 credits. Hand over the username and password privately."
+      ? "Partner account created with its 10 included credits. Hand over the username and password privately."
       : "Cash package recorded. 10 credits added without resetting past usage.",
   );
-  console.log(
-    "Do not run again to retry a successful operation: every topup records another ₹1,000 cash package.",
-  );
+  if (mode === "topup") {
+    console.log(
+      "Do not run topup again to retry a successful operation: every successful topup records another ₹1,000 cash package.",
+    );
+  }
 } catch {
   // Driver errors can include query parameters (including passwords). Never print them.
   console.error(

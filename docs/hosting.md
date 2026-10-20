@@ -56,7 +56,8 @@ select proname from pg_proc where proname in
 ### Auth model
 
 - Guests do not need an account to view the invitation, submit the main RSVP, add a gallery photo, or chat with Simran.
-- Creators authenticate with **username + password**. `register_username` writes the `profiles` row and the matching `auth.users` / `auth.identities` rows in one transaction; no email confirmation or mailbox is involved. The internal address is `<uuid>@accounts.invalid`.
+- Creators authenticate with **username + password** or with the email address of an existing Supabase account. `register_username` writes the `profiles` row and the matching `auth.users` / `auth.identities` rows in one transaction; no email confirmation or mailbox is involved. The internal address is `<uuid>@accounts.invalid`.
+- `0013_automatic_account_access.sql` adds an `AFTER INSERT` trigger on `auth.users`: any account created by the operator (dashboard, Auth admin API or CLI) gets a profile and a 10-credit `print_partners` row in the same transaction.
 - RLS keeps `profiles` self-only, `wedding_rsvps` insert-only for visitors, and `invitation_rsvps` insert-only for guests / owner-readable for the card owner.
 
 ---

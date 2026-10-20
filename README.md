@@ -2,7 +2,7 @@
 
 ## Current product: InvitingYou print-shop partner portal
 
-Access is exclusive and issued personally after **₹1,000 cash for 10 card credits**. Public registration is disabled. The homepage is the partner portal; the original wedding invitation is preserved at `/demo`.
+Access is exclusive and issued personally. You create every account in Supabase, and any account that exists there automatically receives **10 card credits**; further ₹1,000 cash packages add ten more. Public registration is disabled. The homepage is the partner portal; the original wedding invitation is preserved at `/demo`.
 
 **Operator guide:** [`docs/print-shop-partners.md`](docs/print-shop-partners.md) — provision a shop, record a cash package, manage credits, and deploy the access controls. Card credits are consumed on new draft creation; deletion does not refund them.
 
