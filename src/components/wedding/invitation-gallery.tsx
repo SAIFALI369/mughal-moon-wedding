@@ -21,10 +21,12 @@ export function InvitationGallery({
   cardId,
   details,
   preview = false,
+  heading,
 }: {
   cardId?: string;
   details: InvitationDetails;
   preview?: boolean;
+  heading?: { eyebrow: string; title: string };
 }) {
   const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
   const [loading, setLoading] = useState(false);
@@ -110,7 +112,9 @@ export function InvitationGallery({
       id="gallery"
       className="invite-section invite-suite invite-suite-gallery relative overflow-hidden px-6 py-20 sm:py-28"
     >
-      <SuiteHeading eyebrow="Gallery">Moments of Us</SuiteHeading>
+      <SuiteHeading eyebrow={heading?.eyebrow ?? "Gallery"}>
+        {heading?.title ?? "Moments of Us"}
+      </SuiteHeading>
       <p className="invite-suite-sub">
         Portraits and celebration frames, shared by the hosts — tap any photo to see it larger.
       </p>

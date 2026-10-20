@@ -128,6 +128,20 @@ const PALETTES: Record<string, PrintPalette> = {
     soft: "#6f6a5e",
     tint: "#ebe5d6",
   },
+  "chand-bagh": {
+    paper: "#f4f8fb",
+    ink: "#132a3d",
+    accent: "#1f5f7a",
+    soft: "#5d7484",
+    tint: "#e2eef4",
+  },
+  "mela-maidan": {
+    paper: "#fff8ee",
+    ink: "#4a2415",
+    accent: "#c2552c",
+    soft: "#8a6a55",
+    tint: "#fde8d2",
+  },
 };
 
 export function paletteForTheme(theme: string): PrintPalette {

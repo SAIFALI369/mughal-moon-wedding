@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import {
   CalendarDays,
   CalendarHeart,
@@ -46,12 +46,21 @@ import {
 import {
   BaagCover,
   BaagStage,
+  ChandBaghCover,
+  ChandBaghStage,
   ChhatriDawnCover,
   ChhatriDawnStage,
   InkCover,
   LayoutInterlude,
+  MelaCover,
+  MelaMaidanStage,
   SingleStrokeStage,
+  WorldInterlude,
 } from "./invitation-layouts";
+import { CardWorld, PlayTheCard, WorldProvider, WorldSparkle } from "./invitation-world";
+import { isInteractiveLayout, mascotsForTheme, playfulCopy } from "./invitation-options";
+import { useInvitedGuestName } from "@/hooks/use-invited-guest";
+import { CatMascot, SquirrelMascot } from "./invitation-world";
 import {
   ArchOutline,
   InvitationCorners,
@@ -130,6 +139,10 @@ export function InvitationCover({ content }: { content: unknown }) {
         <BaagCover details={details} />
       ) : layout === "single-stroke" ? (
         <InkCover details={details} />
+      ) : layout === "chand-bagh" ? (
+        <ChandBaghCover details={details} />
+      ) : layout === "mela-maidan" ? (
+        <MelaCover details={details} />
       ) : (
         <div className="cover-inner relative flex min-h-[23rem] flex-col items-center justify-center px-7 py-9">
           <div className="cover-blessing flex w-full items-center justify-center gap-2 text-gold">
@@ -267,6 +280,37 @@ function InvitationExtras({
   );
 }
 
+/**
+ * Section titles speak plainly everywhere, and like a game in the two
+ * interactive worlds. The fallback is exactly the copy every other theme uses.
+ */
+function SectionHeading({
+  layout,
+  section,
+  eyebrow,
+  children,
+}: {
+  layout: ReturnType<typeof invitationLayoutFor>;
+  section: Parameters<typeof playfulCopy>[1];
+  eyebrow: string;
+  children: ReactNode;
+}) {
+  const copy = playfulCopy(layout, section);
+  return <SuiteHeading eyebrow={copy?.eyebrow ?? eyebrow}>{copy?.title ?? children}</SuiteHeading>;
+}
+
+/** A collectible star, only in the interactive worlds. */
+function Sparkle({
+  layout,
+  index,
+}: {
+  layout: ReturnType<typeof invitationLayoutFor>;
+  index: number;
+}) {
+  if (!isInteractiveLayout(layout)) return null;
+  return <WorldSparkle index={index} />;
+}
+
 /** Entire invitation is driven by its own card; never borrows the homepage's photos, story or RSVP. */
 export function PersonalInvitation({
   title,
@@ -291,6 +335,10 @@ export function PersonalInvitation({
   const gateDateLine = [details.date, details.venue].filter(Boolean).join(" · ");
   const art = invitationArt[details.theme];
   const layout = invitationLayoutFor(details.theme, details.framework);
+  const interactive = isInteractiveLayout(layout);
+  const guestName = useInvitedGuestName();
+  const mascots = mascotsForTheme(details.theme);
+  const play = (section: Parameters<typeof playfulCopy>[1]) => playfulCopy(layout, section);
   const monogram = getInvitationMonogram(details);
   const assistantName = getInvitationAssistantName(details);
   const plate = datePlate(details.date);
@@ -326,14 +374,23 @@ export function PersonalInvitation({
     </>
   );
 
-  return (
+  const page = (
     <div
       data-theme={details.theme}
       data-framework={details.framework}
       data-layout={layout}
+      data-interactive={interactive ? "true" : undefined}
       className="personal-invite min-h-screen overflow-x-hidden bg-background text-foreground"
     >
       <ThemeBackdrop theme={details.theme} art={art} />
+      {interactive && (
+        <CardWorld
+          layout={layout}
+          details={details}
+          cardKey={cardId || slug || `preview-${details.theme}`}
+          guestName={guestName}
+        />
+      )}
       {showGate && !preview && details.elements.gate && (
         <Preloader
           onDone={() => {}}
@@ -426,6 +483,22 @@ export function PersonalInvitation({
           scrollTo={scrollTo}
           entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
         />
+      ) : layout === "chand-bagh" ? (
+        <ChandBaghStage
+          details={details}
+          backgroundImage={art}
+          actions={actions}
+          scrollTo={scrollTo}
+          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+        />
+      ) : layout === "mela-maidan" ? (
+        <MelaMaidanStage
+          details={details}
+          backgroundImage={art}
+          actions={actions}
+          scrollTo={scrollTo}
+          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+        />
       ) : layout === "moonlit" ? (
         <div id="invitation-top" className="invite-hero-wrap">
           <Hero
@@ -472,6 +545,25 @@ export function PersonalInvitation({
         />
       )}
 
+      {interactive && (
+        <div className="invite-guest-ribbon">
+          <span>
+            {guestName ? (
+              <>
+                Dear <strong>{guestName}</strong>, the{" "}
+                {layout === "mela-maidan" ? "mela" : "garden"} has been waiting for you.
+              </>
+            ) : (
+              <>
+                Dear friend, {mascots?.cat ?? "Noor"} and {mascots?.squirrel ?? "Gul"} saved you a
+                place.
+              </>
+            )}
+          </span>
+          <a href="#play">Play the card</a>
+        </div>
+      )}
+
       {countdownDate && details.elements.countdown && (
         <div className="invite-countdown-wrap">
           <Countdown
@@ -485,13 +577,17 @@ export function PersonalInvitation({
       )}
 
       <LayoutInterlude layout={layout} details={details} />
+      <WorldInterlude layout={layout} details={details} />
 
       {details.elements.message && (
         <section
           id="message"
           className="invite-section invite-suite invite-suite-note relative overflow-hidden px-6 py-20 sm:py-28"
         >
-          <SuiteHeading eyebrow="With love">A Note From Us</SuiteHeading>
+          <Sparkle layout={layout} index={0} />
+          <SectionHeading layout={layout} section="message" eyebrow="With love">
+            A Note From Us
+          </SectionHeading>
           <motion.div {...fadeUp} className="invite-note-card mx-auto max-w-3xl">
             <InvitationCorners />
             <span className="invite-note-seal">
@@ -516,7 +612,10 @@ export function PersonalInvitation({
           id="story"
           className="invite-section invite-suite invite-suite-story relative overflow-hidden px-6 py-20 sm:py-28"
         >
-          <SuiteHeading eyebrow="Our journey">The Story So Far</SuiteHeading>
+          <Sparkle layout={layout} index={1} />
+          <SectionHeading layout={layout} section="story" eyebrow="Our journey">
+            The Story So Far
+          </SectionHeading>
           <motion.div {...fadeUp} className="invite-story-panel mx-auto max-w-4xl">
             <Quote className="invite-story-quote h-10 w-10" aria-hidden="true" />
             <p className="invite-story-text whitespace-pre-wrap">{details.story}</p>
@@ -532,14 +631,27 @@ export function PersonalInvitation({
       )}
 
       {details.elements.gallery && (
-        <InvitationGallery cardId={cardId} details={details} preview={preview} />
+        <div className="invite-sparkle-host">
+          <Sparkle layout={layout} index={6} />
+          <InvitationGallery
+            cardId={cardId}
+            details={details}
+            preview={preview}
+            heading={play("gallery") ?? undefined}
+          />
+        </div>
       )}
+
+      {interactive && <PlayTheCard layout={layout} details={details} guestName={guestName} />}
 
       <section
         id="celebration"
         className="invite-section invite-suite invite-suite-celebration relative overflow-hidden px-6 py-20 sm:py-28"
       >
-        <SuiteHeading eyebrow="Join us">The Celebration</SuiteHeading>
+        <Sparkle layout={layout} index={2} />
+        <SectionHeading layout={layout} section="celebration" eyebrow="Join us">
+          The Celebration
+        </SectionHeading>
         <motion.div {...fadeUp} className="invite-celebration mx-auto max-w-5xl">
           <div className="invite-date-plate">
             <ArchOutline className="invite-date-arch" />
@@ -647,7 +759,10 @@ export function PersonalInvitation({
           id="schedule"
           className="invite-section invite-suite invite-suite-schedule relative overflow-hidden px-6 py-20 sm:py-28"
         >
-          <SuiteHeading eyebrow="All our moments">The Wedding Events</SuiteHeading>
+          <Sparkle layout={layout} index={3} />
+          <SectionHeading layout={layout} section="schedule" eyebrow="All our moments">
+            The Wedding Events
+          </SectionHeading>
           <div className="invite-timeline mx-auto max-w-3xl">
             <article className="invite-timeline-item">
               <span className="invite-timeline-marker">01</span>
@@ -730,7 +845,10 @@ export function PersonalInvitation({
           id="venue"
           className="invite-section invite-suite invite-suite-venue relative overflow-hidden px-6 py-20 sm:py-28"
         >
-          <SuiteHeading eyebrow="Find us">Where We’ll Celebrate</SuiteHeading>
+          <Sparkle layout={layout} index={4} />
+          <SectionHeading layout={layout} section="venue" eyebrow="Find us">
+            Where We’ll Celebrate
+          </SectionHeading>
           <motion.div {...fadeUp} className="invite-venue-card mx-auto max-w-3xl">
             <InvitationCorners />
             <span className="invite-venue-lamp" aria-hidden="true">
@@ -764,7 +882,10 @@ export function PersonalInvitation({
           id="dress-code"
           className="invite-section invite-suite invite-suite-dress relative overflow-hidden px-6 py-20 sm:py-24"
         >
-          <SuiteHeading eyebrow="What to wear">Dress Code</SuiteHeading>
+          <Sparkle layout={layout} index={5} />
+          <SectionHeading layout={layout} section="dressCode" eyebrow="What to wear">
+            Dress Code
+          </SectionHeading>
           <motion.div {...fadeUp} className="invite-dress-card mx-auto max-w-2xl">
             <span className="invite-dress-swatch invite-dress-swatch-one" aria-hidden="true" />
             <span className="invite-dress-swatch invite-dress-swatch-two" aria-hidden="true" />
@@ -782,7 +903,9 @@ export function PersonalInvitation({
           id="gifts"
           className="invite-section invite-suite invite-suite-gifts relative overflow-hidden px-6 py-20 sm:py-24"
         >
-          <SuiteHeading eyebrow="With gratitude">Gifts &amp; Blessings</SuiteHeading>
+          <SectionHeading layout={layout} section="gifts" eyebrow="With gratitude">
+            Gifts &amp; Blessings
+          </SectionHeading>
           <motion.div {...fadeUp} className="invite-gift-card mx-auto max-w-2xl">
             <InvitationCorners />
             <Gift className="invite-gift-icon h-6 w-6" aria-hidden="true" />
@@ -799,7 +922,9 @@ export function PersonalInvitation({
           id="livestream"
           className="invite-section invite-suite invite-suite-live relative overflow-hidden px-6 py-20 text-center sm:py-24"
         >
-          <SuiteHeading eyebrow="From anywhere">Join the Live Stream</SuiteHeading>
+          <SectionHeading layout={layout} section="livestream" eyebrow="From anywhere">
+            Join the Live Stream
+          </SectionHeading>
           <motion.div {...fadeUp} className="invite-live-card mx-auto max-w-lg">
             <span className="invite-live-dot" aria-hidden="true" />
             <p className="invite-live-title">The ceremony, live</p>
@@ -824,7 +949,9 @@ export function PersonalInvitation({
           id="contact"
           className="invite-section invite-suite invite-suite-contact px-6 py-20 text-center sm:py-24"
         >
-          <SuiteHeading eyebrow="Need anything?">Contact the Host</SuiteHeading>
+          <SectionHeading layout={layout} section="contact" eyebrow="Need anything?">
+            Contact the Host
+          </SectionHeading>
           <div className="invite-contact-card mx-auto max-w-lg">
             <p className="font-serif text-2xl">{details.contactName || details.hostName}</p>
             {details.contactPhone && (
@@ -843,16 +970,30 @@ export function PersonalInvitation({
       )}
 
       {details.elements.rsvp && (
-        <div className="invite-rsvp-shell">
-          <InvitationRsvp cardId={cardId} deadline={details.rsvpDeadline} preview={preview} />
+        <div className="invite-rsvp-shell invite-sparkle-host">
+          <Sparkle layout={layout} index={7} />
+          <InvitationRsvp
+            cardId={cardId}
+            deadline={details.rsvpDeadline}
+            preview={preview}
+            heading={play("rsvp") ?? undefined}
+          />
         </div>
       )}
 
       {details.elements.wishes && (
-        <InvitationWishes cardId={cardId} details={details} preview={preview} />
+        <div className="invite-sparkle-host">
+          <Sparkle layout={layout} index={8} />
+          <InvitationWishes
+            cardId={cardId}
+            details={details}
+            preview={preview}
+            heading={play("wishes") ?? undefined}
+          />
+        </div>
       )}
 
-      {!preview && slug && <InvitationShare details={details} slug={slug} />}
+      {!preview && slug && <InvitationShare details={details} slug={slug} layout={layout} />}
 
       {preview ? (
         <InvitationExtras details={details} inline preview={preview} />
@@ -892,6 +1033,12 @@ export function PersonalInvitation({
         )}
       </footer>
     </div>
+  );
+
+  return interactive ? (
+    <WorldProvider cardKey={cardId || slug || `preview-${details.theme}`}>{page}</WorldProvider>
+  ) : (
+    page
   );
 }
 
@@ -975,7 +1122,15 @@ function InvitationVenueMap({ details }: { details: InvitationDetails }) {
  * Share panel: a personalised link per guest, copy, and WhatsApp — the same
  * convenience the main invitation's footer offers, driven by this card's slug.
  */
-function InvitationShare({ details, slug }: { details: InvitationDetails; slug: string }) {
+function InvitationShare({
+  details,
+  slug,
+  layout,
+}: {
+  details: InvitationDetails;
+  slug: string;
+  layout: ReturnType<typeof invitationLayoutFor>;
+}) {
   const [guest, setGuest] = useState("");
   const [copied, setCopied] = useState(false);
 
@@ -1013,7 +1168,9 @@ function InvitationShare({ details, slug }: { details: InvitationDetails; slug: 
       id="share"
       className="invite-section invite-suite invite-suite-share relative overflow-hidden px-6 py-20 text-center sm:py-24"
     >
-      <SuiteHeading eyebrow="Pass it on">Share the Invitation</SuiteHeading>
+      <SectionHeading layout={layout} section="share" eyebrow="Pass it on">
+        Share the Invitation
+      </SectionHeading>
       <motion.div {...fadeUp} className="invite-share-card mx-auto max-w-2xl">
         <p className="invite-share-copy">
           Add a guest or family name to create a personalised link — the greeting follows them to
