@@ -1,3 +1,4 @@
+import { isStorybook } from "./storybook";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { Send, Sparkles, X } from "lucide-react";
 import { ConciergeAvatar, ConciergeMessage, ConciergeThinking } from "./concierge-ui";
@@ -276,7 +277,7 @@ export function PersonalConcierge({
     <div className="invite-concierge">
       <button
         type="button"
-        className="invite-concierge-launcher"
+        className={`invite-concierge-launcher ${isStorybook(details.theme) ? "sb-character-launcher" : ""}`}
         aria-expanded={open}
         aria-controls="invite-concierge-panel"
         aria-label={`Ask ${name}, the AI host assistant`}
@@ -289,7 +290,15 @@ export function PersonalConcierge({
         }
       >
         <span className="invite-concierge-launcher-icon" aria-hidden="true">
-          <Sparkles className="h-4 w-4" />
+          {isStorybook(details.theme) ? (
+            <span className="sb-character" aria-hidden="true">
+              <span className="sb-character-crown">♛</span>
+              <span className="sb-character-face">◕‿◕</span>
+              <span className="sb-character-hand">✋</span>
+            </span>
+          ) : (
+            <Sparkles className="h-4 w-4" />
+          )}
         </span>
         <span className="invite-concierge-launcher-copy">
           <span className="invite-concierge-launcher-eyebrow">Ask</span>

@@ -17,6 +17,7 @@ import { Route as InvitePreviewRouteImport } from './routes/invite-preview'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
+import { Route as StorybookRouteImport } from './routes/storybook'
 import { Route as CardsIdRouteImport } from './routes/cards.$id'
 import { Route as InviteSlugRouteImport } from './routes/invite.$slug'
 
@@ -60,6 +61,11 @@ const SignUpRoute = SignUpRouteImport.update({
   path: '/sign-up',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StorybookRoute = StorybookRouteImport.update({
+  id: '/storybook',
+  path: '/storybook',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CardsIdRoute = CardsIdRouteImport.update({
   id: '/cards/$id',
   path: '/cards/$id',
@@ -80,6 +86,7 @@ export interface FileRoutesByFullPath {
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/storybook': typeof StorybookRoute
   '/cards/$id': typeof CardsIdRoute
   '/invite/$slug': typeof InviteSlugRoute
 }
@@ -92,6 +99,7 @@ export interface FileRoutesByTo {
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/storybook': typeof StorybookRoute
   '/cards/$id': typeof CardsIdRoute
   '/invite/$slug': typeof InviteSlugRoute
 }
@@ -105,6 +113,7 @@ export interface FileRoutesById {
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
+  '/storybook': typeof StorybookRoute
   '/cards/$id': typeof CardsIdRoute
   '/invite/$slug': typeof InviteSlugRoute
 }
@@ -119,6 +128,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/sign-in'
     | '/sign-up'
+    | '/storybook'
     | '/cards/$id'
     | '/invite/$slug'
   fileRoutesByTo: FileRoutesByTo
@@ -131,6 +141,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/sign-in'
     | '/sign-up'
+    | '/storybook'
     | '/cards/$id'
     | '/invite/$slug'
   id:
@@ -143,6 +154,7 @@ export interface FileRouteTypes {
     | '/profile'
     | '/sign-in'
     | '/sign-up'
+    | '/storybook'
     | '/cards/$id'
     | '/invite/$slug'
   fileRoutesById: FileRoutesById
@@ -156,6 +168,7 @@ export interface RootRouteChildren {
   ProfileRoute: typeof ProfileRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
+  StorybookRoute: typeof StorybookRoute
   CardsIdRoute: typeof CardsIdRoute
   InviteSlugRoute: typeof InviteSlugRoute
 }
@@ -218,6 +231,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof SignUpRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/storybook': {
+      id: '/storybook'
+      path: '/storybook'
+      fullPath: '/storybook'
+      preLoaderRoute: typeof StorybookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cards/$id': {
       id: '/cards/$id'
       path: '/cards/$id'
@@ -244,6 +264,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfileRoute: ProfileRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
+  StorybookRoute: StorybookRoute,
   CardsIdRoute: CardsIdRoute,
   InviteSlugRoute: InviteSlugRoute,
 }

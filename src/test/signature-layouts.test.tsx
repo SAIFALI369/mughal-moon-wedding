@@ -50,7 +50,7 @@ const coverFor = (theme: string, framework = "royal-folio") =>
 
 describe("three signature structures", () => {
   it("registers the three themes, each with its own artwork and print palette", () => {
-    expect(invitationThemeIds).toHaveLength(20);
+    expect(invitationThemeIds).toHaveLength(23);
     for (const [theme, layout] of Object.entries(signatures)) {
       expect(invitationThemeIds).toContain(theme);
       expect(invitationArt[theme as keyof typeof invitationArt]).toBeTruthy();

@@ -19,6 +19,9 @@ export const invitationThemeIds = [
   "vows-in-ink",
   "chand-bagh",
   "mela-maidan",
+  "royal-rajmahal",
+  "lotus-goddess",
+  "calligraphy",
 ] as const;
 export type InvitationTheme = (typeof invitationThemeIds)[number];
 
@@ -55,6 +58,11 @@ export type InvitationLayout = (typeof invitationLayoutIds)[number];
  * swatches. Order here is the order shown in the studio and the editor.
  */
 export const invitationThemeCategories = [
+  {
+    id: "keepsakes",
+    label: "Playable Keepsakes",
+    description: "Unbox, scratch, flip and discover your way through the story",
+  },
   {
     id: "signature",
     label: "Signature Structures",
@@ -104,6 +112,30 @@ export const invitationThemes: {
   /** Signature structure, used unless the host chooses the Grand Curtain. */
   layout?: InvitationLayout;
 }[] = [
+  {
+    id: "royal-rajmahal",
+    label: "Royal Rajmahal",
+    description: "Crimson palace, rose petals and a royal envelope",
+    swatch: "#751d30",
+    category: "keepsakes",
+    immersive: true,
+  },
+  {
+    id: "lotus-goddess",
+    label: "Lotus Goddess",
+    description: "Blush lotus pond, sage leaves and a keepsake box",
+    swatch: "#d6a8b4",
+    category: "keepsakes",
+    immersive: true,
+  },
+  {
+    id: "calligraphy",
+    label: "Calligraphy",
+    description: "Temple stone, brass lamps and an unfolding scroll",
+    swatch: "#91663d",
+    category: "keepsakes",
+    immersive: true,
+  },
   {
     id: "eid",
     label: "Eid Light",

@@ -693,6 +693,35 @@ export function InvitationDetailsFields({
               </p>
             )}
           </div>
+          <div className="space-y-2">
+            <Label htmlFor="quick-theme">Quick theme selection</Label>
+            <select
+              id="quick-theme"
+              className="min-h-12 w-full rounded-lg border border-border bg-background px-3 text-sm"
+              value={value.theme}
+              onChange={(e) =>
+                onChange((form) => ({ ...form, theme: e.target.value as InvitationForm["theme"] }))
+              }
+            >
+              {invitationThemeCategories.map((category) => (
+                <optgroup key={category.id} label={category.label}>
+                  {invitationThemes
+                    .filter((theme) => theme.category === category.id)
+                    .map((theme) => (
+                      <option key={theme.id} value={theme.id}>
+                        {theme.label}
+                      </option>
+                    ))}
+                </optgroup>
+              ))}
+            </select>
+            {["royal-rajmahal", "lotus-goddess", "calligraphy"].includes(value.theme) && (
+              <p className="text-xs text-muted-foreground">
+                This playable keepsake includes its own unboxing, scratch story, flip events and
+                venue trail. Its structure takes precedence over the shared layouts.
+              </p>
+            )}
+          </div>
           <fieldset>
             <legend className="mb-3 text-sm font-medium">Theme *</legend>
             <div className="space-y-5">

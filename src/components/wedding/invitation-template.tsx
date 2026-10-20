@@ -1,3 +1,13 @@
+import {
+  isStorybook,
+  StorybookEntry,
+  StorybookHero,
+  LivingMotifs,
+  ScratchStory,
+  FlipEvents,
+  VenueHunt,
+  StorybookAtmosphere,
+} from "./storybook";
 import { motion } from "framer-motion";
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -267,7 +277,9 @@ function InvitationExtras({
           className={`mx-auto grid max-w-5xl gap-6 ${details.songs.length ? "lg:grid-cols-[1.15fr_0.85fr]" : "max-w-2xl"}`}
         >
           <PersonalConcierge details={details} slug={slug} preview={preview} inline />
-          {details.songs.length > 0 && <InvitationMusicPlayer details={details} inline />}
+          {!isStorybook(details.theme) && details.songs.length > 0 && (
+            <InvitationMusicPlayer details={details} inline />
+          )}
         </div>
       </section>
     );
@@ -275,7 +287,9 @@ function InvitationExtras({
   return (
     <>
       <PersonalConcierge details={details} slug={slug} preview={preview} />
-      {details.songs.length > 0 && <InvitationMusicPlayer details={details} />}
+      {!isStorybook(details.theme) && details.songs.length > 0 && (
+        <InvitationMusicPlayer details={details} />
+      )}
     </>
   );
 }
@@ -336,6 +350,7 @@ export function PersonalInvitation({
   const art = invitationArt[details.theme];
   const layout = invitationLayoutFor(details.theme, details.framework);
   const interactive = isInteractiveLayout(layout);
+  const storybook = isStorybook(details.theme);
   const guestName = useInvitedGuestName();
   const mascots = mascotsForTheme(details.theme);
   const play = (section: Parameters<typeof playfulCopy>[1]) => playfulCopy(layout, section);
@@ -382,7 +397,14 @@ export function PersonalInvitation({
       data-interactive={interactive ? "true" : undefined}
       className="personal-invite min-h-screen overflow-x-hidden bg-background text-foreground"
     >
-      <ThemeBackdrop theme={details.theme} art={art} />
+      {!storybook && <ThemeBackdrop theme={details.theme} art={art} />}
+      {storybook && (
+        <>
+          <LivingMotifs theme={details.theme} />
+          <StorybookAtmosphere details={details} />
+          <StorybookEntry details={details} enabled={showGate && details.elements.gate} />
+        </>
+      )}
       {interactive && (
         <CardWorld
           layout={layout}
@@ -391,7 +413,7 @@ export function PersonalInvitation({
           guestName={guestName}
         />
       )}
-      {showGate && !preview && details.elements.gate && (
+      {!storybook && showGate && !preview && details.elements.gate && (
         <Preloader
           onDone={() => {}}
           groomName={details.groomName}
@@ -459,7 +481,9 @@ export function PersonalInvitation({
         </header>
       )}
 
-      {layout === "chhatri-dawn" ? (
+      {storybook ? (
+        <StorybookHero details={details} />
+      ) : layout === "chhatri-dawn" ? (
         <ChhatriDawnStage
           details={details}
           backgroundImage={art}
@@ -616,17 +640,21 @@ export function PersonalInvitation({
           <SectionHeading layout={layout} section="story" eyebrow="Our journey">
             The Story So Far
           </SectionHeading>
-          <motion.div {...fadeUp} className="invite-story-panel mx-auto max-w-4xl">
-            <Quote className="invite-story-quote h-10 w-10" aria-hidden="true" />
-            <p className="invite-story-text whitespace-pre-wrap">{details.story}</p>
-            <div className="invite-story-signoff">
-              <span className="invite-story-rule" aria-hidden="true" />
-              <span>
-                {details.groomName} &amp; {details.brideName}
-              </span>
-              <span className="invite-story-rule" aria-hidden="true" />
-            </div>
-          </motion.div>
+          {storybook ? (
+            <ScratchStory details={details} />
+          ) : (
+            <motion.div {...fadeUp} className="invite-story-panel mx-auto max-w-4xl">
+              <Quote className="invite-story-quote h-10 w-10" aria-hidden="true" />
+              <p className="invite-story-text whitespace-pre-wrap">{details.story}</p>
+              <div className="invite-story-signoff">
+                <span className="invite-story-rule" aria-hidden="true" />
+                <span>
+                  {details.groomName} &amp; {details.brideName}
+                </span>
+                <span className="invite-story-rule" aria-hidden="true" />
+              </div>
+            </motion.div>
+          )}
         </section>
       )}
 
@@ -642,6 +670,8 @@ export function PersonalInvitation({
         </div>
       )}
 
+      {storybook && details.elements.schedule && <FlipEvents details={details} />}
+      {storybook && details.elements.venueMap && <VenueHunt details={details} />}
       {interactive && <PlayTheCard layout={layout} details={details} guestName={guestName} />}
 
       <section
@@ -975,6 +1005,7 @@ export function PersonalInvitation({
           <InvitationRsvp
             cardId={cardId}
             deadline={details.rsvpDeadline}
+            theme={details.theme}
             preview={preview}
             heading={play("rsvp") ?? undefined}
           />
@@ -995,10 +1026,10 @@ export function PersonalInvitation({
 
       {!preview && slug && <InvitationShare details={details} slug={slug} layout={layout} />}
 
-      {preview ? (
+      {preview && !storybook ? (
         <InvitationExtras details={details} inline preview={preview} />
       ) : (
-        <InvitationExtras details={details} slug={slug} />
+        <InvitationExtras details={details} slug={slug} preview={preview} />
       )}
 
       <footer className="invite-footer relative overflow-hidden px-6 py-20 text-center">

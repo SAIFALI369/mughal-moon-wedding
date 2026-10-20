@@ -26,6 +26,27 @@ export type PrintPalette = {
 };
 
 const PALETTES: Record<string, PrintPalette> = {
+  "royal-rajmahal": {
+    paper: "#fff4e1",
+    ink: "#451522",
+    accent: "#9b6e29",
+    soft: "#876955",
+    tint: "#f2dfbd",
+  },
+  "lotus-goddess": {
+    paper: "#fff9f8",
+    ink: "#314c40",
+    accent: "#956374",
+    soft: "#6b7c70",
+    tint: "#f3e3e8",
+  },
+  calligraphy: {
+    paper: "#f4ead9",
+    ink: "#38291e",
+    accent: "#875b2b",
+    soft: "#806d59",
+    tint: "#e8d7ba",
+  },
   eid: { paper: "#fbf8f1", ink: "#22322c", accent: "#2f6b57", soft: "#6f7f78", tint: "#eef4f0" },
   mughal: { paper: "#fbf5e9", ink: "#361a30", accent: "#8a2440", soft: "#7a6455", tint: "#f6e9d8" },
   classic: {

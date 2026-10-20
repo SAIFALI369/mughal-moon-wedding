@@ -57,7 +57,9 @@ describe("creator invitation design and input", () => {
         expect(page).not.toContain("Simran");
         // A theme's signature structure wins over the shared frameworks, so the
         // three redesigns cannot fall back into the same silhouette.
-        if (framework === "curtain-call") expect(page).toContain("curtain-stage");
+        if (["royal-rajmahal", "lotus-goddess", "calligraphy"].includes(theme))
+          expect(page).toContain("sb-hero");
+        else if (framework === "curtain-call") expect(page).toContain("curtain-stage");
         else if (theme === "jharokha-dawn") expect(page).toContain("dawn-stage");
         else if (theme === "haldi-baag") expect(page).toContain("baag-stage");
         else if (theme === "vows-in-ink") expect(page).toContain("ink-stage");
