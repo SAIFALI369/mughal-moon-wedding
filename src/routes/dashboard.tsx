@@ -126,13 +126,22 @@ export function Dashboard() {
     setActiveTab(next);
   }
   function startNew(theme = emptyInvitationForm().theme) {
-    // The two storybook themes open with the Grand Curtain stage by default;
-    // the layout stays a free choice in the editor.
+    // Storybook themes open on the Grand Curtain stage; the two Hindu themes
+    // open on the Mandap stage with a Sanskrit wedding default. The layout and
+    // every word stay a free choice in the editor.
     const storybook = theme === "fairytale" || theme === "ballroom";
+    const hindu = theme === "diya-utsav" || theme === "sacred-mandap";
     const next = {
       ...emptyInvitationForm(),
       theme,
       ...(storybook ? { framework: "curtain-call" as const } : {}),
+      ...(hindu
+        ? {
+            framework: "royal-folio" as const,
+            eventType: "Shubh Vivah",
+            riteLine: "॥ शुभ विवाह ॥",
+          }
+        : {}),
     };
     editorInitial.current = JSON.stringify(next);
     setForm(next);

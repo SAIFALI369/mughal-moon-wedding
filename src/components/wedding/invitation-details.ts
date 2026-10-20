@@ -26,6 +26,8 @@ export type InvitationDetails = {
   story: string;
   hosts: string;
   hostName: string;
+  /** A short line under the hosts, e.g. a Sanskrit blessing or "A storybook celebration". */
+  riteLine: string;
   songs: InvitationSong[];
   dressCode: string;
   contactName: string;
@@ -103,6 +105,7 @@ export function getInvitationDetails(content: unknown): InvitationDetails {
     story: stringField(data, "story"),
     hosts: stringField(data, "hosts"),
     hostName: stringField(data, "hostName"),
+    riteLine: stringField(data, "riteLine"),
     songs: sanitizeInvitationSongs(data.songs),
     dressCode: stringField(data, "dressCode"),
     contactName: stringField(data, "contactName"),

@@ -33,6 +33,7 @@ import {
 import { invitationArt } from "./invitation-art";
 import { CouplePortraits, InvitationStage } from "./invitation-stage";
 import { CurtainStage } from "./invitation-curtain";
+import { LivingScene, MandapStage, riteBlessing } from "./invitation-rite";
 import { InvitationRsvp } from "./invitation-rsvp";
 import { invitationFrameworks, invitationThemes } from "./invitation-options";
 import {
@@ -108,7 +109,16 @@ export function InvitationCover({ content }: { content: unknown }) {
       <div className="cover-inner relative flex min-h-[23rem] flex-col items-center justify-center px-7 py-9">
         <div className="cover-blessing flex w-full items-center justify-center gap-2 text-gold">
           <span className="cover-hairline" aria-hidden="true" />
-          {blessing ? (
+          {riteBlessing(details.theme) ? (
+            <p
+              dir={riteBlessing(details.theme)?.script === "arabic" ? "rtl" : "ltr"}
+              className={`${
+                riteBlessing(details.theme)?.script === "arabic" ? "font-arabic" : "font-sanskrit"
+              } text-lg leading-none text-gold`}
+            >
+              {riteBlessing(details.theme)?.text}
+            </p>
+          ) : blessing ? (
             <p dir="rtl" className="font-arabic text-lg leading-none text-gold">
               بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
             </p>
@@ -286,6 +296,7 @@ export function PersonalInvitation({
           enableMusic={false}
           backgroundImage={art}
           curtain={details.framework === "curtain-call"}
+          theme={details.theme}
         />
       )}
       {!preview && (
@@ -347,6 +358,7 @@ export function PersonalInvitation({
       {details.framework === "moonlit" ? (
         <div id="invitation-top" className="invite-hero-wrap">
           <Hero
+            theme={details.theme}
             groomName={details.groomName}
             brideName={details.brideName}
             dateLine={dateLine || "Together with our families, we invite you to celebrate with us"}
@@ -365,6 +377,14 @@ export function PersonalInvitation({
         </div>
       ) : details.framework === "curtain-call" ? (
         <CurtainStage
+          details={details}
+          backgroundImage={art}
+          actions={actions}
+          scrollTo={scrollTo}
+          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+        />
+      ) : details.theme === "diya-utsav" || details.theme === "sacred-mandap" ? (
+        <MandapStage
           details={details}
           backgroundImage={art}
           actions={actions}

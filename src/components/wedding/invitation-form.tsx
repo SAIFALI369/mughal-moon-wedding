@@ -257,6 +257,20 @@ export function InvitationDetailsFields({
                 first name.
               </p>
             </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="card-rite-line">Blessing or opening line</Label>
+              <Input
+                id="card-rite-line"
+                value={value.riteLine}
+                onChange={(event) => change("riteLine", event.target.value)}
+                maxLength={80}
+                placeholder="A sacred celebration"
+              />
+              <p className="text-xs text-muted-foreground">
+                Shown above your names on the Hindu layouts, for example “A sacred celebration” or
+                “शुभ विवाह”. Leave blank for the default.
+              </p>
+            </div>
           </div>
           <p className="text-xs text-muted-foreground">
             Use a real date. Include a time zone (such as IST or UTC) so Save the Date has a precise

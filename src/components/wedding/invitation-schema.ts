@@ -94,6 +94,7 @@ export const invitationContentSchema = z.object({
   story: z.string().trim().max(2000).default(""),
   hosts: z.string().trim().max(160).default(""),
   hostName: z.string().trim().max(60).default(""),
+  riteLine: z.string().trim().max(80).default(""),
   dressCode: z.string().trim().max(160).default(""),
   contactName: z.string().trim().max(100).default(""),
   contactPhone: z

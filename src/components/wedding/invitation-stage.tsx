@@ -2,6 +2,7 @@ import { useRef, type PointerEvent, type ReactNode } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ChevronDown, Sparkles } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
+import { LivingScene, riteBlessing } from "./invitation-rite";
 
 export function CouplePortraits({
   details,
@@ -88,6 +89,7 @@ export function InvitationStage({
         fetchPriority="high"
       />
       <div className="stage-shade absolute inset-0 -z-20" aria-hidden="true" />
+      <LivingScene theme={details.theme} variant="stage" />
       <div className="stage-orbit stage-orbit-one" aria-hidden="true" />
       <div className="stage-orbit stage-orbit-two" aria-hidden="true" />
       <div className="stage-light stage-light-one" aria-hidden="true" />
@@ -104,6 +106,16 @@ export function InvitationStage({
         className="stage-content relative z-10 mx-auto w-full max-w-6xl"
       >
         <div className="stage-copy">
+          {riteBlessing(details.theme) && (
+            <p
+              dir={riteBlessing(details.theme)?.script === "arabic" ? "rtl" : "ltr"}
+              className={`stage-shloka mb-4 ${
+                riteBlessing(details.theme)?.script === "arabic" ? "font-arabic" : "font-sanskrit"
+              } text-lg sm:text-xl`}
+            >
+              {riteBlessing(details.theme)?.text}
+            </p>
+          )}
           <p className="stage-kicker text-xs font-medium uppercase tracking-[0.36em] text-gold">
             <Sparkles aria-hidden="true" className="mr-2 inline h-4 w-4" />
             {details.hosts || "Together with their families"}
