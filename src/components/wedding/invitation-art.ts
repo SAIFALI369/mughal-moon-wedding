@@ -8,6 +8,9 @@ import fairytale from "@/assets/themes/fairytale.webp";
 import ballroom from "@/assets/themes/ballroom.webp";
 import diyaUtsav from "@/assets/themes/diya-utsav.webp";
 import sacredMandap from "@/assets/themes/sacred-mandap.webp";
+import riadNoor from "@/assets/themes/riad-noor.webp";
+import kashiGhat from "@/assets/themes/kashi-ghat.webp";
+import mehndiNight from "@/assets/themes/mehndi-night.webp";
 import type { InvitationTheme } from "./invitation-options";
 
 export const invitationArt: Record<InvitationTheme, string> = {
@@ -23,4 +26,7 @@ export const invitationArt: Record<InvitationTheme, string> = {
   ballroom,
   "diya-utsav": diyaUtsav,
   "sacred-mandap": sacredMandap,
+  "riad-noor": riadNoor,
+  "kashi-ghat": kashiGhat,
+  "mehndi-night": mehndiNight,
 };

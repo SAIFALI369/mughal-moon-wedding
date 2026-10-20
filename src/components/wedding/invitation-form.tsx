@@ -16,6 +16,7 @@ import { invitationArt } from "./invitation-art";
 import {
   invitationElementOptions,
   invitationFrameworks,
+  invitationThemeCategories,
   invitationThemes,
 } from "./invitation-options";
 import { processInvitationPortrait } from "./portrait-upload";
@@ -300,40 +301,58 @@ export function InvitationDetailsFields({
           </div>
           <fieldset>
             <legend className="mb-3 text-sm font-medium">Theme *</legend>
-            <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {invitationThemes.map((theme) => (
-                <label
-                  key={theme.id}
-                  className={`invitation-choice group cursor-pointer overflow-hidden rounded-xl border-2 transition ${value.theme === theme.id ? "border-gold shadow-gold" : "border-border hover:border-gold/70"}`}
-                >
-                  <input
-                    type="radio"
-                    name="invitation-theme"
-                    value={theme.id}
-                    checked={value.theme === theme.id}
-                    onChange={() => onChange((form) => ({ ...form, theme: theme.id }))}
-                    className="sr-only"
-                  />
-                  <div
-                    className="relative h-20 overflow-hidden"
-                    style={{ backgroundColor: theme.swatch }}
+            <div className="space-y-5">
+              {invitationThemeCategories.map((category) => {
+                const themes = invitationThemes.filter((theme) => theme.category === category.id);
+                if (!themes.length) return null;
+                return (
+                  <section
+                    key={category.id}
+                    aria-label={category.label}
+                    className="invitation-theme-group"
                   >
-                    <img
-                      src={invitationArt[theme.id]}
-                      alt=""
-                      loading="lazy"
-                      className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
-                    <span className="absolute bottom-2 left-3 text-sm font-semibold text-white">
-                      {theme.label}
-                    </span>
-                  </div>
-                  <p className="min-h-12 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
-                    {theme.description}
-                  </p>
-                </label>
-              ))}
+                    <header className="mb-2 flex flex-wrap items-baseline gap-x-2">
+                      <h3 className="font-serif text-lg">{category.label}</h3>
+                      <p className="text-xs text-muted-foreground">{category.description}</p>
+                    </header>
+                    <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                      {themes.map((theme) => (
+                        <label
+                          key={theme.id}
+                          className={`invitation-choice group cursor-pointer overflow-hidden rounded-xl border-2 transition ${value.theme === theme.id ? "border-gold shadow-gold" : "border-border hover:border-gold/70"}`}
+                        >
+                          <input
+                            type="radio"
+                            name="invitation-theme"
+                            value={theme.id}
+                            checked={value.theme === theme.id}
+                            onChange={() => onChange((form) => ({ ...form, theme: theme.id }))}
+                            className="sr-only"
+                          />
+                          <div
+                            className="relative h-20 overflow-hidden"
+                            style={{ backgroundColor: theme.swatch }}
+                          >
+                            <img
+                              src={invitationArt[theme.id]}
+                              alt=""
+                              loading="lazy"
+                              className="h-full w-full object-cover transition duration-500 group-hover:scale-110"
+                            />
+                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+                            <span className="absolute bottom-2 left-3 text-sm font-semibold text-white">
+                              {theme.label}
+                            </span>
+                          </div>
+                          <p className="min-h-12 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                            {theme.description}
+                          </p>
+                        </label>
+                      ))}
+                    </div>
+                  </section>
+                );
+              })}
             </div>
           </fieldset>
           <fieldset>

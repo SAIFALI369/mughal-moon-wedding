@@ -9,7 +9,7 @@ import {
 } from "./concierge-ui";
 import { getInstantConciergeReply, requestConcierge } from "./concierge-client";
 import { getAiVisitorId } from "@/lib/ai-visitor";
-import { LivingScene, riteBlessing } from "./invitation-rite";
+import { FullArtFrame, LivingScene, riteBlessing } from "./invitation-rite";
 import type { InvitationTheme } from "./invitation-options";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
@@ -289,15 +289,7 @@ export function Preloader({
           transition={{ duration: 0.5 }}
           className={`heavenly-entrance fixed inset-0 z-[100] overflow-hidden ${opening ? "is-opening" : ""} ${curtain ? "is-curtain" : ""}`}
         >
-          <img
-            src={backgroundImage}
-            alt=""
-            aria-hidden="true"
-            width={1536}
-            height={1024}
-            fetchPriority="high"
-            className="gate-sky absolute inset-0 h-full w-full object-cover object-right"
-          />
+          <FullArtFrame src={backgroundImage} className="gate-sky" priority />
           <div className="gate-radiance" aria-hidden="true" />
           {theme && <LivingScene theme={theme} variant="gate" reduce={gateReduced} />}
           <div className="heavenly-gate gate-left" aria-hidden="true">
@@ -407,17 +399,15 @@ export function Hero({
       className="eid-hero relative flex min-h-[88svh] items-center justify-center overflow-hidden text-foreground"
     >
       <motion.div style={{ y }} className="absolute inset-0">
-        <img
+        <FullArtFrame
           src={backgroundImage}
+          className="eid-hero-art"
+          priority
           alt={
             backgroundImage === eidSky
               ? "Golden crescent moon and stars above luminous Eid clouds"
               : "Decorative wedding scene"
           }
-          width={1536}
-          height={1024}
-          fetchPriority="high"
-          className="h-full w-full object-cover object-right"
         />
       </motion.div>
       {theme && (
