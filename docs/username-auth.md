@@ -1,8 +1,10 @@
 # Username/password accounts
 
-New accounts are created with a username and password only; public registration is
-disabled and every shop account is issued by an operator. Sign-in accepts either
-that username or the email address of an existing Supabase Auth account. Handles
+New accounts are created by the operator; public registration is disabled. Every
+account that exists in Supabase Auth is approved by definition, so it automatically
+receives a profile and a 10-card print-partner allowance (see
+[print-shop-partners.md](print-shop-partners.md)). Sign-in accepts either the
+account's username or its email address. Handles
 are unique ignoring case and leading/trailing spaces. New accounts are confirmed
 immediately; no OTP, email entry or inbox is involved. Supabase password sessions
 remain in use (with a UUID-based `@accounts.invalid` internal identifier).
