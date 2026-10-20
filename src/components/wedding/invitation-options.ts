@@ -11,6 +11,9 @@ export const invitationThemeIds = [
   "ballroom",
   "diya-utsav",
   "sacred-mandap",
+  "riad-noor",
+  "kashi-ghat",
+  "mehndi-night",
 ] as const;
 export type InvitationTheme = (typeof invitationThemeIds)[number];
 
@@ -23,83 +26,164 @@ export const invitationFrameworkIds = [
 ] as const;
 export type InvitationFramework = (typeof invitationFrameworkIds)[number];
 
+/**
+ * Themes are grouped so a partner can find one without scrolling a wall of
+ * swatches. Order here is the order shown in the studio and the editor.
+ */
+export const invitationThemeCategories = [
+  {
+    id: "islamic",
+    label: "Islamic & Mughal",
+    description: "Arches, lanterns and moonlit palaces",
+  },
+  {
+    id: "hindu",
+    label: "Hindu & Sanskrit",
+    description: "Mandaps, diyas and Devanagari blessings",
+  },
+  {
+    id: "festive",
+    label: "Festive & Shared",
+    description: "Mehndi, marigolds and music for either family",
+  },
+  {
+    id: "storybook",
+    label: "Storybook",
+    description: "Castles, ballrooms and cinematic depth",
+  },
+  {
+    id: "modern",
+    label: "Modern & Luxury",
+    description: "Marble, glass and editorial restraint",
+  },
+  {
+    id: "classic",
+    label: "Classic",
+    description: "The original timeless ivory and gold",
+  },
+] as const;
+export type InvitationThemeCategory = (typeof invitationThemeCategories)[number]["id"];
+
 export const invitationThemes: {
   id: InvitationTheme;
   label: string;
   description: string;
   swatch: string;
+  category: InvitationThemeCategory;
+  /** True when the artwork carries the page from hero to footer. */
+  immersive?: boolean;
 }[] = [
   {
     id: "eid",
     label: "Eid Light",
     description: "The original luminous moonlit sky",
     swatch: "#d7e7df",
+    category: "islamic",
   },
   {
     id: "mughal",
     label: "Mughal Night",
     description: "Deep burgundy and antique gold",
     swatch: "#361a30",
+    category: "islamic",
   },
   {
     id: "classic",
     label: "Classic",
     description: "Warm ivory and heirloom gold",
     swatch: "#f3e7cb",
+    category: "classic",
   },
   {
     id: "aladin",
     label: "Aladin",
     description: "Lantern-lit palace at twilight",
     swatch: "#38235e",
+    category: "islamic",
   },
   {
     id: "bihari-vibe",
     label: "Bihari Vibe",
     description: "Madhubani-inspired flowers and festive warmth",
     swatch: "#c76d43",
+    category: "hindu",
   },
   {
     id: "mecca_madinah",
     label: "Mecca–Madinah",
     description: "Respectful emerald arches and geometric light",
     swatch: "#17493b",
+    category: "islamic",
   },
   {
     id: "luxury",
     label: "Luxury",
     description: "Black marble, velvet and champagne",
     swatch: "#241c25",
+    category: "modern",
   },
   {
     id: "futuristic",
     label: "Futuristic",
     description: "Aurora, glass and holographic light",
     swatch: "#102743",
+    category: "modern",
   },
   {
     id: "fairytale",
     label: "Fairytale Castle",
     description: "A storybook kingdom lit by fireworks at dusk",
     swatch: "#e9b6c6",
+    category: "storybook",
+    immersive: true,
   },
   {
     id: "ballroom",
     label: "Grand Ballroom",
     description: "Crystal chandeliers, candlelight and champagne gold",
     swatch: "#e8d3a8",
+    category: "storybook",
+    immersive: true,
   },
   {
     id: "diya-utsav",
     label: "Diya Utsav",
     description: "A hundred lamps, rangoli and fireworks for a Hindu wedding night",
     swatch: "#f0a24a",
+    category: "hindu",
+    immersive: true,
   },
   {
     id: "sacred-mandap",
     label: "Sacred Mandap",
     description: "A sunlit flower mandap with a living havan fire",
     swatch: "#e9c98a",
+    category: "hindu",
+    immersive: true,
+  },
+  {
+    id: "riad-noor",
+    label: "Riad Noor",
+    description: "A Moroccan courtyard of horseshoe arches, zellige and lantern light",
+    swatch: "#1f5450",
+    category: "islamic",
+    immersive: true,
+  },
+  {
+    id: "kashi-ghat",
+    label: "Kashi Ghat",
+    description: "River steps at dusk, floating diyas and a grand evening aarti",
+    swatch: "#2e6b6a",
+    category: "hindu",
+    immersive: true,
+  },
+  {
+    id: "mehndi-night",
+    label: "Mehndi Night",
+    description: "Emerald drapes, marigold strings and a henna floor",
+    swatch: "#1c5b46",
+    category: "festive",
+    immersive: true,
   },
 ];
 

@@ -25,6 +25,9 @@ export const themeRites: Record<InvitationTheme, InvitationRite> = {
   ballroom: "universal",
   "diya-utsav": "hindu",
   "sacred-mandap": "hindu",
+  "riad-noor": "muslim",
+  "kashi-ghat": "hindu",
+  "mehndi-night": "universal",
 };
 
 export function riteForTheme(theme: InvitationTheme): InvitationRite {
@@ -37,6 +40,38 @@ export const riteBlessings: Record<InvitationRite, { text: string; script: strin
   universal: null,
   hindu: { text: "॥ श्री गणेशाय नमः ॥", script: "sanskrit" },
 };
+
+/**
+ * Shows a theme's artwork whole — never cropped — with a blurred copy of the
+ * same photo filling the letterbox. On a phone the picture is fully visible
+ * and the surrounding blur keeps the colour, so nothing is lost off-screen.
+ */
+export function FullArtFrame({
+  src,
+  className = "",
+  priority = false,
+  alt = "",
+}: {
+  src: string;
+  className?: string;
+  priority?: boolean;
+  /** Describe the picture when it carries meaning; leave empty when decorative. */
+  alt?: string;
+}) {
+  return (
+    <div className={`full-art ${className}`.trim()}>
+      <img src={src} alt="" aria-hidden="true" className="full-art-fill" />
+      <img
+        src={src}
+        alt={alt}
+        aria-hidden={alt ? undefined : "true"}
+        className="full-art-image"
+        fetchPriority={priority ? "high" : undefined}
+        loading={priority ? undefined : "lazy"}
+      />
+    </div>
+  );
+}
 
 /**
  * A living celebratory scene layered over any theme artwork.
@@ -52,12 +87,25 @@ export function LivingScene({
   reduce = false,
 }: {
   theme: InvitationTheme;
-  variant: "gate" | "hero" | "stage";
+  variant: "gate" | "hero" | "stage" | "page";
   reduce?: boolean;
 }) {
   const rite = riteForTheme(theme);
   const hindu = rite === "hindu";
-  const night = hindu || theme === "mughal" || theme === "aladin" || theme === "futuristic";
+  /**
+   * The page layer is fixed behind a whole invitation for the immersive
+   * themes: the same lanterns, petals, drapes and river diyas follow the
+   * guest from the hero to the footer instead of stopping after the opening.
+   */
+  const page = variant === "page";
+  const draped = theme === "riad-noor" || theme === "kashi-ghat" || theme === "mehndi-night";
+  const night =
+    hindu ||
+    theme === "mughal" ||
+    theme === "aladin" ||
+    theme === "futuristic" ||
+    theme === "riad-noor" ||
+    theme === "mehndi-night";
   return (
     <div
       className={`living-scene living-${variant}`}
@@ -67,24 +115,60 @@ export function LivingScene({
       data-reduced={reduce ? "true" : undefined}
       aria-hidden="true"
     >
-      {variant !== "stage" && (
+      {variant !== "stage" && !page && (
         <div className="living-sky" aria-hidden="true">
           {theme === "ballroom" && <div className="living-chandelier-glow" />}
           {hindu && <div className="living-marigold-glow" />}
         </div>
       )}
-      <div className="living-bokeh" aria-hidden="true">
-        {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((index) => (
-          <span className={`bokeh bokeh-${index}`} key={index} />
-        ))}
-      </div>
-      <div className="living-fireworks">
-        <span className="burst burst-a" />
-        <span className="burst burst-b" />
-        <span className="burst burst-c" />
-        <span className="burst burst-d" />
-      </div>
-      {variant !== "stage" && (
+      {!page && (
+        <div className="living-bokeh" aria-hidden="true">
+          {[0, 1, 2, 3, 4, 5, 6, 7, 8].map((index) => (
+            <span className={`bokeh bokeh-${index}`} key={index} />
+          ))}
+        </div>
+      )}
+      {!page && (
+        <div className="living-fireworks">
+          <span className="burst burst-a" />
+          <span className="burst burst-b" />
+          <span className="burst burst-c" />
+          <span className="burst burst-d" />
+        </div>
+      )}
+      {(variant !== "stage" || draped) && (
+        <div className="living-drapes" aria-hidden="true">
+          {[0, 1, 2, 3].map((index) => (
+            <span className={`drape drape-${index}`} key={index} />
+          ))}
+        </div>
+      )}
+      {theme === "riad-noor" && (
+        <div className="living-lanterns">
+          {[0, 1, 2].map((index) => (
+            <span className={`lantern lantern-${index}`} key={index}>
+              <span className="lantern-cord" />
+              <span className="lantern-body" />
+              <span className="lantern-glow" />
+            </span>
+          ))}
+        </div>
+      )}
+      {(theme === "mehndi-night" || theme === "bihari-vibe") && (
+        <div className="living-petals">
+          {Array.from({ length: 10 }, (_, index) => (
+            <span className={`petal petal-${index}`} key={index} />
+          ))}
+        </div>
+      )}
+      {theme === "kashi-ghat" && (
+        <div className="living-river-diyas">
+          {Array.from({ length: 8 }, (_, index) => (
+            <span className={`river-diya river-diya-${index}`} key={index} />
+          ))}
+        </div>
+      )}
+      {variant !== "stage" && !page && (
         <div className="living-diya-row">
           {[0, 1, 2, 3, 4].map((index) => (
             <span className={`diya diya-${index}`} key={index}>
@@ -95,11 +179,13 @@ export function LivingScene({
           ))}
         </div>
       )}
-      <div className="living-sparks">
-        {Array.from({ length: 14 }, (_, index) => (
-          <span className={`spark spark-${index}`} key={index} />
-        ))}
-      </div>
+      {!page && (
+        <div className="living-sparks">
+          {Array.from({ length: 14 }, (_, index) => (
+            <span className={`spark spark-${index}`} key={index} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
@@ -147,13 +233,7 @@ export function MandapStage({
           className="mandap-scene"
           style={reduced ? undefined : { scale: sceneScale, y: sceneY }}
         >
-          <img
-            src={backgroundImage}
-            alt=""
-            aria-hidden="true"
-            className="mandap-scene-art"
-            fetchPriority="high"
-          />
+          <FullArtFrame src={backgroundImage} className="mandap-scene-art" priority />
           <div className="mandap-scene-shade" aria-hidden="true" />
         </motion.div>
 

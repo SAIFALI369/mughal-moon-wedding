@@ -48,7 +48,11 @@ import {
   Music2,
   QrCode,
 } from "lucide-react";
-import { invitationFrameworks, invitationThemes } from "@/components/wedding/invitation-options";
+import {
+  invitationFrameworks,
+  invitationThemeCategories,
+  invitationThemes,
+} from "@/components/wedding/invitation-options";
 import { PlatformShell } from "@/components/platform/platform-shell";
 import { CardPrintDialog } from "@/components/platform/card-print-dialog";
 import { Plus, FileHeart, Globe2, FileEdit, ArrowRight } from "lucide-react";
@@ -685,20 +689,52 @@ export function Dashboard() {
                   {invitationThemes.length} themes · {invitationFrameworks.length} layouts
                 </span>
               </div>
-              <div className="studio-theme-options">
-                {invitationThemes.map((theme) => (
-                  <button key={theme.id} disabled={!canCreate} onClick={() => startNew(theme.id)}>
-                    <span style={{ background: theme.swatch }} aria-hidden="true">
-                      ✧
-                    </span>
-                    <strong>{theme.label}</strong>
-                    <span>{theme.description}</span>
-                    <span className="studio-theme-action">
-                      Start with this theme <Plus size={12} />
-                    </span>
-                  </button>
-                ))}
-              </div>
+              <nav className="studio-theme-jump" aria-label="Theme categories">
+                {invitationThemeCategories.map((category) => {
+                  const count = invitationThemes.filter(
+                    (theme) => theme.category === category.id,
+                  ).length;
+                  return (
+                    <a key={category.id} href={`#theme-group-${category.id}`}>
+                      {category.label} <span>{count}</span>
+                    </a>
+                  );
+                })}
+              </nav>
+              {invitationThemeCategories.map((category) => {
+                const themes = invitationThemes.filter((theme) => theme.category === category.id);
+                if (!themes.length) return null;
+                return (
+                  <div
+                    key={category.id}
+                    id={`theme-group-${category.id}`}
+                    className="studio-theme-group"
+                  >
+                    <div className="studio-theme-group-head">
+                      <h3>{category.label}</h3>
+                      <p>{category.description}</p>
+                    </div>
+                    <div className="studio-theme-options">
+                      {themes.map((theme) => (
+                        <button
+                          key={theme.id}
+                          disabled={!canCreate}
+                          onClick={() => startNew(theme.id)}
+                        >
+                          <span style={{ background: theme.swatch }} aria-hidden="true">
+                            ✧
+                          </span>
+                          <strong>{theme.label}</strong>
+                          <span>{theme.description}</span>
+                          <span className="studio-theme-action">
+                            Start with this theme <Plus size={12} />
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
             </section>
           </TabsContent>
           <TabsContent value="credits">

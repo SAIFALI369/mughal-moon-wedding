@@ -3,6 +3,7 @@ import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion
 import { ChevronDown, Sparkles } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
 import { CouplePortraits } from "./invitation-stage";
+import { FullArtFrame } from "./invitation-rite";
 
 /**
  * Grand Curtain — the "walk into the film" hero.
@@ -66,13 +67,7 @@ export function CurtainStage({
           className="curtain-scene"
           style={reduced ? undefined : { scale: sceneScale, y: sceneY }}
         >
-          <img
-            src={backgroundImage}
-            alt=""
-            aria-hidden="true"
-            className="curtain-scene-art"
-            fetchPriority="high"
-          />
+          <FullArtFrame src={backgroundImage} className="curtain-scene-art" priority />
           <div className="curtain-scene-glow" aria-hidden="true" />
           <div className="curtain-rays" aria-hidden="true" />
           <div className="curtain-motes" aria-hidden="true" />

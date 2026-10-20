@@ -35,7 +35,7 @@ import { CouplePortraits, InvitationStage } from "./invitation-stage";
 import { CurtainStage } from "./invitation-curtain";
 import { LivingScene, MandapStage, riteBlessing } from "./invitation-rite";
 import { InvitationRsvp } from "./invitation-rsvp";
-import { invitationFrameworks, invitationThemes } from "./invitation-options";
+import { invitationFrameworks, invitationThemes, type InvitationTheme } from "./invitation-options";
 import {
   ArchOutline,
   InvitationCorners,
@@ -184,6 +184,24 @@ export function InvitationCover({ content }: { content: unknown }) {
   );
 }
 
+/**
+ * Keeps the chosen theme present from the hero to the footer: the artwork sits
+ * behind the whole card as a soft, blurred wash, and the theme's own motif
+ * repeats down the page so nothing turns into a plain white scroll.
+ */
+function ThemeBackdrop({ theme, art }: { theme: InvitationTheme; art: string }) {
+  const immersive = invitationThemes.find((value) => value.id === theme)?.immersive;
+  if (!immersive) return null;
+  return (
+    <div className="invite-backdrop" aria-hidden="true" data-theme={theme}>
+      <img src={art} alt="" className="invite-backdrop-art" />
+      <span className="invite-backdrop-veil" />
+      <span className="invite-backdrop-motif" />
+      <LivingScene theme={theme} variant="page" />
+    </div>
+  );
+}
+
 function InvitationExtras({
   details,
   inline = false,
@@ -287,6 +305,7 @@ export function PersonalInvitation({
       data-framework={details.framework}
       className="personal-invite min-h-screen overflow-x-hidden bg-background text-foreground"
     >
+      <ThemeBackdrop theme={details.theme} art={art} />
       {showGate && !preview && details.elements.gate && (
         <Preloader
           onDone={() => {}}
@@ -383,7 +402,9 @@ export function PersonalInvitation({
           scrollTo={scrollTo}
           entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
         />
-      ) : details.theme === "diya-utsav" || details.theme === "sacred-mandap" ? (
+      ) : details.theme === "diya-utsav" ||
+        details.theme === "sacred-mandap" ||
+        details.theme === "kashi-ghat" ? (
         <MandapStage
           details={details}
           backgroundImage={art}

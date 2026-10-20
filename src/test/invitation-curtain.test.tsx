@@ -43,7 +43,7 @@ describe("storybook themes", () => {
     for (const theme of invitationThemeIds) {
       expect(invitationArt[theme]).toBeTruthy();
     }
-    expect(invitationThemeIds).toHaveLength(12);
+    expect(invitationThemeIds).toHaveLength(15);
   });
 
   it("keeps both new themes light and readable", () => {
@@ -90,10 +90,14 @@ describe("Grand Curtain layout", () => {
     const html = stage();
     expect(html).not.toContain("<video");
     expect(html).not.toContain("<iframe");
-    // The only asset is the card's own bundled artwork, never a remote host.
+    // The only assets are the card's own bundled artwork (full image plus its
+    // blurred fill), never a remote host.
     const sources = [...html.matchAll(/src="([^"]+)"/g)].map((match) => match[1]);
-    expect(sources).toHaveLength(1);
-    expect(sources[0]).toMatch(/fairytale/);
+    expect(sources.length).toBeGreaterThan(0);
+    for (const source of sources) {
+      expect(source).toMatch(/fairytale/);
+      expect(source).not.toMatch(/^https?:/);
+    }
   });
 
   it("opens the gate as velvet curtains for this layout only", () => {

@@ -86,6 +86,27 @@ const PALETTES: Record<string, PrintPalette> = {
     soft: "#87705a",
     tint: "#f9efdc",
   },
+  "riad-noor": {
+    paper: "#f7fbf9",
+    ink: "#123c3a",
+    accent: "#1f6f68",
+    soft: "#5f7d79",
+    tint: "#e6f2ef",
+  },
+  "kashi-ghat": {
+    paper: "#fdf7ec",
+    ink: "#31251a",
+    accent: "#b6601f",
+    soft: "#87705a",
+    tint: "#faeadb",
+  },
+  "mehndi-night": {
+    paper: "#f8fbf6",
+    ink: "#14372b",
+    accent: "#1f6b4e",
+    soft: "#5f7a6d",
+    tint: "#e6f2ea",
+  },
 };
 
 export function paletteForTheme(theme: string): PrintPalette {

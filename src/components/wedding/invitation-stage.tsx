@@ -2,7 +2,7 @@ import { useRef, type PointerEvent, type ReactNode } from "react";
 import { motion, useScroll, useTransform } from "framer-motion";
 import { ChevronDown, Sparkles } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
-import { LivingScene, riteBlessing } from "./invitation-rite";
+import { FullArtFrame, LivingScene, riteBlessing } from "./invitation-rite";
 
 export function CouplePortraits({
   details,
@@ -80,14 +80,12 @@ export function InvitationStage({
       onPointerMove={move}
       onPointerLeave={reset}
     >
-      <motion.img
+      <motion.div
         style={{ y: parallax }}
-        src={backgroundImage}
-        alt=""
-        aria-hidden="true"
-        className="stage-background absolute inset-0 -z-30 h-[115%] w-full object-cover"
-        fetchPriority="high"
-      />
+        className="stage-background absolute inset-0 -z-30 h-[115%] w-full"
+      >
+        <FullArtFrame src={backgroundImage} priority />
+      </motion.div>
       <div className="stage-shade absolute inset-0 -z-20" aria-hidden="true" />
       <LivingScene theme={details.theme} variant="stage" />
       <div className="stage-orbit stage-orbit-one" aria-hidden="true" />
