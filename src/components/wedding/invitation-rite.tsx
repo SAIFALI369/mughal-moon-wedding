@@ -28,6 +28,9 @@ export const themeRites: Record<InvitationTheme, InvitationRite> = {
   "riad-noor": "muslim",
   "kashi-ghat": "hindu",
   "mehndi-night": "universal",
+  "jharokha-dawn": "muslim",
+  "haldi-baag": "hindu",
+  "vows-in-ink": "universal",
 };
 
 export function riteForTheme(theme: InvitationTheme): InvitationRite {
@@ -154,7 +157,11 @@ export function LivingScene({
           ))}
         </div>
       )}
-      {(theme === "mehndi-night" || theme === "bihari-vibe") && (
+      {theme === "vows-in-ink" && <div className="living-ink-grain" aria-hidden="true" />}
+      {(theme === "mehndi-night" ||
+        theme === "bihari-vibe" ||
+        theme === "jharokha-dawn" ||
+        theme === "haldi-baag") && (
         <div className="living-petals">
           {Array.from({ length: 10 }, (_, index) => (
             <span className={`petal petal-${index}`} key={index} />

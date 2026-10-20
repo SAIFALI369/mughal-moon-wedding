@@ -1,5 +1,15 @@
 import { createFileRoute, notFound } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
+import {
+  invitationFrameworkIds,
+  invitationLayoutFor,
+  invitationThemeCategories,
+  invitationThemeIds,
+  invitationThemes,
+  type InvitationFramework,
+  type InvitationTheme,
+} from "@/components/wedding/invitation-options";
 
 /**
  * Development-only design sandbox for the personal invitation suite. It renders the
@@ -33,6 +43,9 @@ const sampleContent = {
   arrivalNotes:
     "Valet parking is available beside the east lawn. Please arrive by 3:30 PM for the welcome sherbet.",
   rsvpDeadline: "1 December 2030",
+  giftsNote: "Your blessings and duas are the only gifts we need.",
+  livestreamUrl: "https://example.com/live",
+  hashtag: "#AyaanWedsZara",
   additionalEvents: [
     {
       title: "Mehndi & Sangeet",
@@ -61,18 +74,86 @@ const sampleContent = {
     { title: "Evening Mehfil", url: "/audio/evening-mehfil.mp3" },
     { title: "Royal Courtyard", url: "/audio/royal-courtyard.mp3" },
   ],
-  theme: "eid",
-  framework: "moonlit",
+  theme: "eid" as InvitationTheme,
+  framework: "moonlit" as InvitationFramework,
 };
 
 function DesignPreview() {
   if (!import.meta.env.DEV) throw notFound();
+
+  const [theme, setTheme] = useState<InvitationTheme>("eid");
+  const [framework, setFramework] = useState<InvitationFramework>("moonlit");
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const wantedTheme = params.get("theme");
+    const wantedFramework = params.get("framework");
+    if (wantedTheme && (invitationThemeIds as readonly string[]).includes(wantedTheme)) {
+      setTheme(wantedTheme as InvitationTheme);
+    }
+    if (
+      wantedFramework &&
+      (invitationFrameworkIds as readonly string[]).includes(wantedFramework)
+    ) {
+      setFramework(wantedFramework as InvitationFramework);
+    }
+  }, []);
+
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    url.searchParams.set("theme", theme);
+    url.searchParams.set("framework", framework);
+    window.history.replaceState(null, "", url);
+  }, [theme, framework]);
+
+  const layout = invitationLayoutFor(theme, framework);
+  const signature = invitationThemes.find((value) => value.id === theme)?.layout;
+
   return (
     <>
-      <div className="fixed left-1/2 top-3 z-[60] -translate-x-1/2 rounded-full border border-gold/40 bg-background/80 px-4 py-1.5 text-[10px] uppercase tracking-[0.24em] text-gold shadow-lg backdrop-blur">
-        Design preview · sample card
+      <div className="fixed inset-x-0 top-0 z-[60] flex flex-wrap items-center justify-center gap-2 border-b border-gold/40 bg-background/90 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-gold shadow-lg backdrop-blur">
+        <span>Design preview</span>
+        <select
+          aria-label="Preview theme"
+          className="rounded-full border border-gold/40 bg-background px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-foreground"
+          value={theme}
+          onChange={(event) => setTheme(event.target.value as InvitationTheme)}
+        >
+          {invitationThemeCategories.map((category) => (
+            <optgroup key={category.id} label={category.label}>
+              {invitationThemes
+                .filter((item) => item.category === category.id)
+                .map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
+                ))}
+            </optgroup>
+          ))}
+        </select>
+        <select
+          aria-label="Preview layout"
+          className="rounded-full border border-gold/40 bg-background px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-foreground"
+          value={framework}
+          onChange={(event) => setFramework(event.target.value as InvitationFramework)}
+        >
+          {invitationFrameworkIds.map((id) => (
+            <option key={id} value={id}>
+              {id}
+            </option>
+          ))}
+        </select>
+        <span className="text-muted-foreground">
+          {layout}
+          {signature ? " · signature" : ""}
+        </span>
       </div>
-      <PersonalInvitation title="Ayaan & Zara" content={sampleContent} showGate={false} preview />
+      <PersonalInvitation
+        title="Ayaan & Zara"
+        content={{ ...sampleContent, theme, framework }}
+        showGate={false}
+        preview
+      />
     </>
   );
 }

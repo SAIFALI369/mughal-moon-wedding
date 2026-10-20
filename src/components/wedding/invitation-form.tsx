@@ -1,11 +1,12 @@
 import {
+  useMemo,
   useState,
   type ChangeEvent,
   type Dispatch,
   type SetStateAction,
   type ReactNode,
 } from "react";
-import { ImagePlus, Music2, Plus, Sparkles, Trash2 } from "lucide-react";
+import { Check, CircleAlert, ImagePlus, Music2, Plus, Sparkles, Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import type { InvitationForm } from "./invitation-form-data";
 import { invitationArt } from "./invitation-art";
 import {
+  invitationCeremonyPresets,
+  invitationDressCodePresets,
   invitationElementOptions,
   invitationFrameworks,
   invitationThemeCategories,
@@ -21,9 +24,15 @@ import {
 } from "./invitation-options";
 import { processInvitationPortrait } from "./portrait-upload";
 import { INVITATION_SONG_LIMIT, suggestedInvitationSongs } from "./invitation-music";
-import { getInvitationAssistantName, getInvitationDetails } from "./invitation-details";
+import {
+  getInvitationAssistantName,
+  getInvitationDetails,
+  parseInvitationDate,
+} from "./invitation-details";
 import { InvitationCover, PersonalInvitation } from "./invitation-template";
 import { InvitationGalleryEditor } from "./invitation-gallery-editor";
+import { SimranFormReader, applyReading } from "./form-assistant";
+import type { InvitationReading, ReadingFieldKey } from "./invitation-import";
 
 export const invitationEditorSections = [
   { id: "essentials", label: "Details" },
@@ -48,6 +57,9 @@ export function editorSectionForField(field: string): InvitationEditorSection {
       "story",
       "hosts",
       "dressCode",
+      "hashtag",
+      "giftsNote",
+      "livestreamUrl",
       "contactName",
       "contactPhone",
       "rsvpDeadline",
@@ -65,6 +77,8 @@ type Props = {
   onSectionChange?: (section: InvitationEditorSection) => void;
   /** Present when editing a saved card, so the shared gallery can be managed. */
   cardId?: string;
+  /** Simran, the form reader, is shown only for active print partners. */
+  simran?: boolean;
 };
 function EditorPanel({
   compact,
@@ -96,24 +110,147 @@ const requiredFields = [
     limit: 200,
   },
 ] as const;
-const optionalFields = [
-  {
-    key: "hosts",
-    label: "Hosting families",
-    placeholder: "Together with our families",
-    limit: 160,
-  },
+/** Which editor step owns each field, so a missing detail can jump straight there. */
+export function sectionForReadingField(key: ReadingFieldKey): InvitationEditorSection {
+  if (key === "dressCode" || key === "hashtag" || key === "giftsNote" || key === "livestreamUrl")
+    return "details";
+  return "essentials";
+}
 
-  { key: "dressCode", label: "Dress code", placeholder: "Festive traditional attire", limit: 160 },
-  {
-    key: "contactName",
-    label: "Host contact name",
-    placeholder: "The person guests can reach",
-    limit: 100,
-  },
-  { key: "contactPhone", label: "Host phone", placeholder: "+91 98765 43210", limit: 50 },
-  { key: "rsvpDeadline", label: "Please RSVP by", placeholder: "10 December 2026", limit: 100 },
-] as const;
+function fieldDomId(key: ReadingFieldKey): string {
+  return key === "eventType" ? "card-event-type" : `card-${key}`;
+}
+
+type SectionState = {
+  id: InvitationEditorSection;
+  label: string;
+  ready: boolean;
+  missing: string[];
+};
+
+/**
+ * A partner can feel a form when it tells them what is done and what still
+ * needs a human. This is the single source of that truth for the whole editor.
+ */
+function editorProgress(value: InvitationForm) {
+  const missingEssentials: { key: ReadingFieldKey; label: string }[] = [
+    { key: "title", label: "Card title" },
+    ...requiredFields
+      .filter((field) => !value[field.key].trim())
+      .map((field) => ({ key: field.key as ReadingFieldKey, label: field.label as string })),
+    ...(value.eventType.trim()
+      ? []
+      : [{ key: "eventType" as ReadingFieldKey, label: "Main ceremony" }]),
+  ];
+  if (value.date.trim() && !parseInvitationDate(value.date)) {
+    missingEssentials.push({ key: "date", label: "A real wedding date" });
+  }
+  if (value.contactPhone.trim() && !/^[+0-9().\s-]*$/.test(value.contactPhone)) {
+    missingEssentials.push({ key: "contactPhone", label: "A valid phone number" });
+  }
+  const eventsReady = value.additionalEvents.every(
+    (event) => event.title.trim() && event.date.trim() && event.time.trim() && event.venue.trim(),
+  );
+  const songsReady = value.songs.every((song) => song.title.trim() && song.url.trim());
+  const notesReady = true;
+
+  const sections: SectionState[] = [
+    {
+      id: "essentials",
+      label: "Details",
+      ready: missingEssentials.length === 0,
+      missing: missingEssentials.map((item) => item.label),
+    },
+    { id: "design", label: "Design", ready: !!value.theme && !!value.framework, missing: [] },
+    { id: "details", label: "Story", ready: notesReady, missing: [] },
+    {
+      id: "events",
+      label: "Events",
+      ready: eventsReady,
+      missing: eventsReady ? [] : ["Finish each extra event"],
+    },
+    { id: "photos", label: "Photos", ready: true, missing: [] },
+    {
+      id: "songs",
+      label: "Music",
+      ready: songsReady,
+      missing: songsReady ? [] : ["Finish each song"],
+    },
+    { id: "elements", label: "Sections", ready: true, missing: [] },
+    { id: "preview", label: "Preview", ready: true, missing: [] },
+  ];
+  return {
+    sections,
+    ready: sections.filter((section) => section.ready).length,
+    missing: missingEssentials.map((item) => item.key),
+  };
+}
+
+function EditorStatus({
+  value,
+  onJump,
+}: {
+  value: InvitationForm;
+  onJump: (key: ReadingFieldKey) => void;
+}) {
+  const progress = useMemo(() => editorProgress(value), [value]);
+  return (
+    <div className="editor-status flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-border bg-muted/40 px-4 py-2.5">
+      <span className="flex items-center gap-2 text-xs">
+        {progress.missing.length === 0 ? (
+          <Check className="h-3.5 w-3.5 text-emerald-600" aria-hidden="true" />
+        ) : (
+          <CircleAlert className="h-3.5 w-3.5 text-amber-600" aria-hidden="true" />
+        )}
+        <strong>
+          {progress.ready} of {progress.sections.length} steps ready
+        </strong>
+        {progress.missing.length > 0 && (
+          <span className="text-muted-foreground">
+            {progress.missing.length} required{" "}
+            {progress.missing.length === 1 ? "detail" : "details"} left
+          </span>
+        )}
+      </span>
+      <span className="flex flex-wrap gap-1.5">
+        {progress.sections.map((section) => (
+          <span
+            key={section.id}
+            title={
+              section.ready
+                ? `${section.label} is ready`
+                : `${section.label}: ${section.missing.join(", ")}`
+            }
+            className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] ${
+              section.ready
+                ? "border-emerald-200 bg-emerald-50 text-emerald-700"
+                : "border-amber-200 bg-amber-50 text-amber-800"
+            }`}
+          >
+            {section.ready ? "✓" : "•"} {section.label}
+          </span>
+        ))}
+      </span>
+      {progress.missing.length > 0 && (
+        <span className="flex flex-wrap gap-1.5">
+          {progress.missing.slice(0, 4).map((key) => (
+            <button
+              key={key}
+              type="button"
+              onClick={() => onJump(key)}
+              className="rounded-full border border-amber-300 bg-background px-2 py-0.5 text-[10px] text-amber-900 hover:bg-amber-50"
+            >
+              {key === "title"
+                ? "Card title"
+                : (requiredFields.find((field) => field.key === key)?.label ??
+                  (key === "eventType" ? "Main ceremony" : key))}
+            </button>
+          ))}
+        </span>
+      )}
+    </div>
+  );
+}
 
 export function InvitationDetailsFields({
   value,
@@ -122,6 +259,7 @@ export function InvitationDetailsFields({
   section,
   onSectionChange,
   cardId,
+  simran = false,
 }: Props) {
   const [localSection, setLocalSection] = useState<InvitationEditorSection>("essentials");
   const [photoBusy, setPhotoBusy] = useState<"groomPhoto" | "bridePhoto" | null>(null);
@@ -172,6 +310,26 @@ export function InvitationDetailsFields({
     }));
   }
 
+  function goToSection(next: InvitationEditorSection) {
+    setLocalSection(next);
+    onSectionChange?.(next);
+  }
+
+  /** Take the partner to the exact input that still needs a human. */
+  function jumpToField(key: ReadingFieldKey) {
+    const target = sectionForReadingField(key);
+    if (target !== (section ?? localSection)) goToSection(target);
+    window.requestAnimationFrame(() => {
+      const element = document.getElementById(fieldDomId(key));
+      element?.scrollIntoView({ behavior: "smooth", block: "center" });
+      (element as HTMLInputElement | null)?.focus({ preventScroll: true });
+    });
+  }
+
+  function useReading(next: InvitationReading, accepted: string[]) {
+    onChange((form) => applyReading(form, next, accepted));
+  }
+
   return (
     <Tabs
       value={section ?? localSection}
@@ -196,39 +354,197 @@ export function InvitationDetailsFields({
         <section aria-labelledby="form-essentials" className="space-y-5">
           <div>
             <h2 id="form-essentials" className="font-serif text-2xl">
-              01 — The essentials
+              01 — The card
             </h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              These details are required and always visible, even when optional sections are turned
-              off.
+              The four things every guest looks for: who, when, where and how to reply. Fields with{" "}
+              <strong>*</strong> are printed on the card.
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="card-title">Card title *</Label>
-              <Input
-                id="card-title"
-                value={value.title}
-                onChange={(event) => change("title", event.target.value)}
-                placeholder="Our Wedding Celebration"
-                required
-                maxLength={120}
-              />
-            </div>
-            {requiredFields.map(({ key, label, placeholder, limit }) => (
-              <div key={key} className="space-y-2">
-                <Label htmlFor={`card-${key}`}>{label} *</Label>
+
+          <SimranFormReader enabled={simran} onApply={useReading} onJump={jumpToField} />
+
+          <EditorStatus value={value} onJump={jumpToField} />
+
+          <fieldset className="space-y-4 rounded-xl border border-border p-4">
+            <legend className="px-2 font-serif text-lg">The couple</legend>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="card-title">Card title *</Label>
                 <Input
-                  id={`card-${key}`}
-                  value={value[key]}
-                  onChange={(event) => change(key, event.target.value)}
-                  placeholder={placeholder}
+                  id="card-title"
+                  value={value.title}
+                  onChange={(event) => change("title", event.target.value)}
+                  placeholder="Our Wedding Celebration"
                   required
-                  maxLength={limit}
+                  maxLength={120}
+                />
+                <p className="text-xs text-muted-foreground">
+                  The line above your names. “Ayaan &amp; Zara — Nikah” works just as well as a
+                  formal title.
+                </p>
+              </div>
+              {(
+                [
+                  ["groomName", "Groom's name", "Groom's full name", 80],
+                  ["brideName", "Bride's name", "Bride's full name", 80],
+                ] as const
+              ).map(([key, label, placeholder, limit]) => (
+                <div key={key} className="space-y-2">
+                  <Label htmlFor={`card-${key}`}>{label} *</Label>
+                  <Input
+                    id={`card-${key}`}
+                    value={value[key]}
+                    onChange={(event) => change(key, event.target.value)}
+                    placeholder={placeholder}
+                    required
+                    maxLength={limit}
+                    autoComplete="off"
+                  />
+                </div>
+              ))}
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-4 rounded-xl border border-border p-4">
+            <legend className="px-2 font-serif text-lg">When</legend>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="card-date">Wedding date *</Label>
+                <Input
+                  id="card-date"
+                  value={value.date}
+                  onChange={(event) => change("date", event.target.value)}
+                  placeholder="15 December 2026 or 2026-12-15"
+                  required
+                  maxLength={100}
+                  inputMode="text"
+                  aria-invalid={!!value.date.trim() && !parseInvitationDate(value.date)}
+                />
+                <p className="text-xs text-muted-foreground">
+                  {value.date.trim() && !parseInvitationDate(value.date)
+                    ? "That date is not readable yet. Try 15 December 2026 or 2026-12-15."
+                    : "Any clear date works — the countdown and calendar read it for you."}
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="card-time">Wedding time *</Label>
+                <Input
+                  id="card-time"
+                  value={value.time}
+                  onChange={(event) => change("time", event.target.value)}
+                  placeholder="4:00 PM IST"
+                  required
+                  maxLength={100}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Add a time zone (IST, UTC) so Save the Date is exact.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="card-endTime">
+                  End time <span className="font-normal text-muted-foreground">(optional)</span>
+                </Label>
+                <Input
+                  id="card-endTime"
+                  value={value.endTime}
+                  onChange={(event) => change("endTime", event.target.value)}
+                  placeholder="10:00 PM IST"
+                  maxLength={100}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Used for the calendar block; without it we allow two hours.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="card-rsvpDeadline">Please RSVP by</Label>
+                <Input
+                  id="card-rsvpDeadline"
+                  value={value.rsvpDeadline}
+                  onChange={(event) => change("rsvpDeadline", event.target.value)}
+                  placeholder="10 December 2026"
+                  maxLength={100}
+                />
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    ["2 weeks before", -14],
+                    ["1 month before", -30],
+                  ].map(([label, days]) => (
+                    <button
+                      key={label}
+                      type="button"
+                      onClick={() => {
+                        const parts = parseInvitationDate(value.date);
+                        if (!parts) return;
+                        const target = new Date(
+                          Date.UTC(parts.year, parts.month - 1, parts.day + Number(days)),
+                        );
+                        change(
+                          "rsvpDeadline",
+                          `${target.getUTCDate()} ${target.toLocaleString("en-IN", {
+                            month: "long",
+                            timeZone: "UTC",
+                          })} ${target.getUTCFullYear()}`,
+                        );
+                      }}
+                      className="rounded-full border border-border px-2.5 py-1 text-[10px] text-muted-foreground hover:border-gold/70 hover:text-foreground"
+                    >
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-4 rounded-xl border border-border p-4">
+            <legend className="px-2 font-serif text-lg">Where</legend>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="card-venue">Venue name *</Label>
+                <Input
+                  id="card-venue"
+                  value={value.venue}
+                  onChange={(event) => change("venue", event.target.value)}
+                  placeholder="The Grand Palace"
+                  required
+                  maxLength={120}
                 />
               </div>
-            ))}
-            <div className="space-y-2 sm:col-span-2">
+              <div className="space-y-2">
+                <Label htmlFor="card-address">Venue address / city *</Label>
+                <Input
+                  id="card-address"
+                  value={value.address}
+                  onChange={(event) => change("address", event.target.value)}
+                  placeholder="Street, city and state"
+                  required
+                  maxLength={200}
+                />
+              </div>
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="card-mapUrl">
+                  Map or directions link{" "}
+                  <span className="font-normal text-muted-foreground">(optional)</span>
+                </Label>
+                <Input
+                  id="card-mapUrl"
+                  value={value.mapUrl}
+                  onChange={(event) => change("mapUrl", event.target.value)}
+                  placeholder="https://maps.app.goo.gl/…"
+                  inputMode="url"
+                  maxLength={500}
+                />
+                <p className="text-xs text-muted-foreground">
+                  Leave blank and the card builds a Google Maps search from the venue and address.
+                </p>
+              </div>
+            </div>
+          </fieldset>
+
+          <fieldset className="space-y-4 rounded-xl border border-border p-4">
+            <legend className="px-2 font-serif text-lg">The ceremony</legend>
+            <div className="space-y-2">
               <Label htmlFor="card-event-type">Main ceremony *</Label>
               <Input
                 id="card-event-type"
@@ -238,27 +554,30 @@ export function InvitationDetailsFields({
                 maxLength={80}
                 placeholder="Nikah, wedding ceremony, or reception"
               />
+              <div className="flex flex-wrap gap-1.5">
+                {invitationCeremonyPresets.map((preset) => (
+                  <button
+                    key={preset.id}
+                    type="button"
+                    onClick={() =>
+                      onChange((form) => ({
+                        ...form,
+                        eventType: preset.eventType,
+                        ...(preset.riteLine ? { riteLine: preset.riteLine } : {}),
+                      }))
+                    }
+                    className={`rounded-full border px-3 py-1 text-xs transition ${
+                      value.eventType === preset.eventType
+                        ? "border-gold bg-gold/15 text-gold"
+                        : "border-border text-muted-foreground hover:border-gold/70 hover:text-foreground"
+                    }`}
+                  >
+                    {preset.label}
+                  </button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-2 sm:col-span-2">
-              <Label htmlFor="card-host-name">
-                Host name{" "}
-                <span className="font-normal text-muted-foreground">
-                  (your card&apos;s AI assistant takes this name)
-                </span>
-              </Label>
-              <Input
-                id="card-host-name"
-                value={value.hostName}
-                onChange={(event) => change("hostName", event.target.value)}
-                maxLength={60}
-                placeholder="Your name, e.g. Ayesha"
-              />
-              <p className="text-xs text-muted-foreground">
-                Leave blank and we&apos;ll use your host contact, family line, then the groom&apos;s
-                first name.
-              </p>
-            </div>
-            <div className="space-y-2 sm:col-span-2">
+            <div className="space-y-2">
               <Label htmlFor="card-rite-line">Blessing or opening line</Label>
               <Input
                 id="card-rite-line"
@@ -268,21 +587,90 @@ export function InvitationDetailsFields({
                 placeholder="A sacred celebration"
               />
               <p className="text-xs text-muted-foreground">
-                Shown above your names on the Hindu layouts, for example “A sacred celebration” or
-                “शुभ विवाह”. Leave blank for the default.
+                The line above your names. On the Hindu themes it appears in Devanagari, for example
+                “॥ शुभ विवाह ॥”. Leave blank for the default of your chosen theme.
               </p>
             </div>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            Use a real date. Include a time zone (such as IST or UTC) so Save the Date has a precise
-            calendar time.
-          </p>
+          </fieldset>
+
+          <fieldset className="space-y-4 rounded-xl border border-border p-4">
+            <legend className="px-2 font-serif text-lg">Hosts &amp; contact</legend>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="space-y-2 sm:col-span-2">
+                <Label htmlFor="card-hosts">Hosting families</Label>
+                <Input
+                  id="card-hosts"
+                  value={value.hosts}
+                  onChange={(event) => change("hosts", event.target.value)}
+                  placeholder="Together with our families"
+                  maxLength={160}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="card-hostName">
+                  Host name{" "}
+                  <span className="font-normal text-muted-foreground">
+                    (your card&apos;s AI assistant takes this name)
+                  </span>
+                </Label>
+                <Input
+                  id="card-hostName"
+                  value={value.hostName}
+                  onChange={(event) => change("hostName", event.target.value)}
+                  maxLength={60}
+                  placeholder="Your name, e.g. Ayesha"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="card-contactName">Host contact name</Label>
+                <Input
+                  id="card-contactName"
+                  value={value.contactName}
+                  onChange={(event) => change("contactName", event.target.value)}
+                  placeholder="The person guests can reach"
+                  maxLength={100}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="card-contactPhone">Host phone</Label>
+                <Input
+                  id="card-contactPhone"
+                  value={value.contactPhone}
+                  onChange={(event) => change("contactPhone", event.target.value)}
+                  placeholder="+91 98765 43210"
+                  inputMode="tel"
+                  maxLength={50}
+                  aria-invalid={
+                    !!value.contactPhone.trim() && !/^[+0-9().\s-]*$/.test(value.contactPhone)
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="card-hashtag">
+                  Wedding hashtag{" "}
+                  <span className="font-normal text-muted-foreground">(optional)</span>
+                </Label>
+                <Input
+                  id="card-hashtag"
+                  value={value.hashtag}
+                  onChange={(event) => change("hashtag", event.target.value)}
+                  placeholder="#AyaanWedsZara"
+                  maxLength={60}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              The assistant name is taken from the host name, then the contact, then the family
+              line.
+            </p>
+          </fieldset>
+
           <p className="flex items-start gap-2 rounded-xl border border-gold/30 bg-gold/5 px-4 py-3 text-xs leading-relaxed">
             <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-gold" aria-hidden="true" />
             <span>
-              Your card gets its own AI host assistant. It will introduce itself as{" "}
-              <strong>{assistantName}</strong> and answer guests using only this invitation&apos;s
-              details. Set your host name above to choose the assistant&apos;s name yourself.
+              Guests get an AI host assistant named <strong>{assistantName}</strong>. It answers
+              only from this card&apos;s details, and you can change its name any time by editing
+              the host name.
             </span>
           </p>
         </section>
@@ -298,6 +686,12 @@ export function InvitationDetailsFields({
               Pick an atmosphere and a layout separately. Every combination uses your own wedding
               information.
             </p>
+            {invitationThemes.find((theme) => theme.id === value.theme)?.layout && (
+              <p className="mt-2 rounded-lg border border-gold/30 bg-gold/5 px-3 py-2 text-xs text-muted-foreground">
+                This theme has its own opening structure and section styling, so it overrides the
+                layout below. The Grand Curtain is the one exception and always parts its curtains.
+              </p>
+            )}
           </div>
           <fieldset>
             <legend className="mb-3 text-sm font-medium">Theme *</legend>
@@ -400,19 +794,8 @@ export function InvitationDetailsFields({
               which sections guests see.
             </p>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {optionalFields.map(({ key, label, placeholder, limit }) => (
-              <div key={key} className="space-y-2">
-                <Label htmlFor={`card-${key}`}>{label}</Label>
-                <Input
-                  id={`card-${key}`}
-                  value={value[key]}
-                  onChange={(event) => change(key, event.target.value)}
-                  placeholder={placeholder}
-                  maxLength={limit}
-                />
-              </div>
-            ))}
+          <fieldset className="grid gap-4 rounded-xl border border-border p-4 sm:grid-cols-2">
+            <legend className="px-2 font-serif text-lg">The words</legend>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="card-message">A personal note</Label>
               <Textarea
@@ -423,6 +806,9 @@ export function InvitationDetailsFields({
                 maxLength={2000}
                 placeholder="What you would like your guests to know…"
               />
+              <p className="text-xs text-muted-foreground">
+                Appears as “A Note From Us”. Leave blank for a gentle default.
+              </p>
             </div>
             <div className="space-y-2 sm:col-span-2">
               <Label htmlFor="card-story">Our story</Label>
@@ -446,7 +832,75 @@ export function InvitationDetailsFields({
                 placeholder="Parking, accessibility, accommodation…"
               />
             </div>
-          </div>
+          </fieldset>
+
+          <fieldset className="grid gap-4 rounded-xl border border-border p-4 sm:grid-cols-2">
+            <legend className="px-2 font-serif text-lg">Dress &amp; gifts</legend>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="card-dressCode">Dress code</Label>
+              <Input
+                id="card-dressCode"
+                value={value.dressCode}
+                onChange={(event) => change("dressCode", event.target.value)}
+                placeholder="Festive traditional attire"
+                maxLength={160}
+              />
+              <div className="flex flex-wrap gap-1.5">
+                {invitationDressCodePresets.map((preset) => (
+                  <button
+                    key={preset}
+                    type="button"
+                    onClick={() => change("dressCode", preset)}
+                    className={`rounded-full border px-2.5 py-1 text-[11px] transition ${
+                      value.dressCode === preset
+                        ? "border-gold bg-gold/15 text-gold"
+                        : "border-border text-muted-foreground hover:border-gold/70 hover:text-foreground"
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="card-giftsNote">
+                Gifts &amp; blessings{" "}
+                <span className="font-normal text-muted-foreground">(optional)</span>
+              </Label>
+              <Textarea
+                id="card-giftsNote"
+                value={value.giftsNote}
+                onChange={(event) => change("giftsNote", event.target.value)}
+                rows={2}
+                maxLength={300}
+                placeholder="Your presence and duas are the only gift we ask for."
+              />
+              <p className="text-xs text-muted-foreground">
+                Printed in a quiet Gifts section; hide it any time in Sections.
+              </p>
+            </div>
+          </fieldset>
+
+          <fieldset className="grid gap-4 rounded-xl border border-border p-4 sm:grid-cols-2">
+            <legend className="px-2 font-serif text-lg">For guests far away</legend>
+            <div className="space-y-2 sm:col-span-2">
+              <Label htmlFor="card-livestreamUrl">
+                Live stream link{" "}
+                <span className="font-normal text-muted-foreground">(optional)</span>
+              </Label>
+              <Input
+                id="card-livestreamUrl"
+                value={value.livestreamUrl}
+                onChange={(event) => change("livestreamUrl", event.target.value)}
+                placeholder="https://youtube.com/live/…"
+                inputMode="url"
+                maxLength={500}
+              />
+              <p className="text-xs text-muted-foreground">
+                A YouTube, Zoom or Meet link for family who cannot travel.
+              </p>
+            </div>
+          </fieldset>
         </section>
       </EditorPanel>
 

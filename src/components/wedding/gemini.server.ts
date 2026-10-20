@@ -164,10 +164,15 @@ export async function generateGeminiReply({
   systemInstruction,
   messages,
   maxOutputTokens = 250,
+  temperature = 0.5,
+  responseMimeType,
 }: {
   systemInstruction: string;
   messages: GeminiChatMessage[];
   maxOutputTokens?: number;
+  temperature?: number;
+  /** Ask Gemini for strict JSON, used by the partner form reader. */
+  responseMimeType?: string;
 }): Promise<string> {
   const { apiKey, model } = await resolveGeminiConfig();
   const upstream = await fetch(
@@ -183,8 +188,9 @@ export async function generateGeminiReply({
           parts: [{ text: content }],
         })),
         generationConfig: {
-          temperature: 0.5,
+          temperature,
           maxOutputTokens,
+          ...(responseMimeType ? { responseMimeType } : {}),
           ...(model.startsWith("gemini-2.5-flash")
             ? { thinkingConfig: { thinkingBudget: 0 } }
             : {}),

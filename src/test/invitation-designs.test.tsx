@@ -55,8 +55,13 @@ describe("creator invitation design and input", () => {
         expect(page).toContain('id="celebration"');
         expect(page).not.toContain("Mohsin");
         expect(page).not.toContain("Simran");
-        if (framework === "moonlit") expect(page).toContain("eid-hero");
-        else if (framework === "curtain-call") expect(page).toContain("curtain-stage");
+        // A theme's signature structure wins over the shared frameworks, so the
+        // three redesigns cannot fall back into the same silhouette.
+        if (framework === "curtain-call") expect(page).toContain("curtain-stage");
+        else if (theme === "jharokha-dawn") expect(page).toContain("dawn-stage");
+        else if (theme === "haldi-baag") expect(page).toContain("baag-stage");
+        else if (theme === "vows-in-ink") expect(page).toContain("ink-stage");
+        else if (framework === "moonlit") expect(page).toContain("eid-hero");
         else if (theme === "diya-utsav" || theme === "sacred-mandap" || theme === "kashi-ghat")
           expect(page).toContain("mandap-stage");
         else expect(page).toContain("invitation-stage");

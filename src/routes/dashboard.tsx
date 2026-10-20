@@ -818,6 +818,7 @@ export function Dashboard() {
                   onSectionChange={setEditorSection}
                   value={form}
                   onChange={setForm}
+                  simran={!!partner?.active}
                 />
               </div>
               <div className="dashboard-editor-footer">

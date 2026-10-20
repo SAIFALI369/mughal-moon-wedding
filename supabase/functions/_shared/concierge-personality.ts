@@ -42,6 +42,11 @@ export type CardConciergeFacts = {
   contactPhone: string;
   arrivalNotes: string;
   rsvpDeadline: string;
+  /** Newer card fields; optional so older callers keep compiling. */
+  endTime?: string;
+  hashtag?: string;
+  giftsNote?: string;
+  livestreamUrl?: string;
   extraEvents: { title: string; date: string; time: string; venue: string; address: string }[];
   songs: { title: string }[];
 };
@@ -72,12 +77,15 @@ HOST AND COUPLE
 Host: ${facts.hostName}${facts.hostLine ? ` (${facts.hostLine})` : ""}
 Couple: ${facts.couple}
 Main ceremony: ${facts.eventType}
-Date and time: ${[facts.date, facts.time].filter(Boolean).join(" · ") || "To be announced"}
+Date and time: ${[facts.date, facts.time, facts.endTime && `until ${facts.endTime}`].filter(Boolean).join(" · ") || "To be announced"}
 Venue: ${[facts.venue, facts.address].filter(Boolean).join(", ") || "To be announced"}
 RSVP deadline: ${facts.rsvpDeadline || "Not stated"}
 Dress code: ${facts.dressCode || "Not stated"}
 Contact: ${[facts.contactName, facts.contactPhone].filter(Boolean).join(" · ") || "Not published"}
 Arrival notes: ${facts.arrivalNotes || "None"}
+Wedding hashtag: ${facts.hashtag || "Not stated"}
+Gifts: ${facts.giftsNote || "Not stated"}
+Live stream: ${facts.livestreamUrl ? "Yes — a link is on the invitation" : "Not offered"}
 
 A NOTE FROM THE HOSTS
 ${facts.message || "No personal note was added."}
