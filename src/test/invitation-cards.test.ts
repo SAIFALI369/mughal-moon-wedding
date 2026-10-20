@@ -154,15 +154,17 @@ describe("personal invitation cards — database enforcement", () => {
   });
 });
 
-describe("username-only authentication UI", () => {
-  it("uses username RPC registration/login without email or recovery forms", () => {
+describe("account authentication UI", () => {
+  it("signs in with an app username or an existing Supabase email account", () => {
     const signUp = readFileSync(new URL("../routes/sign-up.tsx", import.meta.url), "utf8");
     const signIn = readFileSync(new URL("../routes/sign-in.tsx", import.meta.url), "utf8");
     expect(signUp).toContain('redirect({ to: "/sign-in"');
     expect(signUp).not.toContain('rpc("register_username"');
     expect(signUp).not.toContain('type="email"');
     expect(signUp).not.toContain('auth.signUp');
-    expect(signIn).toContain('rpc("username_login_address"');
+    expect(signIn).toContain("Username or email");
+    expect(signIn).toContain('raw.includes("@")');
+    expect(signIn).toMatch(/rpc\(\s*"username_login_address"/);
     expect(signIn).toContain("signInWithPassword");
     expect(signIn).not.toContain('to="/recover"');
     expect(signIn).toContain("Contact the InvitingYou representative");

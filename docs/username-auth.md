@@ -1,12 +1,38 @@
 # Username/password accounts
 
-Sign up and sign in with a username and password only. Handles are unique ignoring
-case and leading/trailing spaces. New accounts are confirmed immediately; no OTP,
-email entry or inbox is involved. Supabase password sessions remain in use (with
-a UUID-based `@accounts.invalid` internal identifier). Passwords are bcrypt hashed
-in the database. Registration reserves the profile and creates the Auth user and
-identity in one transaction. Requires the standard Supabase Auth schema and a
-migration role able to write `auth.users` / `auth.identities` and install pgcrypto.
+New accounts are created with a username and password only; public registration is
+disabled and every shop account is issued by an operator. Sign-in accepts either
+that username or the email address of an existing Supabase Auth account. Handles
+are unique ignoring case and leading/trailing spaces. New accounts are confirmed
+immediately; no OTP, email entry or inbox is involved. Supabase password sessions
+remain in use (with a UUID-based `@accounts.invalid` internal identifier).
+Passwords are bcrypt hashed in the database. Registration reserves the profile and
+creates the Auth user and identity in one transaction. Requires the standard
+Supabase Auth schema and a migration role able to write `auth.users` /
+`auth.identities` and install pgcrypto.
+
+## Existing Supabase email accounts
+
+Accounts created directly in Supabase (for example with **Add user** in the Auth
+dashboard) have an `auth.users` row and a password but no `public.profiles` row.
+The username login RPC joins `profiles`, so those accounts previously could not
+sign in at all. Migration `0012_link_existing_email_accounts.sql` fixes this
+without changing any account ID, email or password:
+
+- Each **confirmed** email account that lacks a profile receives one, with a
+  username derived from the email local part (`resham@gmail.com` → `resham`).
+  Collisions get `-2`, `-3`, …; accounts whose address is already owned by another
+  profile are skipped for operator review.
+- `username_login_address` now matches either the profile username or the Auth
+  email, still only returning the address after the supplied password verifies.
+  Handles longer than 30 characters are accepted for email identifiers (up to the
+  254-character email limit).
+- `@accounts.invalid` internal accounts and unconfirmed addresses are untouched.
+
+The form in `src/routes/sign-in.tsx` also sends any identifier containing `@`
+straight to `signInWithPassword`, so a legacy email account works even before the
+profile backfill is deployed. Signing in does **not** grant partner credits; an
+operator still records the ₹1,000 cash package before cards can be created.
 
 There is **no application password recovery/reset route**. Losing a password means
 creating a different username/account; old cards remain with the original account.
@@ -28,6 +54,8 @@ Matching SQL is checked into both migration directories:
 
 - `supabase/migrations/20261018000000_username_password_auth.sql`
 - `drizzle/migrations/0005_username_password_auth.sql`
+- `supabase/migrations/20261020000000_link_existing_email_accounts.sql`
+- `drizzle/migrations/0012_link_existing_email_accounts.sql`
 
 The existing `npm run build` postbuild hook invokes `scripts/migrate.mjs`. Set
 `LOVABLE_DB_MIGRATION_URL` (or `DATABASE_URL` / `SUPABASE_DB_URL`) **in the server-side
@@ -51,7 +79,8 @@ advisory lock, and applies new SQL atomically. Pre-existing untracked migrations
 migrations never swallow SQL errors. This auth migration is also safe to reapply
 through the native Supabase migration path.
 
-After deployment, check workflow/build logs and test: signup, logout, mixed-case
-username login, duplicate username, wrong password, and direct recovery URLs (404).
+After deployment, check workflow/build logs and test: mixed-case username login,
+email-account login, logout, duplicate username, wrong password, and direct
+recovery URLs (404).
 Tests use PGlite with mocked Auth schema and hashing functions; they do not replace
 a smoke test against the actual hosted Supabase Auth API.

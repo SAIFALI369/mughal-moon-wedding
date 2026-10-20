@@ -85,6 +85,13 @@
       "when": 1792411800000,
       "tag": "0011_partner_topup_safety",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1792454400000,
+      "tag": "0012_link_existing_email_accounts",
+      "breakpoints": true
     }
   ]
 }

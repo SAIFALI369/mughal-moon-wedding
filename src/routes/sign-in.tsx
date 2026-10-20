@@ -11,47 +11,85 @@ export const Route = createFileRoute("/sign-in")({
   component: SignIn,
 });
 
+// Email-shaped input is checked against Supabase Auth directly. That keeps
+// accounts created before the username-only migration usable: they have an
+// auth.users row and password but no public.profiles row for the RPC to find.
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const INVALID_CREDENTIALS = "Invalid username/email or password";
+
 function SignIn() {
   const navigate = useNavigate();
-  const [username, setUsername] = useState("");
+  const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
+    if (busy) return;
     setError("");
-    const raw = username.trim();
+    const raw = identifier.trim();
     if (!raw) {
-      setError("Enter your username");
+      setError("Enter your username or email");
       return;
     }
     if (!password) {
       setError("Enter your password");
       return;
     }
+    const looksLikeEmail = raw.includes("@");
+    if (looksLikeEmail && !EMAIL_PATTERN.test(raw)) {
+      setError("Enter a valid email address");
+      return;
+    }
     setBusy(true);
     try {
-      const { data: email, error: lookupError } = await supabase.rpc("username_login_address", {
-        requested_username: raw,
-        requested_password: password,
-      });
-      if (lookupError || !email) {
-        setError("Invalid username or password");
-        return;
+      let loginEmail = raw.toLowerCase();
+      if (!looksLikeEmail) {
+        const { data: email, error: lookupError } = await supabase.rpc("username_login_address", {
+          requested_username: raw,
+          requested_password: password,
+        });
+        if (lookupError) {
+          console.error("Username lookup failed", lookupError);
+          setError("Sign-in is temporarily unavailable. Please try again in a moment.");
+          return;
+        }
+        if (!email) {
+          setError(INVALID_CREDENTIALS);
+          return;
+        }
+        loginEmail = String(email).toLowerCase();
       }
-      const { error } = await supabase.auth.signInWithPassword({
-        email: email.toLowerCase(),
+
+      const { error: signInError } = await supabase.auth.signInWithPassword({
+        email: loginEmail,
         password,
       });
-      if (error) {
-        setError("Invalid username or password");
+      if (signInError) {
+        setError(
+          signInError.code === "invalid_credentials" ||
+            /invalid login credentials/i.test(signInError.message)
+            ? INVALID_CREDENTIALS
+            : "Sign-in failed. Please try again.",
+        );
         return;
       }
+
+      // A blocked storage adapter can accept the grant but drop the session.
+      const { data: sessionData } = await supabase.auth.getSession();
+      if (!sessionData.session) {
+        setError(
+          "Signed in, but this browser blocked session storage. Allow storage for this site and try again.",
+        );
+        return;
+      }
+
       toast.success("Welcome back!");
-      navigate({ to: "/dashboard" });
+      await navigate({ to: "/dashboard", replace: true });
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Sign in failed");
+      console.error("Sign-in failed", err);
+      setError("Sign-in failed. Please check your connection and try again.");
     } finally {
       setBusy(false);
     }
@@ -70,14 +108,17 @@ function SignIn() {
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="identifier">Username or email</Label>
               <Input
-                id="username"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
-                placeholder="Your username"
+                id="identifier"
+                value={identifier}
+                onChange={(e) => setIdentifier(e.target.value)}
+                placeholder="Your username or account email"
                 required
                 autoComplete="username"
+                autoCapitalize="none"
+                spellCheck={false}
+                disabled={busy}
               />
             </div>
             <div className="space-y-2">
@@ -90,9 +131,14 @@ function SignIn() {
                 placeholder="Your password"
                 required
                 autoComplete="current-password"
+                disabled={busy}
               />
             </div>
-            {error && <p className="text-sm text-destructive">{error}</p>}
+            {error && (
+              <p role="alert" className="text-sm text-destructive">
+                {error}
+              </p>
+            )}
             <Button
               type="submit"
               disabled={busy}
@@ -101,6 +147,9 @@ function SignIn() {
               {busy ? "Signing in…" : "Sign in"}
             </Button>
           </form>
+          <p className="mt-3 text-center text-xs text-muted-foreground">
+            Already have an account in Supabase? Sign in with that email address and password.
+          </p>
           <div className="mt-5 rounded-lg border border-gold/20 bg-muted/40 p-4 text-sm leading-relaxed">
             <p className="font-medium">By invitation. For your printing business.</p>
             <p className="mt-2 text-muted-foreground">
