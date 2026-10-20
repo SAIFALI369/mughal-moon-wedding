@@ -22,6 +22,7 @@ import { processInvitationPortrait } from "./portrait-upload";
 import { INVITATION_SONG_LIMIT, suggestedInvitationSongs } from "./invitation-music";
 import { getInvitationAssistantName, getInvitationDetails } from "./invitation-details";
 import { InvitationCover, PersonalInvitation } from "./invitation-template";
+import { InvitationGalleryEditor } from "./invitation-gallery-editor";
 
 export const invitationEditorSections = [
   { id: "essentials", label: "Details" },
@@ -61,6 +62,8 @@ type Props = {
   compact?: boolean;
   section?: InvitationEditorSection;
   onSectionChange?: (section: InvitationEditorSection) => void;
+  /** Present when editing a saved card, so the shared gallery can be managed. */
+  cardId?: string;
 };
 function EditorPanel({
   compact,
@@ -117,6 +120,7 @@ export function InvitationDetailsFields({
   compact = false,
   section,
   onSectionChange,
+  cardId,
 }: Props) {
   const [localSection, setLocalSection] = useState<InvitationEditorSection>("essentials");
   const [photoBusy, setPhotoBusy] = useState<"groomPhoto" | "bridePhoto" | null>(null);
@@ -564,6 +568,7 @@ export function InvitationDetailsFields({
               {photoError}
             </p>
           )}
+          <InvitationGalleryEditor cardId={cardId} />
         </section>
       </EditorPanel>
 
@@ -731,6 +736,7 @@ export function InvitationDetailsFields({
                 content={value}
                 showGate={false}
                 preview
+                cardId={cardId}
               />
             </div>
           )}

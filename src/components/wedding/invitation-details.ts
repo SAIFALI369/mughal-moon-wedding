@@ -263,10 +263,19 @@ function calendarDate(date: Date): string {
     .replace(/\.\d{3}/, "");
 }
 
-export function buildInvitationCalendarUrl(details: InvitationDetails): string | null {
-  const date = parseInvitationDate(details.date);
+type CalendarEvent = {
+  title: string;
+  date: string;
+  time: string;
+  venue: string;
+  address: string;
+  notes?: string;
+};
+
+function googleCalendarUrl(event: CalendarEvent): string | null {
+  const date = parseInvitationDate(event.date);
   if (!date) return null;
-  const time = parseInvitationTime(details.time);
+  const time = parseInvitationTime(event.time);
   let dates: string;
   if (time?.zone) {
     const start = eventInstant(date, time);
@@ -280,14 +289,51 @@ export function buildInvitationCalendarUrl(details: InvitationDetails): string |
   }
   const params = new URLSearchParams({
     action: "TEMPLATE",
-    text: `${details.groomName} & ${details.brideName} — Wedding Celebration`,
+    text: event.title,
     dates,
     details:
-      [details.time && `Time: ${details.time}`, details.message].filter(Boolean).join("\n") ||
+      [event.time && `Time: ${event.time}`, event.notes].filter(Boolean).join("\n") ||
       "Wedding celebration",
-    location: [details.venue, details.address].filter(Boolean).join(", "),
+    location: [event.venue, event.address].filter(Boolean).join(", "),
   });
   return `https://calendar.google.com/calendar/render?${params.toString()}`;
+}
+
+export function buildInvitationCalendarUrl(details: InvitationDetails): string | null {
+  return googleCalendarUrl({
+    title: `${details.groomName} & ${details.brideName} — Wedding Celebration`,
+    date: details.date,
+    time: details.time,
+    venue: details.venue,
+    address: details.address,
+    notes: details.message,
+  });
+}
+
+/**
+ * Every listed function — the main celebration and each extra event — gets its own
+ * calendar link, exactly like the main invitation's event cards.
+ */
+export function buildInvitationEventCalendarUrl(
+  details: InvitationDetails,
+  event: InvitationDetails["additionalEvents"][number],
+): string | null {
+  return googleCalendarUrl({
+    title: `${event.title || "Wedding event"} — ${details.groomName} & ${details.brideName}`,
+    date: event.date,
+    time: event.time,
+    venue: event.venue,
+    address: event.address,
+  });
+}
+
+/**
+ * The embedded map used by the main invitation. An iframe without an API key needs
+ * only a query, so the host's own written venue is enough — no demo coordinates.
+ */
+export function invitationMapEmbedUrl(location: string): string | null {
+  const query = location.trim();
+  return query ? `https://www.google.com/maps?q=${encodeURIComponent(query)}&output=embed` : null;
 }
 
 /** Retain the card through the day after the wedding. */

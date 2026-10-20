@@ -186,7 +186,7 @@ export LOVABLE_DB_MIGRATION_URL="postgresql://postgres:[password]@db.ibqkslwleel
 npm run db:migrate
 ```
 
-**Personal invitation builder and private RSVPs**: See [the creator and migration guide](docs/personal-invitations.md). The original moonlit invitation is the default, with independent theme and layout choices. Every published card also gets its own AI host assistant, named after the host, plus a host-chosen soundtrack of up to five songs. The invitation suite has been redesigned with ornate arches, monograms, a cover keepsake, a date plate and a celebration timeline.
+**Personal invitation builder and private RSVPs**: See [the creator and migration guide](docs/personal-invitations.md). The original moonlit invitation is the default, with independent theme and layout choices. Every published card also gets its own AI host assistant, named after the host, plus a host-chosen soundtrack of up to five songs. The invitation suite has been redesigned with ornate arches, monograms, a cover keepsake, a date plate and a celebration timeline. All eight themes and four frameworks share the main invitation's feature set: a gallery with lightbox and guest uploads, a live wishes wall, an embedded multi-venue map, per-event calendar links, a personalised share panel and a confetti RSVP — all scoped to that card's own content.
 
 ## Build with Lovable
 

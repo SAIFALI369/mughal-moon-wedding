@@ -12,7 +12,12 @@ import {
   invitationFormForCard,
   emptyInvitationForm,
 } from "@/components/wedding/invitation-form-data";
-import { getInvitationDetails, isSafePortrait } from "@/components/wedding/invitation-details";
+import {
+  buildInvitationEventCalendarUrl,
+  getInvitationDetails,
+  invitationMapEmbedUrl,
+  isSafePortrait,
+} from "@/components/wedding/invitation-details";
 import { invitationRsvpSchema } from "@/components/wedding/invitation-rsvp-schema";
 
 const basics = {
@@ -91,11 +96,13 @@ describe("creator invitation design and input", () => {
       "countdown",
       "message",
       "story",
+      "gallery",
       "schedule",
       "venue",
       "dress-code",
       "contact",
       "rsvp",
+      "wishes",
     ]) {
       expect(hidden).not.toContain(`id="${section}"`);
     }
@@ -123,11 +130,13 @@ describe("creator invitation design and input", () => {
       "countdown",
       "message",
       "story",
+      "gallery",
       "schedule",
       "venue",
       "dress-code",
       "contact",
       "rsvp",
+      "wishes",
     ]) {
       expect(shown).toContain(`id="${section}"`);
     }
@@ -135,6 +144,58 @@ describe("creator invitation design and input", () => {
     expect(shown).toContain("Portrait of Zara");
     expect(shown).toContain("This is a private preview");
     expect(shown).not.toContain("guest-name"); // a draft preview cannot write RSVPs
+    // The card carries the main invitation's celebration features, not just text.
+    expect(shown).toContain("output=embed");
+    expect(shown).toContain("invite-map-tabs");
+    expect(shown).toContain("Add to calendar");
+    expect(shown).toContain("Wishes open once this invitation is published.");
+  });
+
+  it("gives every theme and framework the same gallery, map, wishes and sharing features", () => {
+    const jpeg = `data:image/jpeg;base64,${Buffer.from([0xff, 0xd8, 0xff, 0xd9]).toString("base64")}`;
+    for (const theme of invitationThemeIds) {
+      for (const framework of invitationFrameworkIds) {
+        const card = {
+          ...basics,
+          theme,
+          framework,
+          story: "We met at sunrise",
+          groomPhoto: jpeg,
+          bridePhoto: jpeg,
+          dressCode: "Festive gold",
+          additionalEvents: [
+            {
+              title: "Sangeet",
+              date: "14 December 2030",
+              time: "6:00 PM IST",
+              venue: "City Hall",
+              address: "East Wing",
+            },
+          ],
+        };
+        const markup = renderToStaticMarkup(
+          <PersonalInvitation
+            title="Our Day"
+            content={card}
+            showGate={false}
+            slug="ayaan-weds-zara"
+          />,
+        );
+        expect(markup).toContain('id="gallery"');
+        expect(markup).toContain('id="wishes"');
+        expect(markup).toContain('id="share"');
+        expect(markup).toContain('id="venue"');
+        expect(markup).toContain("invite-gallery-tile");
+        expect(markup).toContain("invite-map-frame");
+        expect(markup).toContain("https://www.google.com/maps?q=Garden%20Pavilion");
+        expect(markup).toContain("output=embed");
+        expect(markup).toContain("/invite/ayaan-weds-zara");
+        expect(markup).toContain("City Hall");
+        expect(markup).not.toContain("Mohsin");
+        expect(markup).not.toContain("Simran");
+        expect(markup).not.toContain("20261122");
+      }
+    }
   });
 
   it("requires all essentials, real dates, safe portraits and valid event details", () => {
@@ -192,6 +253,31 @@ describe("creator invitation design and input", () => {
         groomPhoto: "javascript:alert(1)",
       }).groomPhoto,
     ).toBeNull();
+  });
+
+  it("builds per-event calendar links and an embedded map from the card's own venues", () => {
+    const details = getInvitationDetails({
+      ...basics,
+      additionalEvents: [
+        {
+          title: "Sangeet",
+          date: "14 December 2030",
+          time: "6:00 PM IST",
+          venue: "City Hall",
+          address: "East Wing",
+        },
+      ],
+    });
+    const calendar = new URL(
+      buildInvitationEventCalendarUrl(details, details.additionalEvents[0])!,
+    );
+    expect(calendar.searchParams.get("text")).toContain("Sangeet");
+    expect(calendar.searchParams.get("location")).toBe("City Hall, East Wing");
+    expect(calendar.searchParams.get("dates")).toBe("20301214T123000Z/20301214T143000Z");
+    expect(invitationMapEmbedUrl("Garden Pavilion, Patna, Bihar")).toBe(
+      "https://www.google.com/maps?q=Garden%20Pavilion%2C%20Patna%2C%20Bihar&output=embed",
+    );
+    expect(invitationMapEmbedUrl("  ")).toBeNull();
   });
 
   it("validates the insert-only RSVP payload, including attendance and guest count", () => {

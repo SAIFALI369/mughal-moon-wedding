@@ -822,6 +822,7 @@ export function Dashboard() {
                   content={previewCard.content}
                   showGate={false}
                   preview
+                  cardId={previewCard.id}
                 />
               </>
             )}

@@ -72,12 +72,7 @@ function DesignPreview() {
       <div className="fixed left-1/2 top-3 z-[60] -translate-x-1/2 rounded-full border border-gold/40 bg-background/80 px-4 py-1.5 text-[10px] uppercase tracking-[0.24em] text-gold shadow-lg backdrop-blur">
         Design preview · sample card
       </div>
-      <PersonalInvitation
-        title="Ayaan & Zara"
-        content={sampleContent}
-        showGate={false}
-        slug="design-preview-card"
-      />
+      <PersonalInvitation title="Ayaan & Zara" content={sampleContent} showGate={false} preview />
     </>
   );
 }
