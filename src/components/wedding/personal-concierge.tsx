@@ -12,57 +12,11 @@ import {
   type ConciergeLanguage,
 } from "./personal-concierge-copy";
 import { applyPersonalMusicReply, getInstantPersonalMusicReply } from "./invitation-music";
+import { getAiVisitorId } from "@/lib/ai-visitor";
 
 type Message = { role: "user" | "assistant"; text: string };
 
 const DAILY_LIMIT = 6;
-
-function limitKey(slug: string) {
-  return `invitation-concierge-${slug}`;
-}
-
-function remainingFor(slug: string): number {
-  if (typeof window === "undefined") return DAILY_LIMIT;
-  try {
-    const raw = window.localStorage.getItem(limitKey(slug));
-    if (!raw) return DAILY_LIMIT;
-    const parsed = JSON.parse(raw) as { count?: number; resetsAt?: number };
-    if (!parsed || typeof parsed.count !== "number" || !parsed.resetsAt) return DAILY_LIMIT;
-    if (Date.now() > parsed.resetsAt) {
-      window.localStorage.removeItem(limitKey(slug));
-      return DAILY_LIMIT;
-    }
-    return Math.max(0, DAILY_LIMIT - parsed.count);
-  } catch {
-    return DAILY_LIMIT;
-  }
-}
-
-function nextCount(slug: string) {
-  if (typeof window === "undefined") return 1;
-  try {
-    const raw = window.localStorage.getItem(limitKey(slug));
-    if (!raw) return 1;
-    const parsed = JSON.parse(raw) as { count?: number; resetsAt?: number };
-    if (!parsed || typeof parsed.count !== "number" || !parsed.resetsAt) return 1;
-    if (Date.now() > parsed.resetsAt) return 1;
-    return parsed.count + 1;
-  } catch {
-    return 1;
-  }
-}
-
-function recordUse(slug: string) {
-  try {
-    const count = nextCount(slug);
-    window.localStorage.setItem(
-      limitKey(slug),
-      JSON.stringify({ count, resetsAt: Date.now() + 24 * 60 * 60 * 1000 }),
-    );
-  } catch {
-    // Private browsing can block storage; the answer still renders.
-  }
-}
 
 /**
  * The host-named concierge that belongs to this card. Guests can chat about this
@@ -94,10 +48,6 @@ export function PersonalConcierge({
   const copy = getPersonalConciergeCopy(details, language);
   const prompts = getPersonalConciergeQuickPrompts(details, language);
   const dir = language === "اردو" ? "rtl" : "ltr";
-
-  useEffect(() => {
-    if (slug) setRemaining(remainingFor(slug));
-  }, [slug]);
 
   useEffect(() => {
     if (open) inputRef.current?.focus();
@@ -156,24 +106,26 @@ export function PersonalConcierge({
         data: {
           slug,
           language,
+          visitor: getAiVisitorId() || undefined,
           messages: next.map(({ role, text }) => ({ role, content: text })),
         },
       });
-      recordUse(slug);
-      setRemaining(remainingFor(slug));
+      setRemaining(
+        typeof result.remaining === "number" ? result.remaining : Math.max(0, remaining - 1),
+      );
       const rendered = applyPersonalMusicReply(result.reply, value, details.songs.length);
       setMessages((current) => [...current, { role: "assistant", text: rendered }]);
     } catch (error: unknown) {
       const message = error instanceof Error ? error.message : "";
-      if (/used all|not configured|no longer available/i.test(message)) {
-        if (/used all/i.test(message)) setRemaining(0);
-        setMessages((current) => [
-          ...current,
-          {
-            role: "assistant",
-            text: /used all/i.test(message) ? copy.limit : copy.error,
-          },
-        ]);
+      if (/used all|message limit/i.test(message)) {
+        setRemaining(0);
+        setMessages((current) => [...current, { role: "assistant", text: copy.limit }]);
+      } else if (/not configured/i.test(message)) {
+        setFailedQuestion(null);
+        setMessages((current) => [...current, { role: "assistant", text: copy.notConfigured }]);
+      } else if (/no longer available/i.test(message)) {
+        setFailedQuestion(null);
+        setMessages((current) => [...current, { role: "assistant", text: copy.error }]);
       } else {
         setFailedQuestion(value);
         setMessages((current) => [...current, { role: "assistant", text: copy.error }]);

@@ -3,9 +3,21 @@ import { EVENTS } from "./config";
 export type ConciergePayload = {
   language: string;
   messages: { role: "user" | "assistant"; content: string }[];
+  /** Anonymous per-browser id so the daily allowance follows the guest, not the IP. */
+  visitor?: string;
 };
 
-type Reply = { reply?: unknown };
+type Reply = { reply?: unknown; remaining?: unknown; limit?: unknown };
+
+export type ConciergeResult = { reply: string; remaining?: number; limit?: number };
+
+function toResult(payload: Reply): ConciergeResult {
+  return {
+    reply: String(payload.reply ?? "").trim(),
+    ...(typeof payload.remaining === "number" ? { remaining: payload.remaining } : {}),
+    ...(typeof payload.limit === "number" ? { limit: payload.limit } : {}),
+  };
+}
 
 async function withTimeout<T>(
   operation: (signal: AbortSignal) => Promise<T>,
@@ -26,27 +38,45 @@ async function withTimeout<T>(
   }
 }
 
+/** Supabase errors often hide the function's JSON message; read it when present. */
+async function edgeErrorMessage(error: unknown): Promise<string> {
+  const context = (error as { context?: { json?: () => Promise<unknown> } })?.context;
+  if (context && typeof context.json === "function") {
+    try {
+      const body = (await context.json()) as { error?: unknown; message?: unknown };
+      if (typeof body?.error === "string" && body.error.trim()) return body.error.trim();
+      if (typeof body?.message === "string" && body.message.trim()) return body.message.trim();
+    } catch {
+      // Body already read or not JSON; fall through to the error message.
+    }
+  }
+  const message = (error as { message?: unknown })?.message;
+  return typeof message === "string" ? message : "";
+}
+
 export async function requestConcierge(
   edge: (signal: AbortSignal) => Promise<{ data: Reply | null; error: unknown }>,
   server: () => Promise<Reply>,
-): Promise<string> {  try {
-    const { data, error } = await withTimeout(edge, 5_000);
+): Promise<ConciergeResult> {
+  let edgeFailure = "";
+  try {
+    const { data, error } = await withTimeout(edge, 6_000);
     if (!error && typeof data?.reply === "string" && data.reply.trim()) {
-      return data.reply.trim();
+      return toResult(data);
     }
-    const msg = (error as any)?.message || (error as any)?.toString?.() || "";
-    if (typeof msg === "string" && /used all|message limit|5 messages/i.test(msg)) throw new Error(msg);
+    if (error) edgeFailure = await edgeErrorMessage(error);
   } catch (e) {
-    const m = (e as any)?.message || "";
-    if (typeof m === "string" && /used all|message limit|5 messages/i.test(m)) throw e;
-    // Unavailable, undeployed, or slow Edge Functions must not block the fallback.
+    edgeFailure = await edgeErrorMessage(e);
   }
 
-  const result = await withTimeout(() => server());
-  if (typeof result.reply !== "string" || !result.reply.trim()) {
-    throw new Error("No answer was returned");
+  // A daily limit or a missing key is a real answer: do not retry it on the server.
+  if (/used all|message limit|not configured/i.test(edgeFailure)) {
+    throw new Error(edgeFailure);
   }
-  return result.reply.trim();
+
+  const result = toResult(await withTimeout(() => server()));
+  if (!result.reply) throw new Error("No answer was returned");
+  return result;
 }
 
 // Exact, standalone suggestions only: never shortcut a follow-up or a compound request.

@@ -8,7 +8,7 @@ describe("concierge delivery", () => {
     const server = vi.fn();
     await expect(
       requestConcierge(async () => ({ data: { reply: " Hello " }, error: null }), server),
-    ).resolves.toBe("Hello");
+    ).resolves.toEqual({ reply: "Hello" });
     expect(server).not.toHaveBeenCalled();
   });
 
@@ -20,8 +20,10 @@ describe("concierge delivery", () => {
         error: failure === "error" ? new Error("Not deployed") : null,
       };
     };
-    await expect(requestConcierge(edge, async () => ({ reply: "Server answer" }))).resolves.toBe(
-      "Server answer",
+    await expect(requestConcierge(edge, async () => ({ reply: "Server answer" }))).resolves.toEqual(
+      {
+        reply: "Server answer",
+      },
     );
   });
 
@@ -35,8 +37,8 @@ describe("concierge delivery", () => {
       },
       async () => ({ reply: "Fallback answer" }),
     );
-    await vi.advanceTimersByTimeAsync(5_000);
-    await expect(result).resolves.toBe("Fallback answer");
+    await vi.advanceTimersByTimeAsync(6_000);
+    await expect(result).resolves.toEqual({ reply: "Fallback answer" });
     expect(signal?.aborted).toBe(true);
     expect(vi.getTimerCount()).toBe(0);
   });
@@ -48,6 +50,25 @@ describe("concierge delivery", () => {
         async () => ({ reply: " " }),
       ),
     ).rejects.toThrow("No answer");
+  });
+
+  it("reads the quota message out of an Edge error body", async () => {
+    const server = vi.fn();
+    await expect(
+      requestConcierge(
+        async () => ({
+          data: null,
+          error: {
+            message: "Edge Function returned a non-2xx status code",
+            context: {
+              json: async () => ({ error: "You have used all 5 messages for today." }),
+            },
+          },
+        }),
+        server,
+      ),
+    ).rejects.toThrow("used all 5 messages");
+    expect(server).not.toHaveBeenCalled();
   });
 
   it("bounds the server fallback too", async () => {

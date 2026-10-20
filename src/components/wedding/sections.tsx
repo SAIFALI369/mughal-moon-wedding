@@ -8,6 +8,7 @@ import {
   ConciergeMessage,
 } from "./concierge-ui";
 import { getInstantConciergeReply, requestConcierge } from "./concierge-client";
+import { getAiVisitorId } from "@/lib/ai-visitor";
 import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import confetti from "canvas-confetti";
@@ -1208,6 +1209,7 @@ const SIMRAN_QUICK_COPY: Record<
     placeholder: string;
     thinking: string;
     error: string;
+    limit: string;
     quick: string[];
   }
 > = {
@@ -1218,6 +1220,7 @@ const SIMRAN_QUICK_COPY: Record<
     placeholder: "Ask Simran…",
     thinking: "Simran is checking the invitation…",
     error: "I couldn't reach Simran right now. Please try again or visit the full concierge page.",
+    limit: "You have used all 5 messages for today. Please come back tomorrow.",
     quick: [
       "What time is the Nikah?",
       "What is the dress code?",
@@ -1235,6 +1238,7 @@ const SIMRAN_QUICK_COPY: Record<
     placeholder: "सिमरन से पूछें…",
     thinking: "सिमरन जानकारी देख रही हैं…",
     error: "अभी सिमरन से संपर्क नहीं हो पाया। कृपया फिर कोशिश करें।",
+    limit: "आज के सभी 5 संदेश पूरे हो गए हैं। कृपया कल फिर आएँ।",
     quick: ["निकाह कितने बजे है?", "ड्रेस कोड क्या है?", "वलीमा कहाँ होगा?", "RSVP कैसे करें?"],
   },
   ur: {
@@ -1243,6 +1247,7 @@ const SIMRAN_QUICK_COPY: Record<
     placeholder: "سمرن سے پوچھیں…",
     thinking: "سمرن تفصیلات دیکھ رہی ہیں…",
     error: "سمرن سے ابھی رابطہ نہیں ہو سکا۔ دوبارہ کوشش کریں۔",
+    limit: "آج کے تمام 5 پیغامات استعمال ہو گئے ہیں۔ براہ کرم کل دوبارہ آئیں۔",
     quick: ["نکاح کتنے بجے ہے؟", "لباس کا ضابطہ کیا ہے؟", "ولیمہ کہاں ہوگا؟", "RSVP کیسے کریں؟"],
   },
 };
@@ -1280,35 +1285,44 @@ export function SimranFloatingWidget({
     const next = [
       ...(retry ? messages.slice(0, -2) : messages),
       { role: "user" as const, text: clean },
-    ].slice(-10);
+    ].slice(-5);
     setMessages(next);
     setDraft("");
     setBusy(true);
 
     const payload = {
       language: copy.label,
-      messages: next.map(({ role, text: content }) => ({ role, content })),
+      messages: next.map(({ role, text: content }) => ({ role, content: content.slice(0, 400) })),
+      visitor: getAiVisitorId(),
     };
 
     try {
-      const reply =
+      const instant =
         getInstantMusicReply(clean, copy.label) ??
         getInstantConciergeReply(clean, copy.label) ??
-        getInstantSmallTalk(clean, copy.label) ??
-        (await requestConcierge(
-          (signal) =>
-            supabase.functions.invoke("wedding-concierge", {
-              body: payload,
-              signal,
-            }),
-          () => askSimranServer({ data: payload }),
-        ));
+        getInstantSmallTalk(clean, copy.label);
+      const result = instant
+        ? { reply: instant }
+        : await requestConcierge(
+            (signal) =>
+              supabase.functions.invoke("wedding-concierge", {
+                body: payload,
+                signal,
+              }),
+            () => askSimranServer({ data: payload }),
+          );
 
-      const renderedReply = applyMusicReply(reply, clean);
+      const renderedReply = applyMusicReply(result.reply, clean);
       setMessages((curr) => [...curr, { role: "assistant", text: renderedReply }]);
-    } catch {
-      setFailedQuestion(clean);
-      setMessages((curr) => [...curr, { role: "assistant", text: copy.error }]);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "";
+      if (/used all|message limit/i.test(message)) {
+        setFailedQuestion(null);
+        setMessages((curr) => [...curr, { role: "assistant", text: copy.limit }]);
+      } else {
+        setFailedQuestion(clean);
+        setMessages((curr) => [...curr, { role: "assistant", text: copy.error }]);
+      }
     } finally {
       requestLock.current = false;
       setBusy(false);

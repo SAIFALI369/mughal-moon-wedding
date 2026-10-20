@@ -9,8 +9,6 @@ type GeminiResponse = {
   candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
 };
 
-const VISITOR_WINDOW_MS = 24 * 60 * 60 * 1000;
-
 function parseDotEnvValue(raw: string, key: string): string {
   for (const line of raw.split(/\r?\n/)) {
     const trimmed = line.trim();
@@ -50,32 +48,96 @@ export function getRequestIp(): string {
   }
 }
 
+const QUOTA_WINDOW_HOURS = 24;
+
+export type AiQuota = {
+  allowed: boolean;
+  remaining: number;
+  limit: number;
+  resetsAt: string | null;
+};
+
+/** A stable per-browser id, so the daily allowance follows the guest, not a shared IP. */
+function visitorKey(visitorId: string): string {
+  return /^[a-zA-Z0-9-]{8,128}$/.test(visitorId) ? `browser:${visitorId}` : `ip:${getRequestIp()}`;
+}
+
+async function hashKey(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(`wedding-invitation-ai:${value}`);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+async function quotaRpc<T>(name: string, body: Record<string, unknown>): Promise<T | null> {
+  const url = process.env["SUPABASE_URL"];
+  const serviceKey = process.env["SUPABASE_SERVICE_ROLE_KEY"];
+  if (!url || !serviceKey) return null;
+  const response = await fetch(`${url.replace(/\/$/, "")}/rest/v1/rpc/${name}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      apikey: serviceKey,
+      Authorization: `Bearer ${serviceKey}`,
+    },
+    body: JSON.stringify(body),
+    signal: AbortSignal.timeout(4_000),
+  });
+  if (!response.ok) throw new Error(`AI quota unavailable (${response.status})`);
+  const text = await response.text();
+  return text ? (JSON.parse(text) as T) : null;
+}
+
 /**
- * Small in-memory guard so each guest gets a bounded number of AI answers per day.
- * It is intentionally per-scope: the homepage concierge and a host's card assistant
- * cannot drain each other's allowance.
+ * Charge one daily AI answer to this visitor. The ledger lives in Postgres so every
+ * surface shares it, and only a successful answer is kept (see refundAiQuota).
  */
-export function enforceVisitorLimit(scope: string, limit: number) {
-  const globalStore = globalThis as unknown as {
-    __weddingVisitorLimits?: Map<string, { count: number; resetsAt: number }>;
-  };
-  if (!globalStore.__weddingVisitorLimits) globalStore.__weddingVisitorLimits = new Map();
-  const store = globalStore.__weddingVisitorLimits;
-  const key = `${scope}:${getRequestIp()}`;
-  const now = Date.now();
-  const current = store.get(key);
-
-  if (!current || now > current.resetsAt) {
-    store.set(key, { count: 1, resetsAt: now + VISITOR_WINDOW_MS });
-  } else {
-    if (current.count >= limit) {
-      throw new Error(`You have used all ${limit} messages for today. Please come back tomorrow.`);
-    }
-    current.count += 1;
+export async function reserveAiQuota(
+  scope: string,
+  limit: number,
+  visitorId?: string,
+): Promise<{ quota: AiQuota; hash: string }> {
+  const rawKey = visitorKey(visitorId ?? "");
+  const hash = await hashKey(rawKey);
+  try {
+    const result = await quotaRpc<Partial<AiQuota>>("consume_ai_message", {
+      p_scope: scope,
+      p_visitor: hash,
+      p_limit: limit,
+      p_window_hours: QUOTA_WINDOW_HOURS,
+    });
+    if (!result) return { quota: { allowed: true, remaining: limit, limit, resetsAt: null }, hash };
+    return {
+      quota: {
+        allowed: result.allowed !== false,
+        remaining: typeof result.remaining === "number" ? result.remaining : limit,
+        limit: typeof result.limit === "number" ? result.limit : limit,
+        resetsAt: typeof result.resetsAt === "string" ? result.resetsAt : null,
+      },
+      hash,
+    };
+  } catch (error) {
+    // Never block a guest because the ledger is unreachable; fall back to allowing.
+    console.error("AI quota lookup failed", error instanceof Error ? error.message : error);
+    return { quota: { allowed: true, remaining: limit, limit, resetsAt: null }, hash };
   }
+}
 
-  for (const [storedKey, bucket] of store) {
-    if (now > bucket.resetsAt) store.delete(storedKey);
+/** A failed answer must not cost the guest a message. */
+export async function refundAiQuota(scope: string, hash: string): Promise<void> {
+  try {
+    await quotaRpc("refund_ai_message", { p_scope: scope, p_visitor: hash });
+  } catch (error) {
+    console.error("AI quota refund failed", error instanceof Error ? error.message : error);
+  }
+}
+
+/** True when a Gemini key is available to this server (env or local supabase/.env). */
+export async function hasGeminiConfig(): Promise<boolean> {
+  try {
+    await resolveGeminiConfig();
+    return true;
+  } catch {
+    return false;
   }
 }
 

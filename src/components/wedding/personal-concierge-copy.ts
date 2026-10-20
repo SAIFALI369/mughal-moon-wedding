@@ -208,6 +208,7 @@ export type PersonalConciergeCopy = {
   note: string;
   previewOnly: string;
   limit: string;
+  notConfigured: string;
   languageLabel: string;
 };
 
@@ -228,6 +229,8 @@ export function getPersonalConciergeCopy(
       previewOnly:
         "पूरे एआई जवाबों के लिए कार्ड प्रकाशित करें। अभी मैं तारीख, जगह, ड्रेस और संगीत के सीधे जवाब दे सकती हूँ।",
       limit: "आज के संदेश पूरे हो गए। कृपया कल फिर आएँ।",
+      notConfigured:
+        "एआई सहायक अभी चालू नहीं है। कृपया बाद में देखें या निमंत्रण के RSVP अनुभाग का उपयोग करें।",
       languageLabel: "भाषा",
     };
   }
@@ -243,6 +246,8 @@ export function getPersonalConciergeCopy(
       previewOnly:
         "مکمل اے آئی جوابات کے لیے کارڈ شائع کریں۔ ابھی میں تاریخ، مقام، لباس اور موسیقی کے سیدھے جواب دے سکتی ہوں۔",
       limit: "آج کے پیغامات پورے ہو گئے۔ براہ کرم کل دوبارہ آئیں۔",
+      notConfigured:
+        "اے آئی معاون ابھی فعال نہیں ہے۔ براہ کرم بعد میں دیکھیں یا دعوت نامے کا RSVP حصہ استعمال کریں۔",
       languageLabel: "زبان",
     };
   }
@@ -257,6 +262,8 @@ export function getPersonalConciergeCopy(
     previewOnly:
       "Publish the card to unlock the full AI answers. Right now I can answer directly about the date, venue, dress code and playlist.",
     limit: "Today's messages are used up. Please come back tomorrow.",
+    notConfigured:
+      "The AI assistant isn't switched on for this invitation yet. Please check back soon, or use the RSVP section of the invitation.",
     languageLabel: "Language",
   };
 }

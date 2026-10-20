@@ -1,15 +1,40 @@
 import { getInstantSmallTalk } from "@/components/wedding/concierge-smalltalk";
 import { MusicToggle } from "@/components/wedding/music-player";
 import { applyMusicReply, getInstantMusicReply } from "@/components/wedding/music-control";
-import { ConciergeAvatar, ConciergeControls, ConciergeMessage, ConciergeThinking } from "@/components/wedding/concierge-ui";
+import {
+  ConciergeAvatar,
+  ConciergeControls,
+  ConciergeMessage,
+  ConciergeThinking,
+} from "@/components/wedding/concierge-ui";
 import { getInstantConciergeReply, requestConcierge } from "@/components/wedding/concierge-client";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import { askSimranServer } from "@/components/wedding/concierge.functions";
 import { supabase } from "@/integrations/supabase/client";
-import { MessageCircle, Plus, History, Trash2, Menu, X, Send, Mic, Sparkles, ChevronDown, Brain, ShieldAlert } from "lucide-react";
-import { getAllSimranMemories, buildMemoryPrompt, cleanupExpiredMemories } from "@/lib/simran-memory";
-import { VISITOR_MESSAGE_LIMIT, canSendMessage, incrementVisitorCount, remainingMessages, resetIfExpired } from "@/lib/visitor-limit";
+import {
+  MessageCircle,
+  Plus,
+  History,
+  Trash2,
+  Menu,
+  X,
+  Send,
+  Mic,
+  Sparkles,
+  ChevronDown,
+  Brain,
+  ShieldAlert,
+} from "lucide-react";
+import {
+  getAllSimranMemories,
+  buildMemoryPrompt,
+  cleanupExpiredMemories,
+} from "@/lib/simran-memory";
+import { getAiVisitorId } from "@/lib/ai-visitor";
+
+// Matches the server's homepage allowance; the server remains the source of truth.
+const VISITOR_MESSAGE_LIMIT = 5;
 
 type Language = "en" | "hi" | "ur";
 type Message = { role: "user" | "assistant"; text: string };
@@ -23,26 +48,43 @@ const copy = {
     back: "← Back to invitation",
     title: "Simran",
     subtitle: "Your wedding guide, everyday sidekick & resident wit",
-    welcome: "Assalamu alaikum! I’m Simran, your AI wedding guide and cheerful sidekick. Ask about the celebration, music, or anything on your mind. I bring the answers—and occasional existential jokes.",
+    welcome:
+      "Assalamu alaikum! I’m Simran, your AI wedding guide and cheerful sidekick. Ask about the celebration, music, or anything on your mind. I bring the answers—and occasional existential jokes.",
     placeholder: "Ask about the wedding, life, or anything…",
     send: "Send",
     thinking: "Simran is finding the details…",
-    error: "I couldn't reach Simran just now. Please try again, or use the RSVP section on the invitation.",
+    error:
+      "I couldn't reach Simran just now. Please try again, or use the RSVP section on the invitation.",
     note: "Wedding answers use confirmed invitation details; general answers can be mistaken. No live web access. Don’t share private RSVP or dietary details in chat.",
+    notConfigured:
+      "The AI concierge isn’t switched on yet. Please check back soon or use the RSVP section of the invitation.",
     rsvp: "Go to RSVP",
-    quick: ["What time is the Nikah?", "What is the dress code?", "Where is the Walima?", "What is the schedule?", "How do I RSVP?", "Play softer music", "Tell me a dark-ish joke", "What can you do?"],
+    quick: [
+      "What time is the Nikah?",
+      "What is the dress code?",
+      "Where is the Walima?",
+      "What is the schedule?",
+      "How do I RSVP?",
+      "Play softer music",
+      "Tell me a dark-ish joke",
+      "What can you do?",
+    ],
   },
   hi: {
     language: "हिन्दी",
     back: "← निमंत्रण पर वापस जाएँ",
     title: "सिमरन",
     subtitle: "आपके जश्न के लिए एआई शादी सहायक",
-    welcome: "अस्सलामु अलैकुम! मैं सिमरन हूँ। कार्यक्रम, स्थान, ड्रेस कोड, रास्ते या RSVP के बारे में पूछें।",
+    welcome:
+      "अस्सलामु अलैकुम! मैं सिमरन हूँ। कार्यक्रम, स्थान, ड्रेस कोड, रास्ते या RSVP के बारे में पूछें।",
     placeholder: "सिमरन से शादी के बारे में पूछें…",
     send: "भेजें",
     thinking: "सिमरन जानकारी देख रही हैं…",
-    error: "अभी सिमरन से संपर्क नहीं हो पाया। कृपया फिर कोशिश करें या निमंत्रण के RSVP अनुभाग का उपयोग करें।",
+    error:
+      "अभी सिमरन से संपर्क नहीं हो पाया। कृपया फिर कोशिश करें या निमंत्रण के RSVP अनुभाग का उपयोग करें।",
     note: "शादी के जवाब निमंत्रण पर आधारित हैं; सामान्य जवाब गलत हो सकते हैं। लाइव वेब एक्सेस नहीं है। निजी RSVP या खान-पान की जानकारी चैट में न भेजें।",
+    notConfigured:
+      "एआई सहायक अभी चालू नहीं है। कृपया बाद में देखें या निमंत्रण के RSVP अनुभाग का उपयोग करें।",
     rsvp: "RSVP पर जाएँ",
     quick: ["निकाह कितने बजे है?", "ड्रेस कोड क्या है?", "वलीमा कहाँ होगा?", "RSVP कैसे करें?"],
   },
@@ -51,12 +93,16 @@ const copy = {
     back: "← دعوت نامے پر واپس جائیں",
     title: "سمرن",
     subtitle: "آپ کی تقریب کے لیے اے آئی شادی معاون",
-    welcome: "السلام علیکم! میں سمرن ہوں۔ تقریبات، مقامات، لباس، راستوں یا RSVP کے بارے میں پوچھیں۔",
+    welcome:
+      "السلام علیکم! میں سمرن ہوں۔ تقریبات، مقامات، لباس، راستوں یا RSVP کے بارے میں پوچھیں۔",
     placeholder: "سمرن سے شادی کے بارے میں پوچھیں…",
     send: "بھیجیں",
     thinking: "سمرن تفصیلات دیکھ رہی ہیں…",
-    error: "سمرن سے ابھی رابطہ نہیں ہو سکا۔ دوبارہ کوشش کریں یا دعوت نامے کا RSVP حصہ استعمال کریں۔",
+    error:
+      "سمرن سے ابھی رابطہ نہیں ہو سکا۔ دوبارہ کوشش کریں یا دعوت نامے کا RSVP حصہ استعمال کریں۔",
     note: "شادی کے جواب دعوت نامے پر مبنی ہیں؛ عمومی جواب غلط ہو سکتے ہیں۔ لائیو ویب رسائی نہیں ہے۔ نجی RSVP یا کھانے کی معلومات چیٹ میں نہ لکھیں۔",
+    notConfigured:
+      "اے آئی معاون ابھی فعال نہیں ہے۔ براہ کرم بعد میں دیکھیں یا دعوت نامے کا RSVP حصہ استعمال کریں۔",
     rsvp: "RSVP پر جائیں",
     quick: ["نکاح کتنے بجے ہے؟", "لباس کا ضابطہ کیا ہے؟", "ولیمہ کہاں ہوگا؟", "RSVP کیسے کریں؟"],
   },
@@ -66,7 +112,11 @@ export const Route = createFileRoute("/ai-concierge")({
   head: () => ({
     meta: [
       { title: "Simran — AI Wedding Concierge | Mohsin & Simran" },
-      { name: "description", content: "Ask Simran, Mohsin and Simran’s AI wedding concierge, about the 2026 schedule, venues, dress code, directions, and RSVP." },
+      {
+        name: "description",
+        content:
+          "Ask Simran, Mohsin and Simran’s AI wedding concierge, about the 2026 schedule, venues, dress code, directions, and RSVP.",
+      },
     ],
   }),
   component: AiConcierge,
@@ -90,12 +140,12 @@ function AiConcierge() {
   });
   const [chatId, setChatId] = useState<string>(() => Date.now().toString(36));
   const listRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  const inputRef = useRef<HTMLTextAreaElement>(null);
 
   const text = copy[language];
   const direction = language === "ur" ? "rtl" : "ltr";
   const [personalMemories, setPersonalMemories] = useState(() => getAllSimranMemories());
-  const [visitorLeft, setVisitorLeft] = useState(() => remainingMessages());
+  const [visitorLeft, setVisitorLeft] = useState(VISITOR_MESSAGE_LIMIT);
 
   useEffect(() => {
     cleanupExpiredMemories();
@@ -106,7 +156,6 @@ function AiConcierge() {
     const id = setInterval(() => {
       const expired = cleanupExpiredMemories();
       if (expired.length) setPersonalMemories(getAllSimranMemories());
-      setVisitorLeft(remainingMessages());
     }, 60_000);
     return () => {
       window.removeEventListener("storage", onStorage);
@@ -121,7 +170,9 @@ function AiConcierge() {
   useEffect(() => {
     try {
       localStorage.setItem("simran-chats", JSON.stringify(chats.slice(0, 20)));
-    } catch {}
+    } catch {
+      // Private browsing can block storage; chat history stays in memory.
+    }
   }, [chats]);
 
   function persistCurrent(next: Message[]) {
@@ -129,41 +180,61 @@ function AiConcierge() {
     const title = next.find((m) => m.role === "user")?.text.slice(0, 40) || "New chat";
     setChats((prev) => {
       const without = prev.filter((c) => c.id !== chatId);
-      return [{ id: chatId, title, messages: next, lang: language, at: Date.now() }, ...without].slice(0, 20);
+      return [
+        { id: chatId, title, messages: next, lang: language, at: Date.now() },
+        ...without,
+      ].slice(0, 20);
     });
   }
 
   async function ask(question: string, retry = false) {
     const value = question.trim().slice(0, 400); // token-save
     if (!value || requestLock.current) return;
-    resetIfExpired();
-    if (!canSendMessage()) {
+    if (visitorLeft === 0) {
       setFailedQuestion(null);
-      const limitMsg: Message = { role: "assistant", text: `You have used all ${VISITOR_MESSAGE_LIMIT} messages for today (token-saving limit). Please come back tomorrow or contact the couple directly.` };
+      const limitMsg: Message = {
+        role: "assistant",
+        text: `You have used all ${VISITOR_MESSAGE_LIMIT} messages for today. Please come back tomorrow or contact the couple directly.`,
+      };
       setMessages((cur) => [...cur, limitMsg].slice(-5));
       return;
     }
     requestLock.current = true;
     setFailedQuestion(null);
-    const nextMessages = [...(retry ? messages.slice(0, -2) : messages), { role: "user" as const, text: value }].slice(-5); // token-save: keep last 5
+    const nextMessages = [
+      ...(retry ? messages.slice(0, -2) : messages),
+      { role: "user" as const, text: value },
+    ].slice(-5); // token-save: keep last 5
     setMessages(nextMessages);
     setDraft("");
     setBusy(true);
     // build local-only memory prompt from SimranMemoryBar (per-card, expires after wedding)
     const memoryPrompt = buildMemoryPrompt(personalMemories).slice(0, 1000); // token-save
-    const payload = { language: text.language, messages: nextMessages.map(({ role, text: content }) => ({ role, content: content.slice(0,400) })), memory: memoryPrompt };
+    const payload = {
+      language: text.language,
+      messages: nextMessages.map(({ role, text: content }) => ({
+        role,
+        content: content.slice(0, 400),
+      })),
+      memory: memoryPrompt,
+      visitor: getAiVisitorId(),
+    };
     try {
-      const reply =
+      const instant =
         getInstantMusicReply(value, text.language) ??
         getInstantConciergeReply(value, text.language) ??
-        getInstantSmallTalk(value, text.language) ??
-        (await requestConcierge(
-          (signal) => supabase.functions.invoke("wedding-concierge", { body: payload, signal }),
-          () => askSimranServer({ data: payload }),
-        ));
-      incrementVisitorCount();
-      setVisitorLeft(remainingMessages());
-      const assistantMessage: Message = { role: "assistant", text: applyMusicReply(reply, value) };
+        getInstantSmallTalk(value, text.language);
+      const result = instant
+        ? { reply: instant }
+        : await requestConcierge(
+            (signal) => supabase.functions.invoke("wedding-concierge", { body: payload, signal }),
+            () => askSimranServer({ data: payload }),
+          );
+      if (typeof result.remaining === "number") setVisitorLeft(result.remaining);
+      const assistantMessage: Message = {
+        role: "assistant",
+        text: applyMusicReply(result.reply, value),
+      };
       setMessages((cur) => {
         const nxt = [...cur, assistantMessage].slice(-5);
         persistCurrent(nxt);
@@ -171,14 +242,19 @@ function AiConcierge() {
       });
     } catch (e: unknown) {
       const m = (e as Error)?.message || "";
-      if (/used all|5 messages/i.test(m)) {
+      if (/used all|message limit/i.test(m)) {
+        setVisitorLeft(0);
         setMessages((cur) => [...cur, { role: "assistant", text: m } as Message].slice(-5));
         setFailedQuestion(null);
+      } else if (/not configured/i.test(m)) {
+        setFailedQuestion(null);
+        const errMsg: Message = { role: "assistant", text: text.notConfigured as string };
+        setMessages((cur) => [...cur, errMsg].slice(-5));
       } else {
         setFailedQuestion(value);
-        const errMsg: Message = { role: "assistant", text: text.error };
+        const errMsg: Message = { role: "assistant", text: text.error as string };
         setMessages((cur) => [...cur, errMsg].slice(-5));
-        }
+      }
     } finally {
       requestLock.current = false;
       setBusy(false);
@@ -225,23 +301,37 @@ function AiConcierge() {
               <Sparkles size={16} />
             </div>
             <span className="font-serif text-lg">Simran</span>
-            <span className="rounded-full bg-ivory/10 px-2 py-0.5 text-[10px] uppercase tracking-widest text-gold-light">Wedding AI</span>
+            <span className="rounded-full bg-ivory/10 px-2 py-0.5 text-[10px] uppercase tracking-widest text-gold-light">
+              Wedding AI
+            </span>
           </div>
-          <button onClick={() => setSidebarOpen(false)} className="rounded-full p-2 text-ivory/70 hover:bg-ivory/10 hover:text-ivory lg:hidden">
+          <button
+            onClick={() => setSidebarOpen(false)}
+            className="rounded-full p-2 text-ivory/70 hover:bg-ivory/10 hover:text-ivory lg:hidden"
+          >
             <X size={18} />
           </button>
         </div>
 
         <div className="p-3">
-          <button onClick={newChat} className="flex w-full items-center gap-2 rounded-xl bg-gold px-4 py-3 text-sm font-medium text-burgundy-deep shadow hover:bg-gold-light transition">
+          <button
+            onClick={newChat}
+            className="flex w-full items-center gap-2 rounded-xl bg-gold px-4 py-3 text-sm font-medium text-burgundy-deep shadow hover:bg-gold-light transition"
+          >
             <Plus size={16} /> New chat
           </button>
         </div>
 
         <div className="flex-1 overflow-y-auto px-2 py-2">
-          <p className="px-3 py-2 text-xs uppercase tracking-widest text-ivory/50 flex items-center gap-2"><History size={14}/> History</p>
+          <p className="px-3 py-2 text-xs uppercase tracking-widest text-ivory/50 flex items-center gap-2">
+            <History size={14} /> History
+          </p>
           <div className="mt-2 space-y-1">
-            {chats.length === 0 && <p className="px-3 py-4 text-xs text-ivory/50">No chats yet. Start with “What time is the Nikah?”</p>}
+            {chats.length === 0 && (
+              <p className="px-3 py-4 text-xs text-ivory/50">
+                No chats yet. Start with “What time is the Nikah?”
+              </p>
+            )}
             {chats.map((c) => (
               <button
                 key={c.id}
@@ -257,22 +347,35 @@ function AiConcierge() {
 
         {/* Personal card memories — local only, auto-expire */}
         <div className="mx-3 rounded-xl border border-gold/20 bg-ivory text-burgundy-deep p-3">
-          <p className="flex items-center gap-2 text-xs font-semibold"><Brain size={14} className="text-burgundy"/> Your card memories for Simran</p>
+          <p className="flex items-center gap-2 text-xs font-semibold">
+            <Brain size={14} className="text-burgundy" /> Your card memories for Simran
+          </p>
           {personalMemories.length === 0 ? (
-            <p className="mt-1 text-xs text-muted-foreground">No local memories yet. Add details in Dashboard — “What Simran should know” per card (stored locally, never on server).</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              No local memories yet. Add details in Dashboard — “What Simran should know” per card
+              (stored locally, never on server).
+            </p>
           ) : (
             <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
               {personalMemories.map((m) => (
                 <div key={m.cardId} className="rounded-lg border border-gold/20 bg-amber-50 p-2">
                   <p className="text-xs font-medium truncate">{m.cardTitle}</p>
-                  <p className="text-[11px] text-muted-foreground truncate">{m.groomName} & {m.brideName} — {m.date}</p>
-                  <p className="text-[11px] line-clamp-2 text-muted-foreground">{m.customDetails || "(no custom notes)"}</p>
-                  <p className="text-[10px] text-emerald-700">Local only — expires {new Date(m.expiresAt).toLocaleDateString()} — auto-deletes</p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    {m.groomName} & {m.brideName} — {m.date}
+                  </p>
+                  <p className="text-[11px] line-clamp-2 text-muted-foreground">
+                    {m.customDetails || "(no custom notes)"}
+                  </p>
+                  <p className="text-[10px] text-emerald-700">
+                    Local only — expires {new Date(m.expiresAt).toLocaleDateString()} — auto-deletes
+                  </p>
                 </div>
               ))}
             </div>
           )}
-          <p className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground"><ShieldAlert size={10}/> Local browser only — never saved — auto-deleted after wedding</p>
+          <p className="mt-2 flex items-center gap-1 text-[10px] text-muted-foreground">
+            <ShieldAlert size={10} /> Local browser only — never saved — auto-deleted after wedding
+          </p>
         </div>
 
         <div className="border-t border-ivory/10 p-3 space-y-3">
@@ -280,8 +383,12 @@ function AiConcierge() {
             <p className="text-xs font-medium text-gold-light">Mohsin & Simran</p>
             <p className="text-xs text-ivory/70">22–23 Nov 2026 · Nikah · Barat · Walima</p>
             <div className="mt-2 flex gap-1 flex-wrap">
-              <span className="rounded-full bg-ivory/10 px-2 py-1 text-[10px]">Nikah 22 Nov 4 PM</span>
-              <span className="rounded-full bg-ivory/10 px-2 py-1 text-[10px]">Walima 23 Nov 8 PM</span>
+              <span className="rounded-full bg-ivory/10 px-2 py-1 text-[10px]">
+                Nikah 22 Nov 4 PM
+              </span>
+              <span className="rounded-full bg-ivory/10 px-2 py-1 text-[10px]">
+                Walima 23 Nov 8 PM
+              </span>
             </div>
           </div>
 
@@ -302,14 +409,23 @@ function AiConcierge() {
                 </option>
               ))}
             </select>
-            <ChevronDown size={16} className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ivory/60" />
+            <ChevronDown
+              size={16}
+              className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-ivory/60"
+            />
           </div>
 
           <div className="flex gap-2">
-            <button onClick={clearHistory} className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-ivory/20 px-3 py-2 text-xs text-ivory/80 hover:bg-ivory/10">
+            <button
+              onClick={clearHistory}
+              className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-ivory/20 px-3 py-2 text-xs text-ivory/80 hover:bg-ivory/10"
+            >
               <Trash2 size={14} /> Clear
             </button>
-            <Link to="/demo" className="flex flex-1 items-center justify-center rounded-xl bg-ivory px-3 py-2 text-xs font-medium text-burgundy-deep hover:bg-ivory/90 text-center">
+            <Link
+              to="/demo"
+              className="flex flex-1 items-center justify-center rounded-xl bg-ivory px-3 py-2 text-xs font-medium text-burgundy-deep hover:bg-ivory/90 text-center"
+            >
               {text.back}
             </Link>
           </div>
@@ -322,20 +438,27 @@ function AiConcierge() {
         {/* Header — follows app theme (burgundy/gold/ivory) with blur */}
         <header className="sticky top-0 z-20 flex h-14 items-center justify-between border-b border-gold/15 bg-background/80 px-3 backdrop-blur sm:px-6">
           <div className="flex items-center gap-3">
-            <button onClick={() => setSidebarOpen(true)} className="rounded-full p-2 hover:bg-muted lg:hidden">
+            <button
+              onClick={() => setSidebarOpen(true)}
+              className="rounded-full p-2 hover:bg-muted lg:hidden"
+            >
               <Menu size={18} />
             </button>
             <div className="hidden sm:flex items-center gap-3">
               <ConciergeAvatar />
               <div>
-                <h1 className="font-serif text-lg leading-none">{text.title} <span className="text-gold">— AI Concierge</span></h1>
+                <h1 className="font-serif text-lg leading-none">
+                  {text.title} <span className="text-gold">— AI Concierge</span>
+                </h1>
                 <p className="text-xs text-muted-foreground">{text.subtitle}</p>
               </div>
             </div>
             <div className="sm:hidden font-serif text-lg">Simran</div>
           </div>
           <div className="flex items-center gap-2">
-            <span className="hidden sm:inline-flex rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs text-burgundy">EID / MUGHAL theme</span>
+            <span className="hidden sm:inline-flex rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs text-burgundy">
+              EID / MUGHAL theme
+            </span>
             <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Online
             </div>
@@ -347,44 +470,75 @@ function AiConcierge() {
           {messages.length === 0 ? (
             <div className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
               <div className="mx-auto max-w-2xl rounded-3xl border border-gold/20 bg-card p-6 text-center shadow-gold sm:p-8">
-                <div className="mx-auto flex justify-center"><ConciergeAvatar /></div>
+                <div className="mx-auto flex justify-center">
+                  <ConciergeAvatar />
+                </div>
                 <h2 className="mt-4 font-serif text-3xl">Assalamu alaikum — I’m Simran</h2>
                 <p className="mt-2 text-sm leading-relaxed text-muted-foreground" dir={direction}>
                   {text.welcome}
                 </p>
                 <div className="mt-6 grid gap-2 sm:grid-cols-2 text-left">
                   {(text.quick as string[]).slice(0, 6).map((q) => (
-                    <button key={q} onClick={() => void ask(q)} className="rounded-2xl border border-gold/20 bg-background px-4 py-3 text-left text-sm hover:bg-gold/5 hover:border-gold/40 transition text-foreground">
+                    <button
+                      key={q}
+                      onClick={() => void ask(q)}
+                      className="rounded-2xl border border-gold/20 bg-background px-4 py-3 text-left text-sm hover:bg-gold/5 hover:border-gold/40 transition text-foreground"
+                    >
                       <span className="block text-xs uppercase tracking-widest text-gold">Try</span>
                       <span className="mt-1 line-clamp-2">{q}</span>
                     </button>
                   ))}
                 </div>
                 <div className="mt-6 flex flex-wrap justify-center gap-2 text-xs text-muted-foreground">
-                  <span className="rounded-full border px-3 py-1">Nikah 4 PM · Jama Masjid Hall</span>
+                  <span className="rounded-full border px-3 py-1">
+                    Nikah 4 PM · Jama Masjid Hall
+                  </span>
                   <span className="rounded-full border px-3 py-1">Barat 7:30 PM · Imperial</span>
                   <span className="rounded-full border px-3 py-1">Walima 8 PM · Leela Palace</span>
                 </div>
               </div>
-              <p className="mx-auto mt-6 max-w-2xl text-center text-xs text-muted-foreground">{text.note}</p>
+              <p className="mx-auto mt-6 max-w-2xl text-center text-xs text-muted-foreground">
+                {text.note}
+              </p>
             </div>
           ) : (
             <div className="mx-auto max-w-3xl">
               {messages.map((m, i) => (
-                <div key={`${i}-${m.role}`} className={`border-b border-gold/5 px-4 py-6 sm:px-6 ${m.role === "assistant" ? "bg-muted/30" : "bg-background"}`}>
+                <div
+                  key={`${i}-${m.role}`}
+                  className={`border-b border-gold/5 px-4 py-6 sm:px-6 ${m.role === "assistant" ? "bg-muted/30" : "bg-background"}`}
+                >
                   <div className="mx-auto flex max-w-3xl gap-4">
-                    <div className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium ${m.role === "user" ? "bg-burgundy text-ivory" : "bg-gold text-burgundy-deep"}`}>
+                    <div
+                      className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-sm font-medium ${m.role === "user" ? "bg-burgundy text-ivory" : "bg-gold text-burgundy-deep"}`}
+                    >
                       {m.role === "user" ? "You" : "S"}
                     </div>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">{m.role === "user" ? "You" : text.title}</p>
-                      <div className="prose prose-sm mt-2 max-w-none whitespace-pre-wrap break-words text-foreground dark:prose-invert" dir={direction}>
+                      <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
+                        {m.role === "user" ? "You" : text.title}
+                      </p>
+                      <div
+                        className="prose prose-sm mt-2 max-w-none whitespace-pre-wrap break-words text-foreground dark:prose-invert"
+                        dir={direction}
+                      >
                         <ConciergeMessage text={m.text} />
                       </div>
                       {m.role === "assistant" && (
                         <div className="mt-3 flex gap-2">
-                          <button onClick={() => navigator.clipboard.writeText(m.text)} className="rounded-full border border-gold/20 px-3 py-1 text-xs hover:bg-gold/10">Copy</button>
-                          <Link to="/demo" hash="rsvp" className="rounded-full bg-burgundy px-3 py-1 text-xs text-ivory hover:bg-burgundy/90">{text.rsvp}</Link>
+                          <button
+                            onClick={() => navigator.clipboard.writeText(m.text)}
+                            className="rounded-full border border-gold/20 px-3 py-1 text-xs hover:bg-gold/10"
+                          >
+                            Copy
+                          </button>
+                          <Link
+                            to="/demo"
+                            hash="rsvp"
+                            className="rounded-full bg-burgundy px-3 py-1 text-xs text-ivory hover:bg-burgundy/90"
+                          >
+                            {text.rsvp}
+                          </Link>
                         </div>
                       )}
                     </div>
@@ -394,8 +548,12 @@ function AiConcierge() {
               {busy && (
                 <div className="border-b border-gold/5 bg-muted/30 px-4 py-6 sm:px-6">
                   <div className="mx-auto flex max-w-3xl gap-4">
-                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold text-burgundy-deep">S</div>
-                    <div className="flex-1 text-sm text-muted-foreground"><ConciergeThinking label={text.thinking} /></div>
+                    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-gold text-burgundy-deep">
+                      S
+                    </div>
+                    <div className="flex-1 text-sm text-muted-foreground">
+                      <ConciergeThinking label={text.thinking} />
+                    </div>
                   </div>
                 </div>
               )}
@@ -407,8 +565,14 @@ function AiConcierge() {
         <div className="border-t border-gold/10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="mx-auto max-w-3xl px-3 py-3 sm:px-6">
             <div className="mb-2 flex items-center justify-between text-xs">
-              <span className={`rounded-full px-2 py-1 ${visitorLeft <= 1 ? "bg-amber-100 text-amber-800" : "bg-muted text-muted-foreground"}`}>{visitorLeft} / {VISITOR_MESSAGE_LIMIT} messages left today</span>
-              <span className="text-muted-foreground">Token-saving mode: last 5 msgs, 400 chars, 250 tokens out</span>
+              <span
+                className={`rounded-full px-2 py-1 ${visitorLeft <= 1 ? "bg-amber-100 text-amber-800" : "bg-muted text-muted-foreground"}`}
+              >
+                {visitorLeft} / {VISITOR_MESSAGE_LIMIT} messages left today
+              </span>
+              <span className="text-muted-foreground">
+                Token-saving mode: last 5 msgs, 400 chars, 250 tokens out
+              </span>
             </div>
             <ConciergeControls
               language={text.language}
@@ -423,21 +587,33 @@ function AiConcierge() {
             />
             <div className="mt-2 flex flex-wrap gap-2">
               {(text.quick as string[]).slice(0, 4).map((q) => (
-                <button key={q} onClick={() => void ask(q)} disabled={busy} className="rounded-full border border-gold/20 bg-card px-3 py-1.5 text-xs hover:bg-gold/10 disabled:opacity-50">
+                <button
+                  key={q}
+                  onClick={() => void ask(q)}
+                  disabled={busy}
+                  className="rounded-full border border-gold/20 bg-card px-3 py-1.5 text-xs hover:bg-gold/10 disabled:opacity-50"
+                >
                   {q}
                 </button>
               ))}
             </div>
-            <form onSubmit={submit} className="mt-3 flex items-end gap-2 rounded-3xl border border-gold/20 bg-card p-2 shadow-lg focus-within:border-gold/40 focus-within:ring-2 focus-within:ring-gold/20">
+            <form
+              onSubmit={submit}
+              className="mt-3 flex items-end gap-2 rounded-3xl border border-gold/20 bg-card p-2 shadow-lg focus-within:border-gold/40 focus-within:ring-2 focus-within:ring-gold/20"
+            >
               <textarea
-                ref={inputRef as any}
+                ref={inputRef}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
                 maxLength={400}
                 disabled={visitorLeft === 0}
                 rows={1}
                 dir={direction}
-                placeholder={visitorLeft === 0 ? "Limit reached — 5/5 messages used today" : text.placeholder as string}
+                placeholder={
+                  visitorLeft === 0
+                    ? "Limit reached — 5/5 messages used today"
+                    : (text.placeholder as string)
+                }
                 aria-label={text.placeholder as string}
                 onKeyDown={(e) => {
                   if (e.key === "Enter" && !e.shiftKey) {
@@ -448,7 +624,11 @@ function AiConcierge() {
                 className="max-h-32 min-h-[44px] flex-1 resize-none bg-transparent px-3 py-3 text-sm outline-none placeholder:text-muted-foreground"
               />
               <div className="flex items-center gap-1 pr-1">
-                <button type="button" aria-label="Voice (coming soon)" className="rounded-full p-2 text-muted-foreground hover:bg-muted">
+                <button
+                  type="button"
+                  aria-label="Voice (coming soon)"
+                  className="rounded-full p-2 text-muted-foreground hover:bg-muted"
+                >
                   <Mic size={18} />
                 </button>
                 <button
@@ -461,7 +641,16 @@ function AiConcierge() {
                 </button>
               </div>
             </form>
-            <p className="mt-2 text-center text-xs text-muted-foreground">Simran can make mistakes. Verify dates: 22–23 Nov 2026. <Link to="/demo" className="underline">Invitation</Link> • <a href="/demo#rsvp" className="underline">RSVP</a></p>
+            <p className="mt-2 text-center text-xs text-muted-foreground">
+              Simran can make mistakes. Verify dates: 22–23 Nov 2026.{" "}
+              <Link to="/demo" className="underline">
+                Invitation
+              </Link>{" "}
+              •{" "}
+              <a href="/demo#rsvp" className="underline">
+                RSVP
+              </a>
+            </p>
           </div>
         </div>
       </div>
@@ -469,7 +658,13 @@ function AiConcierge() {
       <MusicToggle />
 
       {/* Mobile overlay */}
-      {sidebarOpen && <button aria-label="Close sidebar" onClick={() => setSidebarOpen(false)} className="fixed inset-0 z-20 bg-black/30 backdrop-blur-sm lg:hidden" />}
+      {sidebarOpen && (
+        <button
+          aria-label="Close sidebar"
+          onClick={() => setSidebarOpen(false)}
+          className="fixed inset-0 z-20 bg-black/30 backdrop-blur-sm lg:hidden"
+        />
+      )}
     </div>
   );
 }
