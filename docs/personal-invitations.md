@@ -20,6 +20,26 @@ Every theme and framework now carries the same celebration features as the main 
 
 The main Mohsin–Simran invitation, gallery, wishes and RSVP are separate from every creator's card. Your card never borrows their couple portraits or event story.
 
+## QR codes for printed cards
+
+Each row in **Your invitations** has a **QR** button (also under the row's “more” menu as _QR code & print card_). It opens a dialog with the code for that card's public `/invite/:slug` link, plus:
+
+- **PNG (1200 px)** — drop into Word, Canva or a print template. 1200 px is 300 dpi at four inches, so it stays sharp on a card or table tent.
+- **SVG for print** — vector output for a professional print shop. It has no fixed pixel size and prints crisply at any dimension.
+- **Print insert** — opens a print-ready 90 × 55 mm insert with the QR on the left, the couple's names, date and venue on the right, and “Scan for the full invitation, map and RSVP”. The print window contains only the insert, so the dashboard is never printed. Choose “Save as PDF” in the print dialog to send it to a shop.
+- **Copy link** — the exact URL the code points to.
+
+A guest name can be added before exporting, which produces the same personalised `?guest=Name` link as the share panel, so a printed card can greet its recipient by name.
+
+Practical limits, enforced by the renderer:
+
+- Error correction is **Q (25%)**, so smudges, low ink or a glossy finish still scan.
+- The quiet zone is **4 modules** — the minimum the QR specification allows. The generated code already includes it, so leave that white border visible when placing the image.
+- The code is black on white on purpose. Do not recolour it or place it on a photo; if a designer must tint it, keep the dark modules dark and the background near-white.
+- A draft card's QR works, but scans show “invitation not available” until the card is published. The dialog says so before you print anything.
+- QR generation is local to the browser (`qrcode-generator`, MIT). No guest data, card content or URL is sent to a third-party QR service.
+- Print at least **2 cm** wide, flat, on matte stock. Test one copy with a phone before the full run — `src/test/card-qr.test.ts` decodes the generated matrix back to the link in CI, but a printer can still mis-handle scaling.
+
 ## Your card's AI host assistant and soundtrack
 
 Every card is published with its own AI host assistant named after its host (for example “Ask Ayesha”). The floating assistant is rendered only on that card's page and answers guests from the saved card content: ceremony, date, time, venue, address, dress code, story, note, contact, extra events and the chosen songs. It never uses Mohsin & Simran's schedule, story or playlist.

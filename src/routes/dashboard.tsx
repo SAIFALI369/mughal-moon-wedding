@@ -46,9 +46,11 @@ import {
   HeartHandshake,
   Sparkles,
   Music2,
+  QrCode,
 } from "lucide-react";
 import { invitationThemes } from "@/components/wedding/invitation-options";
 import { PlatformShell } from "@/components/platform/platform-shell";
+import { CardQrDialog } from "@/components/platform/card-qr-dialog";
 import { Plus, FileHeart, Globe2, FileEdit, ArrowRight } from "lucide-react";
 import { cleanupExpiredMemories, deleteSimranMemory } from "@/lib/simran-memory";
 
@@ -95,6 +97,7 @@ export function Dashboard() {
   const [form, setForm] = useState<InvitationForm>(emptyInvitationForm);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [previewCard, setPreviewCard] = useState<InvitationCard | null>(null);
+  const [qrCard, setQrCard] = useState<InvitationCard | null>(null);
   const [error, setError] = useState("");
 
   const [activeTab, setActiveTab] = useState<"invitations" | "templates" | "credits">(
@@ -525,6 +528,14 @@ export function Dashboard() {
                         <Button size="sm" variant="outline" onClick={() => startEdit(card)}>
                           <Edit3 size={14} /> Edit
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => setQrCard(card)}
+                          title={`QR code for ${card.title}`}
+                        >
+                          <QrCode size={14} /> QR
+                        </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <Button
@@ -541,6 +552,9 @@ export function Dashboard() {
                               {card.status === "draft"
                                 ? "Publish invitation"
                                 : "Unpublish invitation"}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setQrCard(card)}>
+                              <QrCode size={14} /> QR code & print card
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               disabled={card.status !== "published"}
@@ -828,6 +842,8 @@ export function Dashboard() {
             )}
           </DialogContent>
         </Dialog>
+
+        <CardQrDialog card={qrCard} onOpenChange={(open) => !open && setQrCard(null)} />
       </main>
     </PlatformShell>
   );
