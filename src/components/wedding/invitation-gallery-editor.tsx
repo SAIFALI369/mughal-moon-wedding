@@ -10,8 +10,8 @@ const HOST_PHOTO_CAP = 12;
 
 /**
  * Host-facing gallery manager inside the card editor. Photos live in the card's
- * own gallery table (never in another card's), and guests can add up to five of
- * their own once the invitation is published.
+ * own gallery table (never in another card's) and only the card's owner can add
+ * or remove them; guests see a read-only gallery.
  */
 export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
   const [rows, setRows] = useState<Row[]>([]);
@@ -90,7 +90,7 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
   }
 
   const hostCount = rows.filter((row) => row.source === "host").length;
-  const guestCount = rows.filter((row) => row.source === "guest").length;
+  const legacyGuestCount = rows.filter((row) => row.source === "guest").length;
 
   return (
     <div className="rounded-xl border border-gold/40 bg-gold/5 p-4">
@@ -98,8 +98,8 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
         <div>
           <p className="font-serif text-lg text-foreground">Shared gallery</p>
           <p className="text-sm text-muted-foreground">
-            Your portraits appear first. Add up to {HOST_PHOTO_CAP} photos here; guests can add five
-            of their own once the invitation is published.
+            Your portraits appear first. Add up to {HOST_PHOTO_CAP} photos here. Guests can view the
+            gallery but cannot upload — only you can change it.
           </p>
         </div>
         <button
@@ -162,7 +162,10 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
       )}
 
       <p className="mt-3 text-xs text-muted-foreground">
-        {hostCount} host photo{hostCount === 1 ? "" : "s"} · {guestCount}/5 guest photos
+        {hostCount} of {HOST_PHOTO_CAP} photos added
+        {legacyGuestCount > 0
+          ? ` · ${legacyGuestCount} legacy guest photo${legacyGuestCount === 1 ? "" : "s"} (view only)`
+          : ""}
       </p>
       {note && (
         <p role="status" className="mt-1 text-xs text-gold">

@@ -106,6 +106,13 @@
       "when": 1792502400000,
       "tag": "0014_card_gallery_and_wishes",
       "breakpoints": true
+    },
+    {
+      "idx": 15,
+      "version": "7",
+      "when": 1792560000000,
+      "tag": "0015_host_only_gallery_and_real_rsvp_names",
+      "breakpoints": true
     }
   ]
 }

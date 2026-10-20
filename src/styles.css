@@ -3756,6 +3756,12 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner { 
   font-size: 0.78rem;
   color: var(--gold);
 }
+.invite-gallery-note-readonly {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin: 2rem auto 0;
+}
 
 /* Lightbox ------------------------------------------------------------ */
 .invite-lightbox {

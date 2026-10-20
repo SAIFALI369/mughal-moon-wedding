@@ -6,7 +6,8 @@ import { afterAll, beforeAll, describe, expect, it } from "vitest";
 const db = new PGlite();
 const sql = (name: string) =>
   readFileSync(new URL(`../../drizzle/migrations/${name}`, import.meta.url), "utf8");
-const migration = sql("0014_card_gallery_and_wishes.sql");
+const galleryMigration = sql("0014_card_gallery_and_wishes.sql");
+const lockDownMigration = sql("0015_host_only_gallery_and_real_rsvp_names.sql");
 const alice = "a0000000-0000-4000-8000-000000000001";
 const bob = "b0000000-0000-4000-8000-000000000002";
 const published = "c0000000-0000-4000-8000-000000000001";
@@ -14,7 +15,7 @@ const draft = "c0000000-0000-4000-8000-000000000002";
 const galleryOff = "c0000000-0000-4000-8000-000000000003";
 const wishesOff = "c0000000-0000-4000-8000-000000000004";
 const expired = "c0000000-0000-4000-8000-000000000005";
-const guestPhoto = `data:image/jpeg;base64,${Buffer.from([0xff, 0xd8, 0xff, 0x01, 0xff, 0xd9]).toString("base64")}`;
+const hostPhoto = `data:image/jpeg;base64,${Buffer.from([0xff, 0xd8, 0xff, 0x01, 0xff, 0xd9]).toString("base64")}`;
 
 const basics = {
   groomName: "Ayaan",
@@ -45,6 +46,25 @@ async function card(
   );
 }
 
+// A session-level claim survives RESET ROLE, so each block clears both.
+async function asGuest(callback: () => Promise<unknown>) {
+  await db.exec("RESET ROLE; SET request.jwt.claim.sub = ''; SET ROLE anon;");
+  try {
+    return await callback();
+  } finally {
+    await db.exec("RESET ROLE; RESET request.jwt.claim.sub;");
+  }
+}
+
+async function asUser(userId: string, callback: () => Promise<unknown>) {
+  await db.exec(`RESET ROLE; SET request.jwt.claim.sub = '${userId}'; SET ROLE authenticated;`);
+  try {
+    return await callback();
+  } finally {
+    await db.exec("RESET ROLE; RESET request.jwt.claim.sub;");
+  }
+}
+
 beforeAll(async () => {
   await db.exec(`
     CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role;
@@ -66,7 +86,8 @@ beforeAll(async () => {
   ] as const) {
     await card(id, owner, status);
   }
-  await db.exec(migration);
+  await db.exec(galleryMigration);
+  await db.exec(lockDownMigration);
   await db.query(
     "UPDATE public.invitation_cards SET content = jsonb_set(content,'{elements}','{\"gallery\": false}'::jsonb) WHERE id=$1",
     [galleryOff],
@@ -84,122 +105,103 @@ afterAll(() => db.close());
 
 describe("card gallery and wishes migration", () => {
   it("ships exactly the same SQL to both migration folders and can be re-run", async () => {
-    expect(
-      readFileSync(
-        new URL(
-          "../../supabase/migrations/20261021000000_card_gallery_and_wishes.sql",
-          import.meta.url,
-        ),
-        "utf8",
-      ),
-    ).toBe(migration);
-    await db.exec(migration);
+    for (const [local, hosted] of [
+      ["../../supabase/migrations/20261021000000_card_gallery_and_wishes.sql", galleryMigration],
+      [
+        "../../supabase/migrations/20261021090000_host_only_gallery_and_real_rsvp_names.sql",
+        lockDownMigration,
+      ],
+    ] as const) {
+      expect(readFileSync(new URL(local, import.meta.url), "utf8")).toBe(hosted);
+    }
+    await db.exec(galleryMigration);
+    await db.exec(lockDownMigration);
     expect(
       (await db.query("SELECT 1 FROM pg_policies WHERE tablename='invitation_wishes'")).rows,
     ).toHaveLength(2);
+    expect(
+      (await db.query("SELECT 1 FROM pg_constraint WHERE conname='invitation_photos_host_only'"))
+        .rows,
+    ).toHaveLength(1);
   });
 
-  it("lets a guest add at most five photos to one published gallery", async () => {
-    await db.exec("SET ROLE anon;");
-    try {
-      for (let index = 0; index < 5; index += 1) {
-        await db.query("SELECT public.add_invitation_photo($1,$2,'Guest frame')", [
-          published,
-          guestPhoto,
-        ]);
-      }
+  it("refuses every anonymous gallery upload, even a valid JPEG", async () => {
+    await asGuest(async () => {
       await expect(
-        db.query("SELECT public.add_invitation_photo($1,$2,'Sixth')", [published, guestPhoto]),
-      ).rejects.toThrow(/five guest photos/);
-      await expect(
-        db.query(
-          "SELECT public.add_invitation_photo($1,'data:image/svg+xml;base64,PHN2Zz4=','x')",
-          [published],
-        ),
-      ).rejects.toThrow(/Invalid photo/);
-      const rows = await db.query<{ source: string; caption: string }>(
-        "SELECT source,caption FROM public.invitation_photos WHERE card_id=$1",
-        [published],
-      );
-      expect(rows.rows).toHaveLength(5);
-      expect(rows.rows.every((row) => row.source === "guest")).toBe(true);
-    } finally {
-      await db.exec("RESET ROLE;");
-    }
-  });
-
-  it("hides a draft or opted-out gallery from guests while the host still sees it", async () => {
-    await db
-      .query("SELECT public.add_invitation_photo($1,$2,'Host frame')", [draft, guestPhoto])
-      .catch(() => undefined);
-    await db.exec("SET ROLE anon;");
-    try {
-      expect(
-        (await db.query("SELECT slot FROM public.invitation_photos WHERE card_id=$1", [draft]))
-          .rows,
-      ).toHaveLength(0);
-      expect(
-        (await db.query("SELECT slot FROM public.invitation_photos WHERE card_id=$1", [galleryOff]))
-          .rows,
-      ).toHaveLength(0);
-      await expect(
-        db.query("SELECT public.add_invitation_photo($1,$2,'Blocked')", [galleryOff, guestPhoto]),
-      ).rejects.toThrow(/turned off the gallery/);
-      await expect(
-        db.query("SELECT public.add_invitation_photo($1,$2,'Blocked')", [draft, guestPhoto]),
-      ).rejects.toThrow(/not accepting photos/);
-      await expect(
-        db.query("SELECT public.add_invitation_photo($1,$2,'Expired')", [expired, guestPhoto]),
-      ).rejects.toThrow(/not accepting photos/);
+        db.query("SELECT public.add_invitation_photo($1,$2,'Guest frame')", [published, hostPhoto]),
+      ).rejects.toThrow(/permission denied/);
       expect(
         (await db.query("SELECT slot FROM public.invitation_photos WHERE card_id=$1", [published]))
           .rows,
-      ).toHaveLength(5);
-    } finally {
-      await db.exec("RESET ROLE;");
-    }
+      ).toHaveLength(0);
+    });
   });
 
-  it("lets the host manage their own gallery and blocks everyone else", async () => {
-    await db.exec(`SET request.jwt.claim.sub = '${alice}'; SET ROLE authenticated;`);
-    try {
-      await db.query("SELECT public.add_invitation_photo($1,$2,'Host frame')", [draft, guestPhoto]);
+  it("accepts uploads only from the card's own host", async () => {
+    // A signed-in visitor who does not own the card is still refused.
+    await asUser(bob, async () => {
+      await expect(
+        db.query("SELECT public.add_invitation_photo($1,$2,'Not mine')", [published, hostPhoto]),
+      ).rejects.toThrow(/Only the host/);
+    });
+
+    await asUser(alice, async () => {
+      await db.query("SELECT public.add_invitation_photo($1,$2,'Our portrait')", [
+        draft,
+        hostPhoto,
+      ]);
+      await db.query("SELECT public.add_invitation_photo($1,$2,'Haldi')", [galleryOff, hostPhoto]);
+      await db.query("SELECT public.add_invitation_photo($1,$2,'Host frame')", [
+        published,
+        hostPhoto,
+      ]);
+    });
+    const rows = await db.query<{ source: string }>(
+      "SELECT source FROM public.invitation_photos WHERE card_id=$1",
+      [published],
+    );
+    expect(rows.rows).toEqual([{ source: "host" }]);
+  });
+
+  it("keeps drafts, hidden galleries and expired cards invisible to guests", async () => {
+    await asGuest(async () => {
+      for (const id of [draft, galleryOff, expired]) {
+        expect(
+          (await db.query("SELECT slot FROM public.invitation_photos WHERE card_id=$1", [id])).rows,
+        ).toHaveLength(0);
+      }
       expect(
-        (await db.query("SELECT slot FROM public.invitation_photos WHERE card_id=$1", [draft]))
+        (await db.query("SELECT slot FROM public.invitation_photos WHERE card_id=$1", [published]))
           .rows,
       ).toHaveLength(1);
-      await db.query("SELECT public.delete_invitation_photo($1,1::smallint)", [draft]);
-      expect(
-        (await db.query("SELECT slot FROM public.invitation_photos WHERE card_id=$1", [draft]))
-          .rows,
-      ).toHaveLength(0);
-    } finally {
-      await db.exec("RESET ROLE;");
-    }
-    await db.exec(`SET request.jwt.claim.sub = '${bob}'; SET ROLE authenticated;`);
-    try {
+    });
+  });
+
+  it("lets the host remove their own photo and blocks everyone else", async () => {
+    await asUser(bob, async () => {
       await expect(
         db.query("SELECT public.delete_invitation_photo($1,1::smallint)", [published]),
-      ).rejects.toThrow(/Not authorized/);
-    } finally {
-      await db.exec("RESET ROLE;");
-    }
-    await db.exec(`SET ROLE anon;`);
-    try {
+      ).rejects.toThrow(/Only the host/);
+    });
+    await asGuest(async () => {
       await expect(
         db.query("SELECT public.delete_invitation_photo($1,1::smallint)", [published]),
-      ).rejects.toThrow(/permission denied|Sign in/);
+      ).rejects.toThrow(/permission denied/);
       await expect(db.query("DELETE FROM public.invitation_photos")).rejects.toThrow(
         /permission denied/,
       );
-    } finally {
-      await db.exec("RESET ROLE;");
-    }
+    });
+    await asUser(alice, async () => {
+      await db.query("SELECT public.delete_invitation_photo($1,1::smallint)", [published]);
+    });
+    expect(
+      (await db.query("SELECT slot FROM public.invitation_photos WHERE card_id=$1", [published]))
+        .rows,
+    ).toHaveLength(0);
   });
 
   it("accepts wishes only on published, opted-in cards and keeps drafts private", async () => {
-    await db.exec("SET ROLE anon;");
-    try {
+    await asGuest(async () => {
       await db.query(
         "INSERT INTO public.invitation_wishes(card_id,name,message) VALUES ($1,'Guest','Congratulations!')",
         [published],
@@ -231,8 +233,38 @@ describe("card gallery and wishes migration", () => {
           published,
         ]),
       ).rejects.toThrow(/check constraint/);
-    } finally {
-      await db.exec("RESET ROLE;");
-    }
+    });
+  });
+
+  it("accepts real RSVP names and rejects blank, numeric or placeholder ones", async () => {
+    const insert = (name: string) =>
+      db.query(
+        "INSERT INTO public.invitation_rsvps(card_id,name,attending,guests) VALUES ($1,$2,true,1)",
+        [published, name],
+      );
+    await asGuest(async () => {
+      for (const good of ["Ayesha Khan", "Mohammad Obaidullah", "A. R. Rahman", "रेशम बेगम"]) {
+        await insert(good);
+      }
+      for (const bad of [
+        " ",
+        "A",
+        "1234",
+        "Ahmed 2",
+        "test",
+        "guest",
+        "aaaaaaaa",
+        "A B",
+        "someone@example.com",
+        "https://example.com",
+        "Ahmed 😀",
+      ]) {
+        await expect(insert(bad)).rejects.toThrow(/invitation_rsvps_valid_name|check constraint/);
+      }
+    });
+    const names = await db.query<{ name: string }>(
+      "SELECT name FROM public.invitation_rsvps ORDER BY created_at",
+    );
+    expect(names.rows).toHaveLength(4);
   });
 });
