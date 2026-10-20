@@ -14,6 +14,8 @@ import mehndiNight from "@/assets/themes/mehndi-night.webp";
 import jharokhaDawn from "@/assets/themes/jharokha-dawn.webp";
 import haldiBaag from "@/assets/themes/haldi-baag.webp";
 import vowsInInk from "@/assets/themes/vows-in-ink.webp";
+import chandBagh from "@/assets/themes/chand-bagh.webp";
+import melaMaidan from "@/assets/themes/mela-maidan.webp";
 import type { InvitationTheme } from "./invitation-options";
 
 export const invitationArt: Record<InvitationTheme, string> = {
@@ -35,4 +37,6 @@ export const invitationArt: Record<InvitationTheme, string> = {
   "jharokha-dawn": jharokhaDawn,
   "haldi-baag": haldiBaag,
   "vows-in-ink": vowsInInk,
+  "chand-bagh": chandBagh,
+  "mela-maidan": melaMaidan,
 };

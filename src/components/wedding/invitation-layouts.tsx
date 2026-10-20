@@ -3,7 +3,8 @@ import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion
 import { ChevronDown, Sparkles } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
 import { parseInvitationDate } from "./invitation-details";
-import type { InvitationLayout, InvitationTheme } from "./invitation-options";
+import { mascotsForTheme, type InvitationLayout, type InvitationTheme } from "./invitation-options";
+import { CatMascot, SquirrelMascot } from "./invitation-world";
 import { FullArtFrame, LivingScene, riteBlessing } from "./invitation-rite";
 import { CouplePortraits } from "./invitation-stage";
 
@@ -494,6 +495,291 @@ export function LayoutInterlude({
         <span />
         <p>One thread · {details.date || "a promise"}</p>
         <span />
+      </div>
+    );
+  }
+  return null;
+}
+
+/* ─────────────────────────── 4. Chand Bagh ─────────────────────────── */
+/**
+ * A moonlit garden: the artwork is the whole sky, the names sit on a night
+ * plaque, and the cat waits on the wall with an invitation of its own. The
+ * layout is single-column by design, so nothing can squeeze on a phone.
+ */
+export function ChandBaghStage({
+  details,
+  backgroundImage,
+  actions,
+  scrollTo,
+  entranceDelay,
+}: StageProps) {
+  const ref = useRef<HTMLElement>(null);
+  const reduced = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const sky = useTransform(scrollYProgress, [0, 1], ["0%", "14%"]);
+  const glow = useTransform(scrollYProgress, [0, 1], [1, 1.18]);
+  const date = shortDate(details.date);
+  const mascot = mascotsForTheme(details.theme);
+
+  return (
+    <section
+      ref={ref}
+      id="invitation-top"
+      aria-label="Wedding invitation"
+      className="chand-stage"
+      data-theme={details.theme}
+      data-reduced={reduced ? "true" : undefined}
+    >
+      <motion.div className="chand-sky" style={reduced ? undefined : { y: sky }} aria-hidden="true">
+        <FullArtFrame src={backgroundImage} className="chand-art" priority />
+        <span className="chand-veil" />
+        <motion.span className="chand-moon-glow" style={reduced ? undefined : { scale: glow }} />
+      </motion.div>
+      <LivingScene theme={details.theme} variant="hero" reduce={reduced ?? false} />
+      <span className="chand-constellation" aria-hidden="true">
+        {Array.from({ length: 14 }, (_, index) => (
+          <i key={index} />
+        ))}
+      </span>
+      <span className="chand-fireflies" aria-hidden="true">
+        {Array.from({ length: 7 }, (_, index) => (
+          <i key={index} />
+        ))}
+      </span>
+
+      <motion.div
+        className="chand-inner"
+        initial={{ opacity: 0, y: 28 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 1.2, delay: entranceDelay }}
+      >
+        <p className="chand-kicker">{details.hosts || "Together with their families"}</p>
+        <h1 className="chand-names">
+          <span>{details.groomName}</span>
+          <i aria-hidden="true">&amp;</i>
+          <span>{details.brideName}</span>
+        </h1>
+        <p className="chand-date">
+          {date.weekday && <span className="chand-weekday">{date.weekday}</span>}
+          <span className="chand-day">
+            {date.day
+              ? `${date.day} ${date.month} ${date.year}`
+              : details.date || "Date to be announced"}
+          </span>
+          {details.time && <span className="chand-time">{details.time}</span>}
+        </p>
+        <p className="chand-venue">
+          {details.venue || "Venue to be announced"}
+          {details.address && <span>{details.address}</span>}
+        </p>
+        <CouplePortraits details={details} compact />
+        <div className="chand-actions">{actions}</div>
+      </motion.div>
+
+      <div className="chand-wall">
+        <div className="chand-wall-cat" aria-hidden="true">
+          <CatMascot className="chand-cat" />
+          <SquirrelMascot className="chand-squirrel" />
+        </div>
+        <p className="chand-bubble">
+          {mascot?.cat ?? "Noor"} the cat is expecting you. Tap the gold stars as you wander —{" "}
+          {mascot?.squirrel ?? "Gul"} is counting them.
+        </p>
+        <a href={scrollTo} className="chand-scroll">
+          Follow the fireflies
+          <ChevronDown className="h-4 w-4" aria-hidden="true" />
+        </a>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────────────── 5. Mela Maidan ─────────────────────────── */
+/**
+ * A fairground: bunting, kites and a ticket for a name plate, with the drum
+ * and its two residents closing the hero. Bright, playful, and stacked for
+ * small screens.
+ */
+export function MelaMaidanStage({
+  details,
+  backgroundImage,
+  actions,
+  scrollTo,
+  entranceDelay,
+}: StageProps) {
+  const ref = useRef<HTMLElement>(null);
+  const reduced = useReducedMotion();
+  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
+  const sky = useTransform(scrollYProgress, [0, 1], ["0%", "10%"]);
+  const date = shortDate(details.date);
+  const mascot = mascotsForTheme(details.theme);
+
+  return (
+    <section
+      ref={ref}
+      id="invitation-top"
+      aria-label="Wedding invitation"
+      className="mela-stage"
+      data-theme={details.theme}
+      data-reduced={reduced ? "true" : undefined}
+    >
+      <motion.div className="mela-sky" style={reduced ? undefined : { y: sky }} aria-hidden="true">
+        <FullArtFrame src={backgroundImage} className="mela-art" priority />
+        <span className="mela-veil" />
+      </motion.div>
+      <LivingScene theme={details.theme} variant="hero" reduce={reduced ?? false} />
+
+      <span className="mela-bunting" aria-hidden="true">
+        {Array.from({ length: 16 }, (_, index) => (
+          <i key={index} className={`bunting-flag flag-${index % 4}`} />
+        ))}
+      </span>
+      <span className="mela-kites" aria-hidden="true">
+        {Array.from({ length: 4 }, (_, index) => (
+          <i key={index} className={`mela-kite kite-${index}`} />
+        ))}
+      </span>
+
+      <motion.div
+        className="mela-inner"
+        initial={{ opacity: 0, y: 30, rotate: -0.6 }}
+        animate={{ opacity: 1, y: 0, rotate: 0 }}
+        transition={{ duration: 1.1, delay: entranceDelay }}
+      >
+        <p className="mela-kicker">{details.hosts || "Together with their families"}</p>
+        <div className="mela-ticket">
+          <span className="mela-ticket-stub" aria-hidden="true">
+            <b>{date.day || "•"}</b>
+            <i>{date.month.slice(0, 3) || "day"}</i>
+          </span>
+          <div className="mela-ticket-body">
+            <p className="mela-ticket-label">Admit two · one wedding</p>
+            <h1 className="mela-names">
+              <span>{details.groomName}</span>
+              <i aria-hidden="true">&amp;</i>
+              <span>{details.brideName}</span>
+            </h1>
+            <p className="mela-ticket-meta">
+              {date.day
+                ? `${date.day} ${date.month} ${date.year}`
+                : details.date || "Date to be announced"}
+              {details.time ? ` · ${details.time}` : ""}
+            </p>
+            <p className="mela-ticket-venue">
+              {details.venue || "Venue to be announced"}
+              {details.address && <span>{details.address}</span>}
+            </p>
+          </div>
+          <span className="mela-ticket-notch" aria-hidden="true" />
+        </div>
+        <CouplePortraits details={details} compact />
+        <div className="mela-actions">{actions}</div>
+      </motion.div>
+
+      <div className="mela-drum-row">
+        <div className="mela-drum" aria-hidden="true">
+          <span className="mela-drum-head" />
+          <span className="mela-drum-stat" />
+        </div>
+        <div className="mela-crew" aria-hidden="true">
+          <SquirrelMascot className="mela-squirrel" />
+          <CatMascot className="mela-cat" mood="day" />
+        </div>
+        <p className="mela-bubble">
+          {mascot?.cat ?? "Mithai"} has your ticket, {mascot?.squirrel ?? "Chintu"} has the games.
+          Nine stars are hiding between the sections.
+        </p>
+        <a href={scrollTo} className="mela-scroll">
+          Step into the mela
+          <ChevronDown className="h-4 w-4" aria-hidden="true" />
+        </a>
+      </div>
+    </section>
+  );
+}
+
+/* ─────────────────── covers for the two worlds ─────────────────── */
+
+export function ChandBaghCover({ details }: { details: InvitationDetails }) {
+  const date = coverDate(details);
+  return (
+    <div className="cover-inner chand-cover">
+      <span className="chand-cover-sky" aria-hidden="true">
+        {Array.from({ length: 12 }, (_, index) => (
+          <i key={index} />
+        ))}
+      </span>
+      <span className="chand-cover-moon" aria-hidden="true" />
+      <p className="chand-cover-kicker">{details.hosts || "Together with their families"}</p>
+      <h3 className="chand-cover-names">
+        <span>{details.groomName}</span>
+        <i aria-hidden="true">&amp;</i>
+        <span>{details.brideName}</span>
+      </h3>
+      <p className="chand-cover-date">{date.line || "Date to be announced"}</p>
+      {details.time && <p className="chand-cover-time">{details.time}</p>}
+      {details.venue && <p className="chand-cover-venue">{details.venue}</p>}
+      <CatMascot className="chand-cover-cat" />
+    </div>
+  );
+}
+
+export function MelaCover({ details }: { details: InvitationDetails }) {
+  const date = coverDate(details);
+  return (
+    <div className="cover-inner mela-cover">
+      <span className="mela-cover-bunting" aria-hidden="true">
+        {Array.from({ length: 10 }, (_, index) => (
+          <i key={index} className={`bunting-flag flag-${index % 4}`} />
+        ))}
+      </span>
+      <p className="mela-cover-kicker">{details.hosts || "Together with their families"}</p>
+      <h3 className="mela-cover-names">
+        <span>{details.groomName}</span>
+        <i aria-hidden="true">&amp;</i>
+        <span>{details.brideName}</span>
+      </h3>
+      <p className="mela-cover-date">{date.line || "Date to be announced"}</p>
+      {details.venue && <p className="mela-cover-venue">{details.venue}</p>}
+      <span className="mela-cover-stamp" aria-hidden="true">
+        <CatMascot className="mela-cover-cat" mood="day" />
+      </span>
+    </div>
+  );
+}
+
+/* ─────────────── bands that carry each world past the hero ─────────────── */
+
+export function WorldInterlude({
+  layout,
+  details,
+}: {
+  layout: InvitationLayout;
+  details: InvitationDetails;
+}) {
+  if (layout === "chand-bagh") {
+    return (
+      <div className="chand-interlude" aria-hidden="true">
+        <span className="chand-interlude-moons">
+          {Array.from({ length: 8 }, (_, index) => (
+            <i key={index} className={`moon-phase-${index}`} />
+          ))}
+        </span>
+        <p>The garden keeps its own time</p>
+        <SquirrelMascot className="chand-interlude-squirrel" />
+      </div>
+    );
+  }
+  if (layout === "mela-maidan") {
+    return (
+      <div className="mela-interlude" aria-hidden="true">
+        <span className="mela-interlude-bunting">
+          {Array.from({ length: 12 }, (_, index) => (
+            <i key={index} className={`bunting-flag flag-${index % 4}`} />
+          ))}
+        </span>
+        <p>Keep the ticket — {details.date || "see you at the mela"}</p>
       </div>
     );
   }

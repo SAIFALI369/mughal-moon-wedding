@@ -19,10 +19,12 @@ export function InvitationWishes({
   cardId,
   details,
   preview = false,
+  heading,
 }: {
   cardId?: string;
   details: InvitationDetails;
   preview?: boolean;
+  heading?: { eyebrow: string; title: string };
 }) {
   const [wishes, setWishes] = useState<Wish[]>([]);
   const [name, setName] = useState("");
@@ -100,7 +102,9 @@ export function InvitationWishes({
       id="wishes"
       className="invite-section invite-suite invite-suite-wishes relative overflow-hidden px-6 py-20 sm:py-28"
     >
-      <SuiteHeading eyebrow="Wishes">Blessings &amp; Wishes</SuiteHeading>
+      <SuiteHeading eyebrow={heading?.eyebrow ?? "Wishes"}>
+        {heading?.title ?? "Blessings & Wishes"}
+      </SuiteHeading>
       <p className="invite-suite-sub">
         Leave a note for {details.groomName} &amp; {details.brideName} — every word is kept.
       </p>

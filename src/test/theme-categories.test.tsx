@@ -36,7 +36,7 @@ const newThemes = ["riad-noor", "kashi-ghat", "mehndi-night"] as const;
 
 describe("three more themes", () => {
   it("registers Riad Noor, Kashi Ghat and Mehndi Night with full artwork", () => {
-    expect(invitationThemeIds).toHaveLength(18);
+    expect(invitationThemeIds).toHaveLength(20);
     const labels = invitationThemes.map((theme) => theme.label);
     for (const label of ["Riad Noor", "Kashi Ghat", "Mehndi Night"]) {
       expect(labels).toContain(label);
@@ -67,7 +67,7 @@ describe("three more themes", () => {
 });
 
 describe("theme categories", () => {
-  it("groups all eighteen themes into seven labelled groups with no orphan", () => {
+  it("groups all twenty themes into seven labelled groups with no orphan", () => {
     expect(invitationThemeCategories).toHaveLength(7);
     const grouped = invitationThemeCategories.flatMap((category) =>
       invitationThemes.filter((theme) => theme.category === category.id),

@@ -17,6 +17,8 @@ export const invitationThemeIds = [
   "jharokha-dawn",
   "haldi-baag",
   "vows-in-ink",
+  "chand-bagh",
+  "mela-maidan",
 ] as const;
 export type InvitationTheme = (typeof invitationThemeIds)[number];
 
@@ -42,6 +44,8 @@ export const invitationLayoutIds = [
   "chhatri-dawn",
   "baag",
   "single-stroke",
+  "chand-bagh",
+  "mela-maidan",
   "folio",
 ] as const;
 export type InvitationLayout = (typeof invitationLayoutIds)[number];
@@ -239,7 +243,95 @@ export const invitationThemes: {
     immersive: true,
     layout: "single-stroke",
   },
+  {
+    id: "chand-bagh",
+    label: "Chand Bagh",
+    description: "A moonlit garden where a cat and a squirrel walk the card with your guests",
+    swatch: "#16324a",
+    category: "signature",
+    immersive: true,
+    layout: "chand-bagh",
+  },
+  {
+    id: "mela-maidan",
+    label: "Mela Maidan",
+    description: "A fairground of kites, lanterns and little games to play",
+    swatch: "#e2703f",
+    category: "signature",
+    immersive: true,
+    layout: "mela-maidan",
+  },
 ];
+
+/**
+ * Each world has a cat and a squirrel. They follow the guest down the card,
+ * collect stars, tell riddles and celebrate wishes — the reason to come back.
+ */
+export const invitationMascots = {
+  "chand-bagh": { cat: "Noor", squirrel: "Gul", mood: "night" },
+  "mela-maidan": { cat: "Mithai", squirrel: "Chintu", mood: "day" },
+} as const;
+
+export type MascotTheme = keyof typeof invitationMascots;
+
+export function mascotsForTheme(theme: InvitationTheme) {
+  return invitationMascots[theme as MascotTheme] ?? null;
+}
+
+/** True for the two worlds that carry the whole interactive layer. */
+export const interactiveLayouts = ["chand-bagh", "mela-maidan"] as const;
+export function isInteractiveLayout(layout: InvitationLayout): boolean {
+  return (interactiveLayouts as readonly string[]).includes(layout);
+}
+
+/**
+ * Section titles in the two worlds speak like a game, not a programme.
+ * Everything else is untouched.
+ */
+export const playfulSectionCopy = {
+  "chand-bagh": {
+    message: { eyebrow: "A letter left for you", title: "Read by Moonlight" },
+    story: { eyebrow: "The long way here", title: "How the Garden Grew" },
+    celebration: { eyebrow: "Mark the night", title: "The Moonlit Evening" },
+    schedule: { eyebrow: "Doors, one by one", title: "Nights of the Garden" },
+    venue: { eyebrow: "Follow the fireflies", title: "Find the Garden Gate" },
+    dressCode: { eyebrow: "Dress like the garden", title: "What to Wear" },
+    gifts: { eyebrow: "Give a little light", title: "Gifts & Blessings" },
+    livestream: { eyebrow: "If you cannot travel", title: "Watch With Us" },
+    contact: { eyebrow: "A friend to call", title: "The Keeper of the Garden" },
+    rsvp: { eyebrow: "Noor is waiting", title: "Will You Walk With Us?" },
+    wishes: { eyebrow: "Leave a light", title: "The Lantern Wall" },
+    gallery: { eyebrow: "Memories in the grass", title: "The Garden Album" },
+    share: { eyebrow: "Throw the gate open", title: "Invite a Friend" },
+  },
+  "mela-maidan": {
+    message: { eyebrow: "Note pinned to the tent", title: "A Message From Us" },
+    story: { eyebrow: "How we got here", title: "Our Little Story" },
+    celebration: { eyebrow: "Roll up, roll up", title: "The Big Day" },
+    schedule: { eyebrow: "All the shows", title: "What Happens When" },
+    venue: { eyebrow: "Find our tent", title: "The Fairground" },
+    dressCode: { eyebrow: "Come in colour", title: "What to Wear" },
+    gifts: { eyebrow: "A little something", title: "Gifts & Blessings" },
+    livestream: { eyebrow: "From anywhere", title: "Watch the Fun" },
+    contact: { eyebrow: "Ask anyone to call", title: "The Ringmaster" },
+    rsvp: { eyebrow: "Chintu has a ticket for you", title: "Will You Come to the Mela?" },
+    wishes: { eyebrow: "Pin it up", title: "The Wish Tent" },
+    gallery: { eyebrow: "Confetti moments", title: "The Mela Album" },
+    share: { eyebrow: "Bring a friend", title: "Pass the Ticket" },
+  },
+} as const;
+
+export type PlayfulSection = keyof (typeof playfulSectionCopy)["chand-bagh"];
+export type PlayfulLayout = keyof typeof playfulSectionCopy;
+
+export function playfulCopy(
+  layout: InvitationLayout,
+  section: PlayfulSection,
+): { eyebrow: string; title: string } | null {
+  if (!isInteractiveLayout(layout)) return null;
+  const table = playfulSectionCopy[layout as PlayfulLayout];
+  return table?.[section] ?? null;
+}
 
 const mandapThemes = new Set<string>(["diya-utsav", "sacred-mandap", "kashi-ghat"]);
 

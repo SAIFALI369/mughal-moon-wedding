@@ -31,6 +31,8 @@ export const themeRites: Record<InvitationTheme, InvitationRite> = {
   "jharokha-dawn": "muslim",
   "haldi-baag": "hindu",
   "vows-in-ink": "universal",
+  "chand-bagh": "muslim",
+  "mela-maidan": "universal",
 };
 
 export function riteForTheme(theme: InvitationTheme): InvitationRite {

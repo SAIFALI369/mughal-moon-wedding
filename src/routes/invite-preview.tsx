@@ -17,6 +17,18 @@ import {
  * publishing anything or touching the production database.
  */
 export const Route = createFileRoute("/invite-preview")({
+  validateSearch: (search: Record<string, unknown>) => ({
+    theme:
+      typeof search.theme === "string" &&
+      (invitationThemeIds as readonly string[]).includes(search.theme)
+        ? search.theme
+        : "chand-bagh",
+    framework:
+      typeof search.framework === "string" &&
+      (invitationFrameworkIds as readonly string[]).includes(search.framework)
+        ? search.framework
+        : "moonlit",
+  }),
   head: () => ({
     meta: [{ title: "Personal invitation design preview" }, { name: "robots", content: "noindex" }],
   }),
@@ -81,10 +93,16 @@ const sampleContent = {
 function DesignPreview() {
   if (!import.meta.env.DEV) throw notFound();
 
-  const [theme, setTheme] = useState<InvitationTheme>("eid");
-  const [framework, setFramework] = useState<InvitationFramework>("moonlit");
+  const search = Route.useSearch();
+  const [theme, setTheme] = useState<InvitationTheme>(search.theme as InvitationTheme);
+  // On a phone the panel starts folded; the pill alone is enough to switch worlds.
+  const [open, setOpen] = useState(true);
+  const [framework, setFramework] = useState<InvitationFramework>(
+    search.framework as InvitationFramework,
+  );
 
   useEffect(() => {
+    setOpen(window.innerWidth >= 720);
     const params = new URLSearchParams(window.location.search);
     const wantedTheme = params.get("theme");
     const wantedFramework = params.get("framework");
@@ -111,42 +129,75 @@ function DesignPreview() {
 
   return (
     <>
-      <div className="fixed inset-x-0 top-0 z-[60] flex flex-wrap items-center justify-center gap-2 border-b border-gold/40 bg-background/90 px-3 py-2 text-[10px] uppercase tracking-[0.18em] text-gold shadow-lg backdrop-blur">
-        <span>Design preview</span>
-        <select
-          aria-label="Preview theme"
-          className="rounded-full border border-gold/40 bg-background px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-foreground"
-          value={theme}
-          onChange={(event) => setTheme(event.target.value as InvitationTheme)}
+      <div className={`preview-bar ${open ? "is-open" : ""}`}>
+        <button
+          type="button"
+          className="preview-toggle"
+          aria-expanded={open}
+          onClick={() => setOpen((value) => !value)}
         >
-          {invitationThemeCategories.map((category) => (
-            <optgroup key={category.id} label={category.label}>
-              {invitationThemes
-                .filter((item) => item.category === category.id)
-                .map((item) => (
-                  <option key={item.id} value={item.id}>
-                    {item.label}
+          <span>Preview</span>
+          <b>{invitationThemes.find((item) => item.id === theme)?.label ?? theme}</b>
+          <span aria-hidden="true">{open ? "×" : "▾"}</span>
+        </button>
+        {open && (
+          <div className="preview-panel">
+            <label>
+              <span>Theme</span>
+              <select
+                value={theme}
+                onChange={(event) => setTheme(event.target.value as InvitationTheme)}
+              >
+                {invitationThemeCategories.map((category) => (
+                  <optgroup key={category.id} label={category.label}>
+                    {invitationThemes
+                      .filter((item) => item.category === category.id)
+                      .map((item) => (
+                        <option key={item.id} value={item.id}>
+                          {item.label}
+                        </option>
+                      ))}
+                  </optgroup>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Layout</span>
+              <select
+                value={framework}
+                onChange={(event) => setFramework(event.target.value as InvitationFramework)}
+              >
+                {invitationFrameworkIds.map((id) => (
+                  <option key={id} value={id}>
+                    {id}
                   </option>
                 ))}
-            </optgroup>
-          ))}
-        </select>
-        <select
-          aria-label="Preview layout"
-          className="rounded-full border border-gold/40 bg-background px-2 py-1 text-[10px] uppercase tracking-[0.12em] text-foreground"
-          value={framework}
-          onChange={(event) => setFramework(event.target.value as InvitationFramework)}
-        >
-          {invitationFrameworkIds.map((id) => (
-            <option key={id} value={id}>
-              {id}
-            </option>
-          ))}
-        </select>
-        <span className="text-muted-foreground">
-          {layout}
-          {signature ? " · signature" : ""}
-        </span>
+              </select>
+            </label>
+            <p className="preview-note">
+              Structure in force: <b>{layout}</b>
+              {signature ? " · signature" : ""}
+            </p>
+            <div className="preview-shortcuts">
+              {[
+                ["chand-bagh", "Chand Bagh"],
+                ["mela-maidan", "Mela Maidan"],
+                ["jharokha-dawn", "Jharokha"],
+                ["haldi-baag", "Haldi Baag"],
+                ["vows-in-ink", "Vows in Ink"],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={theme === id ? "is-active" : ""}
+                  onClick={() => setTheme(id as InvitationTheme)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
       <PersonalInvitation
         title="Ayaan & Zara"

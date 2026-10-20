@@ -40,10 +40,13 @@ export function InvitationRsvp({
   cardId,
   deadline,
   preview = false,
+  heading,
 }: {
   cardId?: string;
   deadline?: string;
   preview?: boolean;
+  /** Optional in-world copy for the two interactive themes. */
+  heading?: { eyebrow: string; title: string };
 }) {
   const [attending, setAttending] = useState(true);
   const [name, setName] = useState("");
@@ -174,7 +177,9 @@ export function InvitationRsvp({
 
   return (
     <section id="rsvp" className="invite-section relative bg-muted px-6 py-20 sm:py-28">
-      <SectionTitle eyebrow="The pleasure of your company">Kindly RSVP</SectionTitle>
+      <SectionTitle eyebrow={heading?.eyebrow ?? "The pleasure of your company"}>
+        {heading?.title ?? "Kindly RSVP"}
+      </SectionTitle>
       <div className="glass-card gold-corners mx-auto max-w-2xl rounded-2xl p-7 shadow-gold sm:p-12">
         {invitedGuest && !submitted && (
           <p className="invite-rsvp-greeting">
