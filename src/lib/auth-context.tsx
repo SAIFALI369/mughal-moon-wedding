@@ -47,7 +47,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, session, loading, signOut }}>{children}</AuthContext.Provider>
+    <AuthContext.Provider value={{ user, session, loading, signOut }}>
+      {children}
+    </AuthContext.Provider>
   );
 }
 
@@ -60,5 +62,18 @@ export function getUsernameFromUser(user: User | null): string {
   // username may be in user_metadata or app_metadata
   const meta = (user.user_metadata || {}) as Record<string, unknown>;
   const app = (user.app_metadata || {}) as Record<string, unknown>;
-  return (meta.username as string) || (meta.user_name as string) || (app.username as string) || "";
+  const stored =
+    (meta.username as string) ||
+    (meta.user_name as string) ||
+    (meta.preferred_username as string) ||
+    (app.username as string) ||
+    "";
+  if (stored) return stored;
+
+  // Accounts created directly in Supabase Auth (before the username migration)
+  // have no username metadata. Use the email local part for display, but never
+  // expose the UUID-based internal identifier used by app-created accounts.
+  const email = user.email?.trim() ?? "";
+  if (!email || /@accounts\.invalid$/i.test(email)) return "";
+  return email.split("@")[0]?.trim() ?? "";
 }
