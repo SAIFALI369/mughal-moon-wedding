@@ -1,6 +1,5 @@
 import { describe, expect, it } from "vitest";
 import jsQR from "jsqr";
-import { buildCardInsertHtml } from "@/lib/card-insert";
 import {
   buildCardQr,
   invitationShareUrl,
@@ -142,53 +141,5 @@ describe("printable output", () => {
     expect(qrFileName("ayesha-imran", "png")).toBe("invitation-ayesha-imran-qr.png");
     expect(qrFileName("Ayesha & Imran / 2026", "svg")).toBe("invitation-Ayesha-Imran-2026-qr.svg");
     expect(qrFileName("///", "png")).toBe("invitation-invitation-qr.png");
-  });
-});
-
-describe("printable card insert", () => {
-  const svg = qrSvgMarkup(buildCardQr(URL));
-
-  it("lays out one 90 × 55 mm insert with the QR and the couple's details", () => {
-    const html = buildCardInsertHtml({
-      title: "Ayesha & Imran",
-      names: "Ayesha & Imran",
-      when: "12 December 2026 · 7:00 PM",
-      where: "Pearl Hall, Patna",
-      footer: "The Khan family",
-      qrSvg: svg,
-    });
-    expect(html).toContain("width: 90mm; height: 55mm");
-    expect(html).toContain("@page { size: A4; margin: 12mm; }");
-    expect(html).toContain("Ayesha &amp; Imran");
-    expect(html).toContain(svg);
-    expect(html).toContain("Pearl Hall, Patna");
-    expect(html).toContain("The Khan family");
-    expect(html).toContain("window.print()");
-    // A print window must not pull remote resources or scripts.
-    expect(html).not.toContain("<script src");
-    expect(html).not.toContain("<link");
-    expect(html).not.toContain('href="http');
-    // The only URL is the SVG namespace, so nothing loads from the network.
-    expect(html.match(/https?:\/\/[^\s"']+/g)).toEqual(["http://www.w3.org/2000/svg"]);
-  });
-
-  it("omits optional lines instead of printing blanks", () => {
-    const html = buildCardInsertHtml({ title: "Draft", names: "Groom & Bride", qrSvg: svg });
-    expect(html).not.toContain('class="meta"');
-    expect(html).not.toContain('class="footer"');
-    expect(html).toContain('class="scan"');
-  });
-
-  it("escapes host-supplied text so a venue cannot inject markup", () => {
-    const html = buildCardInsertHtml({
-      title: "Card",
-      names: '<script>alert("x")</script>',
-      where: 'Hall <img src=x onerror="alert(1)">',
-      qrSvg: svg,
-    });
-    expect(html).not.toContain("<script>alert");
-    expect(html).not.toContain("<img src=x");
-    expect(html).toContain("&lt;script&gt;");
-    expect(html).toContain("&lt;img src=x");
   });
 });

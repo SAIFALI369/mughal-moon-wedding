@@ -50,7 +50,7 @@ import {
 } from "lucide-react";
 import { invitationThemes } from "@/components/wedding/invitation-options";
 import { PlatformShell } from "@/components/platform/platform-shell";
-import { CardQrDialog } from "@/components/platform/card-qr-dialog";
+import { CardPrintDialog } from "@/components/platform/card-print-dialog";
 import { Plus, FileHeart, Globe2, FileEdit, ArrowRight } from "lucide-react";
 import { cleanupExpiredMemories, deleteSimranMemory } from "@/lib/simran-memory";
 
@@ -532,9 +532,10 @@ export function Dashboard() {
                           size="sm"
                           variant="outline"
                           onClick={() => setQrCard(card)}
-                          title={`QR code for ${card.title}`}
+                          aria-label={`Print card & QR for ${card.title}`}
+                          title={`Print card, guest QR sheets and artwork for ${card.title}`}
                         >
-                          <QrCode size={14} /> QR
+                          <QrCode size={14} /> Print &amp; QR
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -554,7 +555,7 @@ export function Dashboard() {
                                 : "Unpublish invitation"}
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => setQrCard(card)}>
-                              <QrCode size={14} /> QR code & print card
+                              <QrCode size={14} /> Print card &amp; QR
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               disabled={card.status !== "published"}
@@ -843,7 +844,7 @@ export function Dashboard() {
           </DialogContent>
         </Dialog>
 
-        <CardQrDialog card={qrCard} onOpenChange={(open) => !open && setQrCard(null)} />
+        <CardPrintDialog card={qrCard} onOpenChange={(open) => !open && setQrCard(null)} />
       </main>
     </PlatformShell>
   );

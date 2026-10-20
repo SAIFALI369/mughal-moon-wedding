@@ -148,7 +148,7 @@ describe("Personal invitation workspace", () => {
     ];
     render(<Dashboard />);
     await screen.findByText("1 active invitations");
-    fireEvent.click(screen.getByRole("button", { name: "QR" }));
+    fireEvent.click(screen.getByRole("button", { name: /Print card & QR/ }));
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText(/\/invite\/ayesha-imran/)).toBeInTheDocument();
     expect(dialog.querySelector("svg path")).not.toBeNull();
@@ -160,6 +160,51 @@ describe("Personal invitation workspace", () => {
       target: { value: "Uncle Ahmed" },
     });
     expect(within(dialog).getByText(/guest=Uncle%20Ahmed/)).toBeInTheDocument();
+  });
+
+  it("prepares a batch of personalised QR inserts from a pasted guest list", async () => {
+    mocks.rows = [
+      {
+        id: "card-qr",
+        title: "Ayesha & Imran",
+        slug: "ayesha-imran",
+        status: "published",
+        content: { groomName: "Imran", brideName: "Ayesha" },
+        created_at: "2026-10-19",
+        updated_at: "2026-10-19",
+      },
+    ];
+    render(<Dashboard />);
+    await screen.findByText("1 active invitations");
+    fireEvent.click(screen.getByRole("button", { name: /Print card & QR/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("tab", { name: "Guest list" }));
+    fireEvent.change(within(dialog).getByLabelText(/Guest names/), {
+      target: { value: "Uncle Ahmed & Family\nAyesha Khan\nAyesha Khan" },
+    });
+    expect(await within(dialog).findByText(/2 guests ready/)).toHaveTextContent("1 skipped");
+    expect(within(dialog).getByRole("button", { name: /Print 2 QR inserts/ })).toBeEnabled();
+  });
+
+  it("offers A5 front and back artwork", async () => {
+    mocks.rows = [
+      {
+        id: "card-qr",
+        title: "Ayesha & Imran",
+        slug: "ayesha-imran",
+        status: "published",
+        content: { groomName: "Imran", brideName: "Ayesha" },
+        created_at: "2026-10-19",
+        updated_at: "2026-10-19",
+      },
+    ];
+    render(<Dashboard />);
+    await screen.findByText("1 active invitations");
+    fireEvent.click(screen.getByRole("button", { name: /Print card & QR/ }));
+    const dialog = await screen.findByRole("dialog");
+    fireEvent.click(within(dialog).getByRole("tab", { name: "Print card" }));
+    expect(within(dialog).getByText("A5 front & back")).toBeInTheDocument();
+    expect(within(dialog).getByRole("button", { name: /Print A5 artwork/ })).toBeInTheDocument();
   });
 
   it("warns that a draft QR will not work until publishing", async () => {
@@ -176,7 +221,7 @@ describe("Personal invitation workspace", () => {
     ];
     render(<Dashboard />);
     await screen.findByText("1 active invitations");
-    fireEvent.click(screen.getByRole("button", { name: "QR" }));
+    fireEvent.click(screen.getByRole("button", { name: /Print card & QR/ }));
     const dialog = await screen.findByRole("dialog");
     expect(within(dialog).getByText(/still a draft/i)).toBeInTheDocument();
   });

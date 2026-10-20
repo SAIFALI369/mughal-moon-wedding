@@ -1,10 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { HeartHandshake, LockKeyhole, RefreshCw, UserRound } from "lucide-react";
+import { Download, HeartHandshake, LockKeyhole, RefreshCw, UserRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { supabase } from "@/lib/db";
 import { getUsernameFromUser, useAuth } from "@/lib/auth-context";
+import { downloadRsvps, rsvpFileName, summariseRsvps } from "@/lib/rsvp-export";
 
 type CardSummary = { id: string; title: string; slug: string; status: "draft" | "published" };
 type Reply = {
@@ -21,7 +22,7 @@ type Reply = {
 
 export const Route = createFileRoute("/profile")({ component: Profile });
 
-function Profile() {
+export function Profile() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   const [cards, setCards] = useState<CardSummary[]>([]);
@@ -82,8 +83,7 @@ function Profile() {
         Loading your profile…
       </main>
     );
-  const accepted = replies.filter((reply) => reply.attending);
-  const guests = accepted.reduce((total, reply) => total + reply.guests, 0);
+  const summary = summariseRsvps(replies);
 
   return (
     <main className="min-h-screen bg-background px-4 py-8 sm:px-6">
@@ -100,16 +100,26 @@ function Profile() {
               Your account and the private replies to cards you own.
             </p>
           </div>
-          <Button
-            type="button"
-            variant="outline"
-            disabled={busy}
-            onClick={() => {
-              void load();
-            }}
-          >
-            <RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} /> Refresh replies
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              disabled={!replies.length}
+              onClick={() => downloadRsvps(replies, rsvpFileName("all-cards"))}
+            >
+              <Download className="mr-2 h-4 w-4" /> Export all replies
+            </Button>
+            <Button
+              type="button"
+              variant="outline"
+              disabled={busy}
+              onClick={() => {
+                void load();
+              }}
+            >
+              <RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} /> Refresh replies
+            </Button>
+          </div>
         </header>
         <Card>
           <CardHeader>
@@ -148,9 +158,9 @@ function Profile() {
           )}
           <div className="mt-5 grid gap-3 sm:grid-cols-3">
             {[
-              { label: "Responses", value: replies.length },
-              { label: "Accepting", value: accepted.length },
-              { label: "Guests expected", value: guests },
+              { label: "Responses", value: summary.responses },
+              { label: "Accepting", value: summary.accepting },
+              { label: "Guests expected", value: summary.guestsExpected },
             ].map((stat) => (
               <div key={stat.label} className="rounded-xl border border-gold/30 bg-card p-5">
                 <p className="font-serif text-4xl text-gold">{stat.value}</p>
@@ -160,6 +170,27 @@ function Profile() {
               </div>
             ))}
           </div>
+          {summary.dietary.length > 0 && (
+            <div
+              role="region"
+              aria-label="Dietary summary"
+              className="mt-3 rounded-xl border border-gold/30 bg-card p-4"
+            >
+              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
+                Dietary notes from guests
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                {summary.dietary.map((entry) => (
+                  <span
+                    key={entry.label}
+                    className="rounded-full border border-gold/40 bg-background px-3 py-1 text-xs"
+                  >
+                    {entry.label} · {entry.count}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </section>
         {busy && (
           <p role="status" className="text-sm text-muted-foreground">
@@ -181,26 +212,66 @@ function Profile() {
                 aria-label={`RSVPs for ${card.title}`}
                 className="scroll-mt-6 rounded-2xl border border-border bg-card p-5 sm:p-7"
               >
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
-                    <h3 className="font-serif text-2xl">{card.title}</h3>
-                    <p className="mt-1 text-xs text-muted-foreground">
-                      {card.status === "draft"
-                        ? "Private draft — previous replies remain visible to you"
-                        : "Published"}{" "}
-                      · {cardReplies.length} response{cardReplies.length === 1 ? "" : "s"}
-                    </p>
-                  </div>
-                  {card.status === "published" && (
-                    <Link
-                      to="/invite/$slug"
-                      params={{ slug: card.slug }}
-                      className="text-sm text-gold underline underline-offset-4"
-                    >
-                      Open invitation
-                    </Link>
-                  )}
-                </div>
+                {(() => {
+                  const cardSummary = summariseRsvps(cardReplies);
+                  return (
+                    <>
+                      <div className="flex flex-wrap items-center justify-between gap-2">
+                        <div>
+                          <h3 className="font-serif text-2xl">{card.title}</h3>
+                          <p className="mt-1 text-xs text-muted-foreground">
+                            {card.status === "draft"
+                              ? "Private draft — previous replies remain visible to you"
+                              : "Published"}{" "}
+                            · {cardSummary.responses} response
+                            {cardSummary.responses === 1 ? "" : "s"}
+                          </p>
+                        </div>
+                        <div className="flex flex-wrap items-center gap-3">
+                          {cardSummary.responses > 0 && (
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => downloadRsvps(cardReplies, rsvpFileName(card.slug))}
+                            >
+                              <Download className="mr-2 h-4 w-4" /> CSV
+                            </Button>
+                          )}
+                          {card.status === "published" && (
+                            <Link
+                              to="/invite/$slug"
+                              params={{ slug: card.slug }}
+                              className="text-sm text-gold underline underline-offset-4"
+                            >
+                              Open invitation
+                            </Link>
+                          )}
+                        </div>
+                      </div>
+                      {cardSummary.responses > 0 && (
+                        <dl className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                          {[
+                            { label: "Attending", value: cardSummary.accepting },
+                            { label: "Guests", value: cardSummary.guestsExpected },
+                            { label: "Declined", value: cardSummary.declined },
+                            { label: "Dietary notes", value: cardSummary.dietary.length },
+                          ].map((stat) => (
+                            <div
+                              key={stat.label}
+                              className="rounded-lg border border-border bg-background px-3 py-2"
+                            >
+                              <dt className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                                {stat.label}
+                              </dt>
+                              <dd className="font-serif text-xl">{stat.value}</dd>
+                            </div>
+                          ))}
+                        </dl>
+                      )}
+                    </>
+                  );
+                })()}
                 {!cardReplies.length && (
                   <p className="mt-5 text-sm text-muted-foreground">
                     No guest replies yet for this card.
