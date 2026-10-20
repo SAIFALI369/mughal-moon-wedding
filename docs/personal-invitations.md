@@ -20,18 +20,48 @@ Every theme and framework now carries the same celebration features as the main 
 
 The main Mohsin–Simran invitation, gallery, wishes and RSVP are separate from every creator's card. Your card never borrows their couple portraits or event story.
 
-## QR codes for printed cards
+## Print package: QR, inserts and A5 artwork
 
-Each row in **Your invitations** has a **QR** button (also under the row's “more” menu as _QR code & print card_). It opens a dialog with the code for that card's public `/invite/:slug` link, plus:
+Each row in **Your invitations** has a **Print card & QR** button (also under the row's “more” menu). It opens a three-tab dialog — **QR code**, **Guest list** and **Print card** — that turns one card into everything a print shop needs.
+
+### QR code
 
 - **PNG (1200 px)** — drop into Word, Canva or a print template. 1200 px is 300 dpi at four inches, so it stays sharp on a card or table tent.
 - **SVG for print** — vector output for a professional print shop. It has no fixed pixel size and prints crisply at any dimension.
-- **Print insert** — opens a print-ready 90 × 55 mm insert with the QR on the left, the couple's names, date and venue on the right, and “Scan for the full invitation, map and RSVP”. The print window contains only the insert, so the dashboard is never printed. Choose “Save as PDF” in the print dialog to send it to a shop.
+- **Print insert** — a print-ready 90 × 55 mm insert with the QR on the left, the couple's names, the date and venue on the right, and “Scan for the map & RSVP”. The print window contains only the insert, so the dashboard is never printed.
 - **Copy link** — the exact URL the code points to.
 
 A guest name can be added before exporting, which produces the same personalised `?guest=Name` link as the share panel, so a printed card can greet its recipient by name.
 
-Practical limits, enforced by the renderer:
+### A5 front and back artwork
+
+The **Print card** tab opens an A5 portrait sheet with two pages, built from the card's own theme colours and text:
+
+- **Front** — hosting families, the couple's names, the ceremony, date and time, venue and address, and a tinted QR block.
+- **Back** — names, your message, the full **order of celebration** (the main ceremony plus every extra event with its own date, time and venue), and **good to know** lines for dress code, RSVP-by date, host contact and arrival notes, with a second QR.
+
+Empty optional fields are left off instead of printing a lone label. In the browser print dialog choose **Save as PDF**, set **A5**, and keep margins at **none** — the sheet already includes its own margins. The result can go straight to a shop; nothing else on the dashboard is printed.
+
+### Guest list → batch personalised QR inserts
+
+The **Guest list** tab prints one insert per guest, each QR pointing at `?guest=Their%20Name` so the invitation greets them personally.
+
+- Paste names one per line, or import a `.csv` / `.txt` file up to **1 MB**.
+- A CSV with a **Name** / *Full name* / *Guest* / *Family* / *Mehmaan* / *Naam* header uses that column; without a header the parser picks the column that looks most like names. Phone, email, serial-number, address and notes columns are ignored.
+- Names shorter than two characters, without letters, or containing symbols are skipped. Duplicates are dropped regardless of case and spacing. Names are capped at 80 characters and the list at **300 guests**; anything beyond that is reported and not printed.
+- **Eight inserts** fit on one A4 sheet at 90 × 55 mm with dashed cut guides, and longer lists paginate automatically. The dialog shows the guest count and the number of A4 sheets before you print.
+
+### RSVP dashboard and export
+
+**My profile & RSVPs** (`/profile`) now summarises replies instead of only listing them:
+
+- **Responses**, **accepting** and **guests expected** across every card, plus a **dietary summary** that groups notes case-insensitively (e.g. “Vegetarian · 2”, “Jain · 1”).
+- Each card gets its own **responses / attending / guests / declined / dietary** figures and a **CSV** button; **Export all replies** downloads every card at once.
+- The CSV has the columns *Guest name, Attending, Guests, Contact, Dietary notes, Message, Replied at*. It is UTF-8 with a byte-order mark and CRLF line endings, so Hindi and Urdu names open correctly in Excel, and cells starting with `=`, `+`, `-` or `@` are prefixed with `'` so a typed name cannot run as a spreadsheet formula. Guests who declined are written as `No` with `0` guests.
+
+Replies remain owner-only: the profile reads only cards you own, and the database grants no public read on `invitation_rsvps`.
+
+Practical limits, enforced by the QR renderer:
 
 - Error correction is **Q (25%)**, so smudges, low ink or a glossy finish still scan.
 - The quiet zone is **4 modules** — the minimum the QR specification allows. The generated code already includes it, so leave that white border visible when placing the image.
@@ -39,6 +69,7 @@ Practical limits, enforced by the renderer:
 - A draft card's QR works, but scans show “invitation not available” until the card is published. The dialog says so before you print anything.
 - QR generation is local to the browser (`qrcode-generator`, MIT). No guest data, card content or URL is sent to a third-party QR service.
 - Print at least **2 cm** wide, flat, on matte stock. Test one copy with a phone before the full run — `src/test/card-qr.test.ts` decodes the generated matrix back to the link in CI, but a printer can still mis-handle scaling.
+- If the browser blocks the print window, allow pop-ups for the site; the dialog shows that message instead of failing silently.
 
 ## Your card's AI host assistant and soundtrack
 
@@ -78,4 +109,6 @@ Identical SQL lives in `drizzle/migrations/0009_private_card_rsvps_and_portraits
 
 ## Local verification
 
-`npm test` includes all 8 × 4 theme/framework combinations (including gallery, wishes, map and share sections in every one), required-field and element-selection tests, a browser-form mock for portrait compression and RSVP insertion, and PGlite policy tests for anonymous insert, owner-only reads, the twelve-photo limit, gallery and wishes toggles, expired or draft cards, refused anonymous gallery uploads and rejected invalid RSVP names. Run `npx tsc --noEmit` and `npm run build` as well. These tests do **not** replace checking the live database after deployment.
+`npm test` includes all 8 × 4 theme/framework combinations (including gallery, wishes, map and share sections in every one), required-field and element-selection tests, a browser-form mock for portrait compression and RSVP insertion, and PGlite policy tests for anonymous insert, owner-only reads, the twelve-photo limit, gallery and wishes toggles, expired or draft cards, refused anonymous gallery uploads and rejected invalid RSVP names. The print package is covered separately: `src/test/guest-list.test.ts` (CSV quoting, header detection, dedupe, rejected rows, the 300-guest cap), `src/test/rsvp-export.test.ts` (totals, dietary grouping, CSV BOM/CRLF and the formula guard), `src/test/print-sheets.test.ts` (eight inserts per A4 sheet, escaping, palette per theme, A5 front and back) and `src/test/profile-rsvps.test.tsx` (per-card stats and both CSV downloads). `src/test/card-qr.test.ts` still decodes a generated QR back to the invitation link.
+
+Run `npx tsc --noEmit` and `npm run build` as well. For a visual check of the print output, open the dialog, print to PDF, and confirm the page size is **A5** (artwork) or **A4** (insert sheets) before sending anything to a shop. These tests do **not** replace checking the live database after deployment.
