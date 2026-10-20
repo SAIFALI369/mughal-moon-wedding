@@ -112,7 +112,7 @@ function CardEditor() {
           </CardHeader>
           <CardContent>
             <form onSubmit={save} className="space-y-4">
-              <InvitationDetailsFields value={form} onChange={setForm} />
+              <InvitationDetailsFields value={form} onChange={setForm} cardId={card.id} />
               {error && <p className="text-sm text-destructive">{error}</p>}
               <div className="flex gap-2">
                 <Button type="submit" disabled={busy} className="bg-burgundy text-ivory">

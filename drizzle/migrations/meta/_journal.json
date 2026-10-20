@@ -99,6 +99,13 @@
       "when": 1792459200000,
       "tag": "0013_automatic_account_access",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1792502400000,
+      "tag": "0014_card_gallery_and_wishes",
+      "breakpoints": true
     }
   ]
 }

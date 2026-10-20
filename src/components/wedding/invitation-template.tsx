@@ -1,25 +1,34 @@
 import { motion } from "framer-motion";
+import { useEffect, useState } from "react";
 import {
   CalendarDays,
   CalendarHeart,
   CalendarPlus,
+  Check,
   Clock3,
+  Copy,
+  ExternalLink,
   Heart,
   MapPin,
   Music2,
   Phone,
   Quote,
+  Share2,
   Sparkles as SparklesIcon,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Countdown, Hero, Preloader } from "./sections";
 import { fadeUp } from "./ornaments";
 import {
   buildInvitationCalendarUrl,
+  buildInvitationEventCalendarUrl,
   getInvitationCountdownDate,
   getInvitationAssistantName,
   getInvitationDetails,
   getInvitationMonogram,
+  invitationMapEmbedUrl,
   parseInvitationDate,
+  type InvitationDetails,
 } from "./invitation-details";
 import { invitationArt } from "./invitation-art";
 import { CouplePortraits, InvitationStage } from "./invitation-stage";
@@ -34,6 +43,8 @@ import {
 } from "./invitation-ornaments";
 import { PersonalConcierge } from "./personal-concierge";
 import { InvitationMusicPlayer } from "./invitation-music-player";
+import { InvitationGallery } from "./invitation-gallery";
+import { InvitationWishes } from "./invitation-wishes";
 
 function directionsUrl(venue: string, address: string): string | null {
   const location = [venue, address].filter(Boolean).join(", ");
@@ -300,6 +311,11 @@ export function PersonalInvitation({
               <a href="#celebration" className="transition hover:text-gold">
                 Celebration
               </a>
+              {details.elements.gallery && (
+                <a href="#gallery" className="hidden transition hover:text-gold sm:inline">
+                  Gallery
+                </a>
+              )}
               {details.elements.venueMap && (
                 <a href="#venue" className="transition hover:text-gold">
                   Venue
@@ -410,6 +426,10 @@ export function PersonalInvitation({
             </div>
           </motion.div>
         </section>
+      )}
+
+      {details.elements.gallery && (
+        <InvitationGallery cardId={cardId} details={details} preview={preview} />
       )}
 
       <section
@@ -539,6 +559,16 @@ export function PersonalInvitation({
                   {details.venue}
                   {details.address ? `, ${details.address}` : ""}
                 </p>
+                {calendarUrl && (
+                  <a
+                    href={calendarUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="invite-text-link"
+                  >
+                    <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" /> Add to calendar
+                  </a>
+                )}
               </div>
             </article>
             {details.additionalEvents.map((event, index) => (
@@ -557,16 +587,34 @@ export function PersonalInvitation({
                     {event.venue}
                     {event.address ? `, ${event.address}` : ""}
                   </p>
-                  {details.elements.venueMap && (
-                    <a
-                      href={directionsUrl(event.venue, event.address) || "#celebration"}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="invite-text-link"
-                    >
-                      <MapPin className="h-3.5 w-3.5" aria-hidden="true" /> Directions
-                    </a>
-                  )}
+                  <div className="invite-timeline-links">
+                    {details.elements.venueMap && (
+                      <a
+                        href={directionsUrl(event.venue, event.address) || "#celebration"}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="invite-text-link"
+                      >
+                        <MapPin className="h-3.5 w-3.5" aria-hidden="true" /> Directions
+                      </a>
+                    )}
+                    {(() => {
+                      const eventCalendar = buildInvitationEventCalendarUrl(details, event);
+                      return (
+                        eventCalendar && (
+                          <a
+                            href={eventCalendar}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="invite-text-link"
+                          >
+                            <CalendarPlus className="h-3.5 w-3.5" aria-hidden="true" /> Add to
+                            calendar
+                          </a>
+                        )
+                      );
+                    })()}
+                  </div>
                 </div>
               </motion.article>
             ))}
@@ -604,6 +652,7 @@ export function PersonalInvitation({
               )}
             </div>
           </motion.div>
+          <InvitationVenueMap details={details} />
         </section>
       )}
 
@@ -654,6 +703,12 @@ export function PersonalInvitation({
         </div>
       )}
 
+      {details.elements.wishes && (
+        <InvitationWishes cardId={cardId} details={details} preview={preview} />
+      )}
+
+      {!preview && slug && <InvitationShare details={details} slug={slug} />}
+
       {preview ? (
         <InvitationExtras details={details} inline preview={preview} />
       ) : (
@@ -687,6 +742,154 @@ export function PersonalInvitation({
         )}
       </footer>
     </div>
+  );
+}
+
+/**
+ * Same interactive behaviour as the main invitation's venue section: one tab per
+ * celebration, an embedded map, and a link out — built from this card's venues only.
+ */
+function InvitationVenueMap({ details }: { details: InvitationDetails }) {
+  const locations = [
+    {
+      label: details.eventType || "Main celebration",
+      date: details.date,
+      time: details.time,
+      venue: details.venue,
+      address: details.address,
+    },
+    ...details.additionalEvents.map((event) => ({
+      label: event.title,
+      date: event.date,
+      time: event.time,
+      venue: event.venue,
+      address: event.address,
+    })),
+  ].filter((location) => location.venue.trim().length > 0);
+  const [active, setActive] = useState(0);
+
+  if (locations.length === 0) return null;
+  const current = locations[Math.min(active, locations.length - 1)];
+  const embed = invitationMapEmbedUrl([current.venue, current.address].filter(Boolean).join(", "));
+  const external = directionsUrl(current.venue, current.address);
+
+  return (
+    <motion.div {...fadeUp} className="invite-venue-map mx-auto mt-10 max-w-3xl">
+      {locations.length > 1 && (
+        <div role="tablist" aria-label="Celebration venues" className="invite-map-tabs">
+          {locations.map((location, index) => (
+            <button
+              key={`${index}-${location.label}`}
+              type="button"
+              role="tab"
+              aria-selected={index === Math.min(active, locations.length - 1)}
+              className={`invite-map-tab ${index === Math.min(active, locations.length - 1) ? "is-active" : ""}`}
+              onClick={() => setActive(index)}
+            >
+              {location.label}
+            </button>
+          ))}
+        </div>
+      )}
+      {embed && (
+        <div className="invite-map-frame">
+          <iframe
+            key={`${current.venue}-${current.address}`}
+            title={`Map of ${current.venue}`}
+            src={embed}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+          />
+        </div>
+      )}
+      <div className="invite-map-meta">
+        <p className="invite-map-venue">
+          {current.label} · {current.venue}
+        </p>
+        <p className="invite-map-when">
+          {[current.date, current.time].filter(Boolean).join(" · ") || "Details to be announced"}
+        </p>
+        {external && (
+          <a href={external} target="_blank" rel="noreferrer" className="invite-text-link">
+            <ExternalLink className="h-3.5 w-3.5" aria-hidden="true" /> Open in Google Maps
+          </a>
+        )}
+      </div>
+    </motion.div>
+  );
+}
+
+/**
+ * Share panel: a personalised link per guest, copy, and WhatsApp — the same
+ * convenience the main invitation's footer offers, driven by this card's slug.
+ */
+function InvitationShare({ details, slug }: { details: InvitationDetails; slug: string }) {
+  const [guest, setGuest] = useState("");
+  const [copied, setCopied] = useState(false);
+
+  function buildLink(): string {
+    const origin = typeof window === "undefined" ? "" : window.location.origin;
+    const name = guest.trim();
+    return `${origin}/invite/${slug}${name ? `?guest=${encodeURIComponent(name)}` : ""}`;
+  }
+
+  async function copy() {
+    const link = buildLink();
+    try {
+      await navigator.clipboard.writeText(link);
+      setCopied(true);
+      toast.success("Personalised invitation link copied");
+      setTimeout(() => setCopied(false), 2500);
+    } catch {
+      toast("Copy this link: " + link);
+    }
+  }
+
+  function whatsapp() {
+    const name = guest.trim();
+    const greeting = name ? `Dear ${name}, ` : "";
+    const message = `${greeting}you are warmly invited to celebrate with ${details.groomName} & ${details.brideName}${details.date ? ` on ${details.date}` : ""}${details.venue ? ` at ${details.venue}` : ""}. View the invitation and reply here: ${buildLink()}`;
+    window.open(
+      `https://wa.me/?text=${encodeURIComponent(message)}`,
+      "_blank",
+      "noopener,noreferrer",
+    );
+  }
+
+  return (
+    <section
+      id="share"
+      className="invite-section invite-suite invite-suite-share relative overflow-hidden px-6 py-20 text-center sm:py-24"
+    >
+      <SuiteHeading eyebrow="Pass it on">Share the Invitation</SuiteHeading>
+      <motion.div {...fadeUp} className="invite-share-card mx-auto max-w-2xl">
+        <p className="invite-share-copy">
+          Add a guest or family name to create a personalised link — the greeting follows them to
+          the card, and their RSVP is still private.
+        </p>
+        <div className="invite-share-controls">
+          <label className="invite-share-field">
+            <span className="sr-only">Guest or family name</span>
+            <input
+              value={guest}
+              onChange={(event) => setGuest(event.target.value)}
+              maxLength={80}
+              placeholder="e.g. Uncle Ahmed & Family"
+            />
+          </label>
+          <button type="button" className="invite-share-secondary" onClick={() => void copy()}>
+            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied ? "Copied" : "Copy link"}
+          </button>
+          <button type="button" className="invite-share-primary" onClick={whatsapp}>
+            <Share2 className="h-4 w-4" /> WhatsApp
+          </button>
+        </div>
+        <p className="invite-share-hint">
+          Shares <span>/invite/{slug}</span> — this couple&rsquo;s own invitation.
+        </p>
+      </motion.div>
+    </section>
   );
 }
 

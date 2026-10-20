@@ -60,11 +60,13 @@ const elementsSchema = z.object({
   message: z.boolean().default(defaultInvitationElements.message),
   portraits: z.boolean().default(defaultInvitationElements.portraits),
   story: z.boolean().default(defaultInvitationElements.story),
+  gallery: z.boolean().default(defaultInvitationElements.gallery),
   schedule: z.boolean().default(defaultInvitationElements.schedule),
   venueMap: z.boolean().default(defaultInvitationElements.venueMap),
   dressCode: z.boolean().default(defaultInvitationElements.dressCode),
   contact: z.boolean().default(defaultInvitationElements.contact),
   rsvp: z.boolean().default(defaultInvitationElements.rsvp),
+  wishes: z.boolean().default(defaultInvitationElements.wishes),
 });
 
 export const invitationContentSchema = z.object({

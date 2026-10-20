@@ -107,11 +107,13 @@ export const defaultInvitationElements = {
   message: true,
   portraits: true,
   story: true,
+  gallery: true,
   schedule: true,
   venueMap: true,
   dressCode: true,
   contact: true,
   rsvp: true,
+  wishes: true,
 };
 export type InvitationElements = typeof defaultInvitationElements;
 export type InvitationElement = keyof InvitationElements;
@@ -131,6 +133,11 @@ export const invitationElementOptions: {
   },
   { id: "story", label: "Our story", description: "How your journey began" },
   {
+    id: "gallery",
+    label: "Photo gallery",
+    description: "A shared wall of photos, with lightbox and guest uploads",
+  },
+  {
     id: "schedule",
     label: "Additional events",
     description: "Reception, sangeet and other celebrations",
@@ -139,4 +146,9 @@ export const invitationElementOptions: {
   { id: "dressCode", label: "Dress code", description: "What guests should wear" },
   { id: "contact", label: "Host contact", description: "Who guests can call for questions" },
   { id: "rsvp", label: "Guest RSVP", description: "Collect replies privately in your profile" },
+  {
+    id: "wishes",
+    label: "Wishes wall",
+    description: "Let guests leave a public blessing beside your invitation",
+  },
 ];
