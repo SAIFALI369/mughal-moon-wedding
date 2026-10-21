@@ -7,3 +7,4 @@ export * from "./scratch-story";
 export * from "./flip-events";
 export * from "./venue-hunt";
 export * from "./atmosphere";
+export * from "./sculpture";
