@@ -1,10 +1,19 @@
+import { StorybookSculpture } from "./sculpture";
 import { motion } from "framer-motion";
 import type { InvitationDetails } from "../invitation-details";
 import { invitationArt } from "../invitation-art";
 export function StorybookHero({ details }: { details: InvitationDetails }) {
   return (
     <section id="invitation-top" tabIndex={-1} className="sb-hero">
-      <img src={invitationArt[details.theme]} alt="" fetchPriority="high" className="sb-hero-art" />
+      <div className="sb-hero-visual">
+        <img
+          src={invitationArt[details.theme]}
+          alt=""
+          fetchPriority="high"
+          className="sb-hero-art"
+        />
+        <StorybookSculpture details={details} />
+      </div>
       <div className="sb-hero-copy">
         <p className="sb-eyebrow">{details.hosts || "Together with our families"}</p>
         <motion.div initial={false} animate={{ opacity: 1, y: 0 }} transition={{ duration: 1 }}>

@@ -7,6 +7,7 @@ import {
   FlipEvents,
   VenueHunt,
   StorybookAtmosphere,
+  StorybookSculpture,
 } from "./storybook";
 import { motion } from "framer-motion";
 import { useEffect, useState, type ReactNode } from "react";
@@ -670,6 +671,12 @@ export function PersonalInvitation({
         </div>
       )}
 
+      {storybook && (
+        <section className="sb-sculpture-interlude" aria-label="A keepsake to play with">
+          <p className="sb-eyebrow">A little wonder between chapters</p>
+          <StorybookSculpture details={details} compact />
+        </section>
+      )}
       {storybook && details.elements.schedule && <FlipEvents details={details} />}
       {storybook && details.elements.venueMap && <VenueHunt details={details} />}
       {interactive && <PlayTheCard layout={layout} details={details} guestName={guestName} />}
