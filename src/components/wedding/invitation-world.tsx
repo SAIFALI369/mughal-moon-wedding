@@ -167,19 +167,19 @@ export function CatMascot({
   mood?: string;
 }) {
   return (
-    <svg viewBox="0 0 120 120" className={className} aria-hidden="true" fill="none">
+    <svg viewBox="0 0 120 120" className={`mascot-alive ${className}`} aria-hidden="true" fill="none">
       <ellipse cx="60" cy="106" rx="30" ry="5" fill="currentColor" opacity=".12" />
       <path
         d="M38 100c-6-8-8-18-6-27 2-11 10-18 20-18h16c10 0 18 7 20 18 2 9 0 19-6 27"
         fill="currentColor"
         opacity=".92"
       />
-      <path d="M41 60 35 36l18 10Z" fill="currentColor" opacity=".92" />
-      <path d="M79 60 85 36 67 46Z" fill="currentColor" opacity=".92" />
+      <path className="m-ear-l" d="M41 60 35 36l18 10Z" fill="currentColor" opacity=".92" />
+      <path className="m-ear-r" d="M79 60 85 36 67 46Z" fill="currentColor" opacity=".92" />
       <path d="M43 44l-2-9 8 5Z" fill="#f7c8b8" opacity=".8" />
       <path d="M77 44l2-9-8 5Z" fill="#f7c8b8" opacity=".8" />
-      <ellipse cx="51" cy="66" rx="3.4" ry="4.2" fill={mood === "day" ? "#2b1d12" : "#f8e7a8"} />
-      <ellipse cx="69" cy="66" rx="3.4" ry="4.2" fill={mood === "day" ? "#2b1d12" : "#f8e7a8"} />
+      <ellipse className="m-eye" cx="51" cy="66" rx="3.4" ry="4.2" fill={mood === "day" ? "#2b1d12" : "#f8e7a8"} />
+      <ellipse className="m-eye" cx="69" cy="66" rx="3.4" ry="4.2" fill={mood === "day" ? "#2b1d12" : "#f8e7a8"} />
       <path d="M57 74h6l-3 3Z" fill="#f0a898" />
       <path
         d="M60 77c0 3-5 4-6 1M60 77c0 3 5 4 6 1"
@@ -195,6 +195,7 @@ export function CatMascot({
         strokeLinecap="round"
       />
       <path
+        className="m-cat-tail"
         d="M92 100c9-4 16-12 18-22"
         stroke="currentColor"
         strokeWidth="7"
@@ -208,9 +209,10 @@ export function CatMascot({
 
 export function SquirrelMascot({ className = "" }: { className?: string }) {
   return (
-    <svg viewBox="0 0 120 120" className={className} aria-hidden="true" fill="none">
+    <svg viewBox="0 0 120 120" className={`mascot-alive ${className}`} aria-hidden="true" fill="none">
       <ellipse cx="58" cy="106" rx="24" ry="4" fill="currentColor" opacity=".12" />
       <path
+        className="m-sq-tail"
         d="M78 96c14-6 24-20 22-36-2-18-18-28-32-22-9 4-10 15-4 20 7 6 17 1 18-8"
         stroke="currentColor"
         strokeWidth="10"
@@ -221,8 +223,8 @@ export function SquirrelMascot({ className = "" }: { className?: string }) {
       <circle cx="46" cy="57" r="16" fill="currentColor" opacity=".95" />
       <path d="M34 46l-3-10 10 5Z" fill="currentColor" opacity=".95" />
       <path d="M58 46l3-10-10 5Z" fill="currentColor" opacity=".95" />
-      <ellipse cx="40" cy="56" rx="2.8" ry="3.4" fill="#20140c" />
-      <ellipse cx="52" cy="56" rx="2.8" ry="3.4" fill="#20140c" />
+      <ellipse className="m-eye" cx="40" cy="56" rx="2.8" ry="3.4" fill="#20140c" />
+      <ellipse className="m-eye" cx="52" cy="56" rx="2.8" ry="3.4" fill="#20140c" />
       <circle cx="46" cy="63" r="2.2" fill="#20140c" />
       <path d="M46 65v3" stroke="#20140c" strokeWidth="1.2" strokeLinecap="round" />
       <ellipse cx="40" cy="72" rx="7" ry="9" fill="#f6d8a8" opacity=".9" />
