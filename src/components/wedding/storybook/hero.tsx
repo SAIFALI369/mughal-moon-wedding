@@ -1,10 +1,12 @@
 import { StorybookSculpture } from "./sculpture";
+import { StorybookCinema } from "./living-motifs";
 import { motion } from "framer-motion";
 import type { InvitationDetails } from "../invitation-details";
 import { invitationArt } from "../invitation-art";
 export function StorybookHero({ details }: { details: InvitationDetails }) {
   return (
     <section id="invitation-top" tabIndex={-1} className="sb-hero">
+      <StorybookCinema theme={details.theme} />
       <div className="sb-hero-visual">
         <img
           src={invitationArt[details.theme]}
