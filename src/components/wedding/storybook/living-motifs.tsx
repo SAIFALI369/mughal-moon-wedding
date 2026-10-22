@@ -1,4 +1,4 @@
-import type { CSSProperties } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
 
 /**
  * Cinematic hero effect for the three keepsake themes, replacing the old
@@ -9,6 +9,16 @@ export function LivingMotifs(_props: { theme: string }) {
 }
 
 export function StorybookCinema({ theme }: { theme: string }) {
+  const [take, setTake] = useState(0);
+  useEffect(() => {
+    const replay = () => window.setTimeout(() => setTake((n) => n + 1), 700);
+    window.addEventListener("storybook:opened", replay);
+    return () => window.removeEventListener("storybook:opened", replay);
+  }, []);
+  return <CinemaTake key={take} theme={theme} />;
+}
+
+function CinemaTake({ theme }: { theme: string }) {
   if (theme === "royal-rajmahal") {
     return (
       <div className="cine cine-curtains" aria-hidden="true">
