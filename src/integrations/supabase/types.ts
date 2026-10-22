@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      ai_message_usage: {
+        Row: {
+          scope: string
+          updated_at: string
+          used: number
+          visitor_key: string
+          window_started_at: string
+        }
+        Insert: {
+          scope: string
+          updated_at?: string
+          used?: number
+          visitor_key: string
+          window_started_at?: string
+        }
+        Update: {
+          scope?: string
+          updated_at?: string
+          used?: number
+          visitor_key?: string
+          window_started_at?: string
+        }
+        Relationships: []
+      }
       invitation_cards: {
         Row: {
           content: Json
@@ -52,6 +76,193 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      invitation_photos: {
+        Row: {
+          caption: string
+          card_id: string
+          created_at: string
+          id: string
+          image_data: string
+          slot: number
+          source: string
+          uploader_id: string | null
+        }
+        Insert: {
+          caption?: string
+          card_id: string
+          created_at?: string
+          id?: string
+          image_data: string
+          slot: number
+          source?: string
+          uploader_id?: string | null
+        }
+        Update: {
+          caption?: string
+          card_id?: string
+          created_at?: string
+          id?: string
+          image_data?: string
+          slot?: number
+          source?: string
+          uploader_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_photos_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "invitation_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitation_rsvps: {
+        Row: {
+          attending: boolean
+          card_id: string
+          contact: string
+          created_at: string
+          dietary: string
+          guests: number
+          id: string
+          message: string
+          name: string
+        }
+        Insert: {
+          attending: boolean
+          card_id: string
+          contact?: string
+          created_at?: string
+          dietary?: string
+          guests: number
+          id?: string
+          message?: string
+          name: string
+        }
+        Update: {
+          attending?: boolean
+          card_id?: string
+          contact?: string
+          created_at?: string
+          dietary?: string
+          guests?: number
+          id?: string
+          message?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_rsvps_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "invitation_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      invitation_wishes: {
+        Row: {
+          card_id: string
+          created_at: string
+          id: string
+          message: string
+          name: string
+        }
+        Insert: {
+          card_id: string
+          created_at?: string
+          id?: string
+          message: string
+          name: string
+        }
+        Update: {
+          card_id?: string
+          created_at?: string
+          id?: string
+          message?: string
+          name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitation_wishes_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "invitation_cards"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      partner_cash_packages: {
+        Row: {
+          amount_inr: number
+          card_credits: number
+          id: string
+          owner_id: string
+          payment_method: string
+          recorded_at: string
+        }
+        Insert: {
+          amount_inr?: number
+          card_credits?: number
+          id?: string
+          owner_id: string
+          payment_method?: string
+          recorded_at?: string
+        }
+        Update: {
+          amount_inr?: number
+          card_credits?: number
+          id?: string
+          owner_id?: string
+          payment_method?: string
+          recorded_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "partner_cash_packages_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "print_partners"
+            referencedColumns: ["owner_id"]
+          },
+        ]
+      }
+      print_partners: {
+        Row: {
+          active: boolean
+          cards_created: number
+          cards_purchased: number
+          created_at: string
+          owner_id: string
+          shop_name: string
+        }
+        Insert: {
+          active?: boolean
+          cards_created?: number
+          cards_purchased?: number
+          created_at?: string
+          owner_id: string
+          shop_name: string
+        }
+        Update: {
+          active?: boolean
+          cards_created?: number
+          cards_purchased?: number
+          created_at?: string
+          owner_id?: string
+          shop_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "print_partners_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: true
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       profiles: {
         Row: {
@@ -172,13 +383,50 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      add_invitation_photo: {
+        Args: { p_card_id: string; photo_caption: string; photo_data: string }
+        Returns: number
+      }
       add_wedding_photo: {
         Args: { photo_caption: string; photo_data: string }
         Returns: number
       }
+      consume_ai_message: {
+        Args: {
+          p_limit: number
+          p_scope: string
+          p_visitor: string
+          p_window_hours?: number
+        }
+        Returns: Json
+      }
       delete_expired_invitations: { Args: never; Returns: number }
+      delete_invitation_photo: {
+        Args: { p_card_id: string; target_slot: number }
+        Returns: undefined
+      }
       delete_wedding_photo: {
         Args: { target_slot: number }
+        Returns: undefined
+      }
+      ensure_account_access: {
+        Args: { account_id: string }
+        Returns: undefined
+      }
+      provision_print_partner: {
+        Args: {
+          requested_password: string
+          requested_shop_name: string
+          requested_username: string
+        }
+        Returns: string
+      }
+      record_partner_cash_package: {
+        Args: { requested_shop_name: string; requested_username: string }
+        Returns: string
+      }
+      refund_ai_message: {
+        Args: { p_scope: string; p_visitor: string }
         Returns: undefined
       }
       register_username: {
@@ -193,6 +441,8 @@ export type Database = {
         Args: { requested_password: string; requested_username: string }
         Returns: string
       }
+      valid_guest_name: { Args: { candidate: string }; Returns: boolean }
+      valid_invitation_portrait: { Args: { photo: string }; Returns: boolean }
     }
     Enums: {
       [_ in never]: never

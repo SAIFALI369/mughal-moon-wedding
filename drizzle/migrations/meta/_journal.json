@@ -120,6 +120,13 @@
       "when": 1792612800000,
       "tag": "0016_shared_ai_quota",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1792664911306,
+      "tag": "0017_tighten_rsvp_insert_policy",
+      "breakpoints": true
     }
   ]
 }
