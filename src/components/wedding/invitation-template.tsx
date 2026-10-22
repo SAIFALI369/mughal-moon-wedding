@@ -1,3 +1,4 @@
+import { ThemeCinema } from "./theme-cinema";
 import {
   isStorybook,
   StorybookEntry,
@@ -399,6 +400,7 @@ export function PersonalInvitation({
       className="personal-invite min-h-screen overflow-x-hidden bg-background text-foreground"
     >
       {!storybook && <ThemeBackdrop theme={details.theme} art={art} />}
+      {!storybook && <ThemeCinema theme={details.theme} />}
       {storybook && (
         <>
           <LivingMotifs theme={details.theme} />
