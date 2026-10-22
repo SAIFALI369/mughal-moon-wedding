@@ -8288,3 +8288,6 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner { 
   .cine { display:none; }
   .mascot-alive *, .mascot-alive { animation:none!important; }
 }
+.sb-hero > :not(.cine) { position:relative; z-index:2; }
+.cine-lotus { z-index:1; }
+.cine-lotus-svg { opacity:.55; }
