@@ -221,8 +221,10 @@ export function SectionTitle({
 export function Sparkles({ count = 70 }: { count?: number }) {
   const ref = useRef<HTMLCanvasElement>(null);
   useEffect(() => {
-    const c = ref.current!;
-    const ctx = c.getContext("2d")!;
+    const c = ref.current;
+    if (!c || /jsdom/i.test(navigator.userAgent)) return;
+    const ctx = c.getContext("2d");
+    if (!ctx) return;
     let raf = 0;
     const resize = () => {
       c.width = c.offsetWidth * devicePixelRatio;

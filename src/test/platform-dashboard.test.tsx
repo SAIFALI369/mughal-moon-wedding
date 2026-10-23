@@ -1,5 +1,5 @@
-import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { act, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { Dashboard } from "@/routes/dashboard";
 
@@ -71,7 +71,19 @@ vi.mock("@/components/wedding/invitation-template", () => ({
   PersonalInvitation: () => <div>Invitation preview</div>,
 }));
 
+function setViewportWidth(width: number) {
+  act(() => {
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: width,
+    });
+    window.dispatchEvent(new Event("resize"));
+  });
+}
+
 beforeEach(() => {
+  setViewportWidth(1280);
   mocks.rows = [];
   mocks.creditsUsed = 0;
   mocks.active = true;
@@ -79,21 +91,23 @@ beforeEach(() => {
   mocks.order.mockImplementation(async () => ({ data: mocks.rows, error: null }));
 });
 
+afterEach(() => {
+  setViewportWidth(1024);
+});
+
 describe("Personal invitation workspace", () => {
   it("loads only the current owner's cards and shows real empty counts", async () => {
     render(<Dashboard />);
-    await screen.findByText("Your next customer’s story starts here.");
+    await screen.findByText("No invitations yet");
     expect(mocks.eq).toHaveBeenCalledWith("owner_id", "current-owner");
-    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-      "Welcome back, Patna Print House.",
-    );
+    expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent("Patna Print House");
     expect(screen.getByText("0 active invitations")).toBeInTheDocument();
     expect(screen.queryByTestId("editor-theme")).not.toBeInTheDocument();
   });
 
   it("opens and dismisses the private draft editor", async () => {
     render(<Dashboard />);
-    await screen.findByText("Your next customer’s story starts here.");
+    await screen.findByText("No invitations yet");
     fireEvent.click(screen.getByRole("button", { name: "Create invitation" }));
     expect(screen.getByTestId("editor-theme")).toHaveTextContent("eid");
     fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
@@ -102,7 +116,7 @@ describe("Personal invitation workspace", () => {
 
   it("starts a draft using the selected real theme", async () => {
     render(<Dashboard />);
-    await screen.findByText("Your next customer’s story starts here.");
+    await screen.findByText("No invitations yet");
     fireEvent.mouseDown(screen.getByRole("tab", { name: "Templates" }), {
       button: 0,
       ctrlKey: false,
@@ -132,6 +146,49 @@ describe("Personal invitation workspace", () => {
     });
     expect(screen.getByRole("button", { name: /Mughal Night/ })).toBeDisabled();
   });
+
+  it("shows both phone and desktop previews on desktop, and only phone preview on a phone", async () => {
+    mocks.rows = [
+      {
+        id: "card-preview",
+        title: "Ayesha & Imran",
+        slug: "ayesha-imran",
+        status: "published",
+        content: { groomName: "Imran", brideName: "Ayesha" },
+        created_at: "2026-10-19",
+        updated_at: "2026-10-19",
+      },
+    ];
+    setViewportWidth(1280);
+    render(<Dashboard />);
+    await screen.findByText("1 active invitations");
+    fireEvent.click(screen.getByRole("button", { name: "Preview" }));
+
+    const dialog = await screen.findByRole("dialog");
+    const deviceSwitch = within(dialog).getByRole("group", { name: "Preview device" });
+    const phoneBtn = within(deviceSwitch).getByRole("button", { name: "Phone" });
+    const desktopBtn = within(deviceSwitch).getByRole("button", { name: "Desktop" });
+    expect(phoneBtn).toHaveAttribute("aria-pressed", "true");
+    expect(desktopBtn).toHaveAttribute("aria-pressed", "false");
+    expect(dialog.querySelector('[data-preview-device="phone"]')).not.toBeNull();
+    expect(dialog.querySelector(".preview-phone-bezel")).not.toBeNull();
+
+    // Switch to Desktop preview on desktop
+    fireEvent.click(desktopBtn);
+    expect(desktopBtn).toHaveAttribute("aria-pressed", "true");
+    expect(dialog.querySelector('[data-preview-device="desktop"]')).not.toBeNull();
+    expect(dialog.querySelector(".preview-phone-bezel")).toBeNull();
+
+    // On a phone screen: only phone preview is shown, no desktop toggle
+    setViewportWidth(375);
+    await waitFor(() => {
+      expect(within(dialog).queryByRole("group", { name: "Preview device" })).toBeNull();
+    });
+    expect(within(dialog).queryByRole("button", { name: "Desktop" })).toBeNull();
+    expect(dialog.querySelector('[data-preview-device="phone"]')).not.toBeNull();
+    expect(dialog.querySelector(".preview-phone-bezel")).toBeNull();
+  });
+
   it("shows a printable QR code for each card", async () => {
     mocks.rows = [
       {
@@ -158,7 +215,6 @@ describe("Personal invitation workspace", () => {
     expect(within(dialog).getByRole("button", { name: /SVG for print/ })).toBeInTheDocument();
     expect(within(dialog).getByRole("button", { name: /Print insert/ })).toBeInTheDocument();
 
-    // A personalised QR embeds the guest greeting.
     fireEvent.change(within(dialog).getByLabelText(/Guest name on the QR/), {
       target: { value: "Uncle Ahmed" },
     });
@@ -212,7 +268,7 @@ describe("Personal invitation workspace", () => {
 
   it("starts a storybook theme on the Grand Curtain layout", async () => {
     render(<Dashboard />);
-    await screen.findByText("Your next customer’s story starts here.");
+    await screen.findByText("No invitations yet");
     fireEvent.mouseDown(screen.getByRole("tab", { name: "Templates" }), {
       button: 0,
       ctrlKey: false,
@@ -243,7 +299,7 @@ describe("Personal invitation workspace", () => {
 
   it("keeps package details and templates off the default invitation screen", async () => {
     render(<Dashboard />);
-    await screen.findByText("Your next customer’s story starts here.");
+    await screen.findByText("No invitations yet");
     expect(screen.queryByRole("region", { name: "Partner card package" })).not.toBeInTheDocument();
     expect(screen.queryByRole("button", { name: /Mughal Night/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Credits & access" }));

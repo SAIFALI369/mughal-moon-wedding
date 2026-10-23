@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { useState } from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InvitationDetailsFields } from "@/components/wedding/invitation-form";
 import { emptyInvitationForm } from "@/components/wedding/invitation-form-data";
@@ -52,6 +52,44 @@ describe("invitation editor and guest reply", () => {
     expect(screen.getByLabelText("Groom's name *")).toHaveValue("Ayaan");
     fireEvent.mouseDown(screen.getByRole("tab", { name: "Design" }), { button: 0, ctrlKey: false });
     expect(screen.getByRole("radio", { name: /Aladin/i })).toBeChecked();
+  });
+
+  it("shows phone and desktop preview options on desktop and only phone preview on mobile in the editor", async () => {
+    act(() => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        writable: true,
+        value: 1200,
+      });
+      window.dispatchEvent(new Event("resize"));
+    });
+    render(<Editor compact />);
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Preview" }), {
+      button: 0,
+      ctrlKey: false,
+    });
+    expect(screen.getByRole("button", { name: "Phone" })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Desktop" })).toBeInTheDocument();
+    fireEvent.click(screen.getByRole("button", { name: "Desktop" }));
+    expect(document.querySelector('[data-preview-device="desktop"]')).not.toBeNull();
+
+    act(() => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        writable: true,
+        value: 390,
+      });
+      window.dispatchEvent(new Event("resize"));
+    });
+    await waitFor(() => {
+      expect(screen.queryByRole("button", { name: "Desktop" })).not.toBeInTheDocument();
+    });
+    expect(document.querySelector('[data-preview-device="phone"]')).not.toBeNull();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    });
   });
 
   it("changes theme, framework and section visibility separately in the live cover", () => {

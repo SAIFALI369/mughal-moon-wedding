@@ -2,6 +2,11 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
 import {
+  PreviewDeviceToggle,
+  usePhoneScreen,
+  type PreviewDevice,
+} from "@/components/platform/invitation-preview";
+import {
   invitationFrameworkIds,
   invitationLayoutFor,
   invitationThemeCategories,
@@ -11,11 +16,6 @@ import {
   type InvitationTheme,
 } from "@/components/wedding/invitation-options";
 
-/**
- * Development-only design sandbox for the personal invitation suite. It renders the
- * same component guests see, with sample content, so the card can be reviewed without
- * publishing anything or touching the production database.
- */
 export const Route = createFileRoute("/invite-preview")({
   validateSearch: (search: Record<string, unknown>) => ({
     theme:
@@ -94,8 +94,10 @@ function DesignPreview() {
   if (!import.meta.env.DEV) throw notFound();
 
   const search = Route.useSearch();
+  const isPhone = usePhoneScreen();
+  const [device, setDevice] = useState<PreviewDevice>("desktop");
+  const effectiveDevice: PreviewDevice = isPhone ? "phone" : device;
   const [theme, setTheme] = useState<InvitationTheme>(search.theme as InvitationTheme);
-  // On a phone the panel starts folded; the pill alone is enough to switch worlds.
   const [open, setOpen] = useState(true);
   const [framework, setFramework] = useState<InvitationFramework>(
     search.framework as InvitationFramework,
@@ -125,21 +127,23 @@ function DesignPreview() {
   }, [theme, framework]);
 
   const layout = invitationLayoutFor(theme, framework);
-  const signature = invitationThemes.find((value) => value.id === theme)?.layout;
 
   return (
     <>
       <div className={`preview-bar ${open ? "is-open" : ""}`}>
-        <button
-          type="button"
-          className="preview-toggle"
-          aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
-        >
-          <span>Preview</span>
-          <b>{invitationThemes.find((item) => item.id === theme)?.label ?? theme}</b>
-          <span aria-hidden="true">{open ? "×" : "▾"}</span>
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            type="button"
+            className="preview-toggle"
+            aria-expanded={open}
+            onClick={() => setOpen((value) => !value)}
+          >
+            <span>Preview</span>
+            <b>{invitationThemes.find((item) => item.id === theme)?.label ?? theme}</b>
+            <span aria-hidden="true">{open ? "×" : "▾"}</span>
+          </button>
+          {!isPhone && <PreviewDeviceToggle device={effectiveDevice} onChange={setDevice} />}
+        </div>
         {open && (
           <div className="preview-panel">
             <label>
@@ -175,36 +179,35 @@ function DesignPreview() {
               </select>
             </label>
             <p className="preview-note">
-              Structure in force: <b>{layout}</b>
-              {signature ? " · signature" : ""}
+              Layout: <b>{layout}</b>
             </p>
-            <div className="preview-shortcuts">
-              {[
-                ["chand-bagh", "Chand Bagh"],
-                ["mela-maidan", "Mela Maidan"],
-                ["jharokha-dawn", "Jharokha"],
-                ["haldi-baag", "Haldi Baag"],
-                ["vows-in-ink", "Vows in Ink"],
-              ].map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={theme === id ? "is-active" : ""}
-                  onClick={() => setTheme(id as InvitationTheme)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
           </div>
         )}
       </div>
-      <PersonalInvitation
-        title="Ayaan & Zara"
-        content={{ ...sampleContent, theme, framework }}
-        showGate={false}
-        preview
-      />
+      {!isPhone && effectiveDevice === "phone" ? (
+        <div className="admin-preview-canvas is-phone-frame min-h-screen pt-16">
+          <div className="preview-phone-bezel">
+            <div className="preview-phone-notch" aria-hidden="true">
+              <span />
+            </div>
+            <div className="preview-phone-viewport">
+              <PersonalInvitation
+                title="Ayaan & Zara"
+                content={{ ...sampleContent, theme, framework }}
+                showGate={false}
+                preview
+              />
+            </div>
+          </div>
+        </div>
+      ) : (
+        <PersonalInvitation
+          title="Ayaan & Zara"
+          content={{ ...sampleContent, theme, framework }}
+          showGate={false}
+          preview
+        />
+      )}
     </>
   );
 }
