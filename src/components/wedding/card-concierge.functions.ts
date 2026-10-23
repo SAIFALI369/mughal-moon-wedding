@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { dailyLimit } from "@/lib/ai-limits";
 import {
   buildCardConciergeInstruction,
   type CardConciergeFacts,
@@ -36,7 +37,8 @@ export type CardConciergeReply = {
   resetsAt: string | null;
 };
 
-const CARD_DAILY_LIMIT = 6;
+/** Per-guest daily answers for one card's assistant; `0` removes the cap. */
+const CARD_DAILY_LIMIT = dailyLimit("AI_DAILY_LIMIT_CARD");
 
 type EdgeReply = {
   reply?: unknown;
@@ -108,7 +110,7 @@ export const askCardConcierge = createServerFn({ method: "POST" })
   .handler(async ({ data }): Promise<CardConciergeReply> => {
     const [
       {
-        generateGeminiReply,
+        generateAiReply,
         getRequestIp,
         hasGeminiConfig,
         normalizeChatMessages,
@@ -180,7 +182,7 @@ export const askCardConcierge = createServerFn({ method: "POST" })
       };
 
       const systemInstruction = buildCardConciergeInstruction(facts, data.language);
-      const reply = await generateGeminiReply({ systemInstruction, messages });
+      const reply = await generateAiReply({ systemInstruction, messages });
       return {
         reply,
         assistantName,

@@ -60,6 +60,10 @@ export async function consumeAiMessage(
   limit: number,
   windowHours = DEFAULT_WINDOW_HOURS,
 ): Promise<AiQuota> {
+  // `0` is an explicit "no cap" switch for deployments with a large free pool.
+  if (limit <= 0) {
+    return { allowed: true, remaining: 0, limit: 0, resetsAt: null };
+  }
   if (!backendConfigured(backend)) {
     return { allowed: true, remaining: limit, limit, resetsAt: null };
   }

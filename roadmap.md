@@ -17,6 +17,17 @@
 - [x] Let Simran handle common music commands instantly and free-form Gemini requests through whitelisted playback actions.
 - [x] Add chat retry/clear controls, more instant replies, request locking, WebP assets and a social share image.
 - [x] Share event data across the invitation and both AI backends; add SQL permission/limit and chat/music tests.
+
+## Free AI capacity
+
+- [x] Replace the single-key Gemini dependency with a pooled free-tier router (`supabase/functions/_shared/free-router.ts`) shared by the Edge Function, the app server, card chat and the partner form reader.
+- [x] Add three keyless providers (Kilo Code, OVHcloud, LLM7.io) so a fresh deploy answers with zero configuration, plus failover, key rotation, per-route cooldowns and a total time budget.
+- [x] Vendor `mnfst/awesome-free-llm-apis`, `neuralnexustech/freeroute` and `freellms/free-llm-api-keys` under `third-party/` as git submodules and derive the provider catalogue from them.
+- [x] Make the daily allowance environment-driven (`AI_DAILY_LIMIT_*`, default 100, `0` = unlimited) instead of hard-coded at 5 and 6.
+- [x] Add `npm run ai:check` to probe every configured route and report which providers are live.
+- [ ] Add at least three free `*_API_KEY` values to the Supabase Edge Function secrets and to Vercel, then run `npm run ai:check` from a networked machine.
+- [ ] Re-deploy `wedding-concierge` (it now imports `_shared/free-router.ts`) and verify Hindi/Urdu replies.
+
 - [ ] Apply `0001_shared_guest_gallery.sql` to the production Supabase database.
 - [ ] Deploy the updated concierge Edge Function with a valid Gemini secret and set `VITE_SITE_URL` for production share metadata.
 - [ ] Verify production uploads, cross-device Realtime and real Gemini playback commands after deployment.

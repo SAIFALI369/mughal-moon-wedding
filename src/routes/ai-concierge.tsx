@@ -34,7 +34,12 @@ import {
 import { getAiVisitorId } from "@/lib/ai-visitor";
 
 // Matches the server's homepage allowance; the server remains the source of truth.
-const VISITOR_MESSAGE_LIMIT = 5;
+/**
+ * Starting value only — the server reports the real daily allowance on the first
+ * reply (`AI_DAILY_LIMIT_HOMEPAGE`, default 100). A server limit of `0` means the
+ * cap is off, and the counter is hidden.
+ */
+const VISITOR_MESSAGE_LIMIT = 100;
 
 type Language = "en" | "hi" | "ur";
 type Message = { role: "user" | "assistant"; text: string };
@@ -146,6 +151,8 @@ function AiConcierge() {
   const direction = language === "ur" ? "rtl" : "ltr";
   const [personalMemories, setPersonalMemories] = useState(() => getAllSimranMemories());
   const [visitorLeft, setVisitorLeft] = useState(VISITOR_MESSAGE_LIMIT);
+  // `0` from the server means "no daily cap", so the counter is not shown at all.
+  const [visitorLimit, setVisitorLimit] = useState(VISITOR_MESSAGE_LIMIT);
 
   useEffect(() => {
     cleanupExpiredMemories();
@@ -190,11 +197,11 @@ function AiConcierge() {
   async function ask(question: string, retry = false) {
     const value = question.trim().slice(0, 400); // token-save
     if (!value || requestLock.current) return;
-    if (visitorLeft === 0) {
+    if (visitorLimit > 0 && visitorLeft === 0) {
       setFailedQuestion(null);
       const limitMsg: Message = {
         role: "assistant",
-        text: `You have used all ${VISITOR_MESSAGE_LIMIT} messages for today. Please come back tomorrow or contact the couple directly.`,
+        text: `You have used all ${visitorLimit} messages for today. Please come back tomorrow or contact the couple directly.`,
       };
       setMessages((cur) => [...cur, limitMsg].slice(-5));
       return;
@@ -231,6 +238,7 @@ function AiConcierge() {
             () => askSimranServer({ data: payload }),
           );
       if (typeof result.remaining === "number") setVisitorLeft(result.remaining);
+      if (typeof result.limit === "number" && result.limit > 0) setVisitorLimit(result.limit);
       const assistantMessage: Message = {
         role: "assistant",
         text: applyMusicReply(result.reply, value),
@@ -565,11 +573,17 @@ function AiConcierge() {
         <div className="border-t border-gold/10 bg-background/80 backdrop-blur supports-[backdrop-filter]:bg-background/60">
           <div className="mx-auto max-w-3xl px-3 py-3 sm:px-6">
             <div className="mb-2 flex items-center justify-between text-xs">
-              <span
-                className={`rounded-full px-2 py-1 ${visitorLeft <= 1 ? "bg-amber-100 text-amber-800" : "bg-muted text-muted-foreground"}`}
-              >
-                {visitorLeft} / {VISITOR_MESSAGE_LIMIT} messages left today
-              </span>
+              {visitorLimit > 0 ? (
+                <span
+                  className={`rounded-full px-2 py-1 ${visitorLeft <= 1 ? "bg-amber-100 text-amber-800" : "bg-muted text-muted-foreground"}`}
+                >
+                  {visitorLeft} / {visitorLimit} messages left today
+                </span>
+              ) : (
+                <span className="rounded-full bg-muted px-2 py-1 text-muted-foreground">
+                  Unlimited messages
+                </span>
+              )}
               <span className="text-muted-foreground">
                 Token-saving mode: last 5 msgs, 400 chars, 250 tokens out
               </span>

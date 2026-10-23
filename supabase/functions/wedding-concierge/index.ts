@@ -9,7 +9,8 @@ import {
   refundAiMessage,
   type AiUsageBackend,
 } from "../_shared/ai-quota.ts";
-import { AI_NAME, GEMINI_API_KEY, GEMINI_MODEL } from "./gemini-key.ts";
+import { AI_NAME } from "./gemini-key.ts";
+import { AiPoolExhaustedError, chat, hasAiConfig } from "../_shared/free-router.ts";
 
 declare const Deno: {
   env: { get(name: string): string | undefined };
@@ -18,17 +19,33 @@ declare const Deno: {
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
 type RateBucket = { count: number; resetsAt: number };
-type GeminiResponse = {
-  candidates?: Array<{ content?: { parts?: Array<{ text?: string }> } }>;
-};
 
-const RATE_LIMIT = 10; // per-minute burst guard; the daily allowance is stored in Postgres
 const RATE_WINDOW_MS = 60_000;
-const HOMEPAGE_DAILY_LIMIT = 5;
-const CARD_DAILY_LIMIT = 6;
 const QUOTA_WINDOW_HOURS = 24;
 const MAX_BODY_BYTES = 4_000;
 const rateBuckets = new Map<string, RateBucket>();
+
+/**
+ * Per-minute burst guard. Raise it with `AI_BURST_PER_MINUTE` now that answers
+ * come from a pooled free tier rather than a single key.
+ */
+function burstLimitPerMinute(): number {
+  const parsed = Number(Deno.env.get("AI_BURST_PER_MINUTE"));
+  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 30;
+}
+
+/**
+ * Daily answers per guest. `AI_DAILY_LIMIT_HOMEPAGE` / `AI_DAILY_LIMIT_CARD`
+ * override these; `0` removes the cap for that surface. Invalid values keep the
+ * default instead of silently disabling the limit.
+ */
+function dailyLimit(name: string, fallback: number): number {
+  const raw = Deno.env.get(name);
+  if (raw === undefined || raw === null || raw === "") return fallback;
+  const parsed = Number(raw);
+  if (!Number.isFinite(parsed) || parsed < 0) return fallback;
+  return Math.floor(parsed);
+}
 
 function corsHeaders(request: Request) {
   const configuredOrigin = Deno.env.get("ALLOWED_ORIGIN")?.replace(/\/$/, "");
@@ -82,7 +99,7 @@ function burstLimit(visitor: string) {
     rateBuckets.set(visitor, { count: 1, resetsAt: now + RATE_WINDOW_MS });
     return { allowed: true, retryAfter: 0 };
   }
-  if (current.count >= RATE_LIMIT) {
+  if (current.count >= burstLimitPerMinute()) {
     return { allowed: false, retryAfter: Math.max(1, Math.ceil((current.resetsAt - now) / 1000)) };
   }
   current.count += 1;
@@ -130,8 +147,11 @@ Deno.serve(async (request: Request) => {
   const declaredSize = Number(request.headers.get("content-length") || "0");
   if (declaredSize > MAX_BODY_BYTES) return json(request, { error: "Request is too large" }, 413);
 
-  const apiKey = (Deno.env.get("GEMINI_API_KEY") || GEMINI_API_KEY).trim();
-  if (!apiKey) return json(request, { error: "AI service is not configured" }, 500);
+  // The keyless providers (Kilo, OVHcloud, LLM7) keep chat alive with no secrets
+  // at all, so this only trips when the pool has been deliberately emptied.
+  if (!hasAiConfig()) {
+    return json(request, { error: "AI service is not configured" }, 503);
+  }
 
   let backend: AiUsageBackend | null = null;
   let quotaReserved = false;
@@ -212,7 +232,9 @@ Deno.serve(async (request: Request) => {
     backend = quotaBackend(cardMode ? `card:${slug}` : "homepage", visitor);
     const quota = await consumeAiMessage(
       backend,
-      cardMode ? CARD_DAILY_LIMIT : HOMEPAGE_DAILY_LIMIT,
+      cardMode
+        ? dailyLimit("AI_DAILY_LIMIT_CARD", 100)
+        : dailyLimit("AI_DAILY_LIMIT_HOMEPAGE", 100),
       QUOTA_WINDOW_HOURS,
     );
     if (!quota.allowed) {
@@ -245,62 +267,32 @@ Deno.serve(async (request: Request) => {
       systemInstruction = buildConciergeInstruction(AI_NAME, language, memory);
     }
 
-    const configuredModel = (
-      Deno.env.get("GEMINI_MODEL") ||
-      GEMINI_MODEL ||
-      "gemini-2.5-flash"
-    ).trim();
-    const model = /^[a-zA-Z0-9._-]{1,80}$/.test(configuredModel)
-      ? configuredModel
-      : "gemini-2.5-flash";
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15_000);
-
-    let upstream: Response;
+    // Ask the pooled free providers in rotation: a rate-limited key or an
+    // offline provider fails over to the next route inside this one request.
+    let reply: string;
     try {
-      upstream = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "x-goog-api-key": apiKey },
-          signal: controller.signal,
-          body: JSON.stringify({
-            systemInstruction: { parts: [{ text: systemInstruction }] },
-            contents: messages.map(({ role, content }) => ({
-              role: role === "assistant" ? "model" : "user",
-              parts: [{ text: content }],
-            })),
-            generationConfig: {
-              temperature: 0.5,
-              maxOutputTokens: 250,
-              ...(model.startsWith("gemini-2.5-flash")
-                ? { thinkingConfig: { thinkingBudget: 0 } }
-                : {}),
-            },
-          }),
-        },
+      const answer = await chat({
+        systemInstruction,
+        messages,
+        maxOutputTokens: 250,
+        temperature: 0.5,
+      });
+      reply = answer.reply;
+    } catch (error) {
+      const exhausted = error instanceof AiPoolExhaustedError;
+      console.error(
+        "Free AI pool failed",
+        exhausted
+          ? `after ${error.attempts} routes`
+          : error instanceof Error
+            ? error.message
+            : "unknown",
       );
-    } finally {
-      clearTimeout(timeout);
-    }
-
-    if (!upstream.ok) {
-      console.error("Gemini request failed with status", upstream.status);
       await refundAiMessage(backend);
       quotaReserved = false;
       return json(request, { error: "The AI service could not answer right now" }, 502);
     }
 
-    const result = (await upstream.json()) as GeminiResponse;
-    const reply = result.candidates?.[0]?.content?.parts
-      ?.map((part) => part.text ?? "")
-      .join("\n")
-      .trim();
-    if (!reply) {
-      await refundAiMessage(backend);
-      quotaReserved = false;
-      return json(request, { error: "No answer was returned" }, 502);
-    }
     return json(request, {
       reply,
       assistantName,

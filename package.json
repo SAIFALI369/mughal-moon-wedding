@@ -15,7 +15,8 @@
     "format": "prettier --write .",
     "test": "vitest run",
     "test:watch": "vitest",
-    "partner:account": "node scripts/partner-account.mjs"
+    "partner:account": "node scripts/partner-account.mjs",
+    "ai:check": "node scripts/check-free-ai.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1",
