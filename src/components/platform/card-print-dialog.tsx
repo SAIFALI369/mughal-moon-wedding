@@ -45,7 +45,7 @@ function triggerDownload(href: string, filename: string) {
   link.remove();
 }
 
-function printDetails(card: PrintCard, details: ReturnType<typeof getInvitationDetails>) {
+function printDetails(details: ReturnType<typeof getInvitationDetails>) {
   return {
     ...details,
     extraEvents: details.additionalEvents,
@@ -113,7 +113,7 @@ export function CardPrintDialog({
     try {
       await navigator.clipboard.writeText(url);
       setCopied(true);
-      toast.success("Invitation link copied");
+      toast.success("Link copied");
       setTimeout(() => setCopied(false), 2500);
     } catch {
       toast("Copy this link: " + url);
@@ -126,16 +126,16 @@ export function CardPrintDialog({
     const href = URL.createObjectURL(blob);
     triggerDownload(href, qrFileName(card.slug, "svg"));
     setTimeout(() => URL.revokeObjectURL(href), 4_000);
-    toast.success("SVG downloaded — best for a print shop");
+    toast.success("SVG downloaded");
   }
 
   function downloadPng() {
     if (!qr || !card) return;
     try {
       triggerDownload(qrPngDataUrl(qr, 1200), qrFileName(card.slug, "png"));
-      toast.success("PNG downloaded at 1200 px");
+      toast.success("PNG downloaded");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Could not export the PNG");
+      toast.error(error instanceof Error ? error.message : "Could not export PNG");
     }
   }
 
@@ -143,19 +143,19 @@ export function CardPrintDialog({
     if (!card || !details || !svg) return;
     const html = buildInsertSheetHtml({
       inserts: [{ ...(guest.trim() ? { name: guest.trim() } : {}), qrSvg: svg }],
-      details: printDetails(card, details),
+      details: printDetails(details),
       palette,
       title: card.title,
     });
     if (!openPrintWindow(html)) {
-      toast.error("Allow pop-ups for this site to print the insert.");
+      toast.error("Allow pop-ups to print.");
     }
   }
 
   function printGuestSheet() {
     if (!card || !details || !origin) return;
     if (!guestList.entries.length) {
-      setListError("Add at least one name before printing.");
+      setListError("Add at least one name.");
       return;
     }
     const inserts = guestList.entries.map((entry) => {
@@ -164,12 +164,12 @@ export function CardPrintDialog({
     });
     const html = buildInsertSheetHtml({
       inserts,
-      details: printDetails(card, details),
+      details: printDetails(details),
       palette,
       title: card.title,
     });
     if (!openPrintWindow(html)) {
-      setListError("Allow pop-ups for this site to print the sheet.");
+      setListError("Allow pop-ups to print.");
       return;
     }
     setListError("");
@@ -179,20 +179,20 @@ export function CardPrintDialog({
     if (!card || !details || !svg || !url) return;
     const html = buildInvitationArtworkHtml({
       title: card.title,
-      details: printDetails(card, details),
+      details: printDetails(details),
       palette,
       qrSvg: svg,
       url,
     });
     if (!openPrintWindow(html)) {
-      toast.error("Allow pop-ups for this site to print the card.");
+      toast.error("Allow pop-ups to print.");
     }
   }
 
   async function readFile(file: File | undefined) {
     if (!file) return;
     if (file.size > 1_000_000) {
-      setListError("That file is larger than 1 MB. Paste the names instead.");
+      setListError("File larger than 1 MB.");
       return;
     }
     try {
@@ -200,7 +200,7 @@ export function CardPrintDialog({
       setListText(text);
       setListError("");
     } catch {
-      setListError("That file could not be read. Paste the names instead.");
+      setListError("Could not read file.");
     }
   }
 
@@ -209,22 +209,16 @@ export function CardPrintDialog({
 
   return (
     <Dialog open={card !== null} onOpenChange={(open) => !open && onOpenChange(false)}>
-      <DialogContent className="max-h-[92dvh] w-[94vw] max-w-2xl gap-0 overflow-y-auto p-0">
+      <DialogContent className="max-h-[92dvh] w-[94vw] max-w-xl gap-0 overflow-y-auto p-0">
         {card && details && (
           <>
-            <header className="border-b border-border/60 px-6 py-5 pr-12">
-              <DialogTitle className="flex items-center gap-2 font-serif text-2xl">
-                <Printer
-                  className="h-5 w-5 text-[var(--studio-accent,#a05d48)]"
-                  aria-hidden="true"
-                />
-                Print &amp; QR
-              </DialogTitle>
-              <DialogDescription className="mt-1 text-sm">
-                Put a scannable code on the physical invitation, or print the whole card.
+            <header className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-6 py-4 pr-12">
+              <DialogTitle className="text-lg font-semibold">Print &amp; QR</DialogTitle>
+              <DialogDescription className="sr-only">
+                Print options and QR codes for {card.title}
               </DialogDescription>
               <div
-                className="mt-4 flex flex-wrap gap-1.5"
+                className="flex gap-1 rounded-lg bg-muted p-1"
                 role="tablist"
                 aria-label="Print options"
               >
@@ -234,10 +228,10 @@ export function CardPrintDialog({
                     type="button"
                     role="tab"
                     aria-selected={tab === entry.id}
-                    className={`rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
+                    className={`rounded-md px-3 py-1 text-xs font-medium transition ${
                       tab === entry.id
-                        ? "bg-[var(--studio-ink,#263c3a)] text-white"
-                        : "border border-border text-muted-foreground hover:border-[var(--studio-accent,#a05d48)]"
+                        ? "bg-background text-foreground shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
                     }`}
                     onClick={() => setTab(entry.id)}
                   >
@@ -247,43 +241,34 @@ export function CardPrintDialog({
               </div>
             </header>
 
-            <div className="px-6 py-6">
+            <div className="space-y-4 px-6 py-5">
               {isDraft && (
                 <p
                   role="status"
-                  className="mb-4 rounded-lg border border-amber-300/70 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                  className="rounded-lg border border-amber-300/70 bg-amber-50 px-3 py-2 text-xs text-amber-900"
                 >
-                  This card is still a draft. The QR works now, but it opens “invitation not
-                  available” until you publish.
+                  This card is still a draft — publish before guests scan the QR.
                 </p>
               )}
               {isPreviewOrigin && (
                 <p
                   role="status"
-                  className="mb-4 rounded-lg border border-amber-300/70 bg-amber-50 px-3 py-2 text-xs text-amber-900"
+                  className="rounded-lg border border-amber-300/70 bg-amber-50 px-3 py-2 text-xs text-amber-900"
                 >
-                  You are on a preview address, so codes point to{" "}
-                  <span className="break-all font-medium">{origin}</span>. Print from your live site
-                  ({liveUrl}) instead.
+                  Preview domain (<span className="break-all font-medium">{origin}</span>). Print
+                  from {liveUrl} for production.
                 </p>
               )}
 
               {tab === "qr" && (
-                <div className="grid gap-6 sm:grid-cols-[minmax(0,220px)_minmax(0,1fr)]">
-                  <div className="mx-auto w-full max-w-[220px]">
-                    <div
-                      className="overflow-hidden rounded-xl border border-border bg-white p-3 shadow-sm [&_svg]:h-auto [&_svg]:w-full"
-                      // Generated locally from the invitation URL; no remote content.
-                      dangerouslySetInnerHTML={{ __html: svg }}
-                    />
-                    <p className="mt-2 text-center text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-                      {guest.trim() ? "Personalised code" : "Scan to open"}
-                    </p>
+                <div className="grid items-start gap-5 sm:grid-cols-[180px_minmax(0,1fr)]">
+                  <div className="mx-auto w-full max-w-[180px] overflow-hidden rounded-xl border border-border bg-white p-3 [&_svg]:h-auto [&_svg]:w-full">
+                    <div dangerouslySetInnerHTML={{ __html: svg }} />
                   </div>
 
-                  <div className="min-w-0 space-y-4">
+                  <div className="min-w-0 space-y-3.5">
                     <div>
-                      <h3 className="truncate font-serif text-lg">{card.title}</h3>
+                      <h3 className="truncate text-base font-medium">{card.title}</h3>
                       <p className="truncate text-xs text-muted-foreground">
                         {url || "Preparing link…"}
                       </p>
@@ -295,70 +280,54 @@ export function CardPrintDialog({
                         value={guest}
                         onChange={(event) => setGuest(event.target.value.slice(0, 80))}
                         placeholder="e.g. Uncle Ahmed & Family"
-                        className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-[var(--studio-accent,#a05d48)]"
+                        className="mt-1 w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground outline-none focus:border-foreground/50"
                       />
                     </label>
 
                     <div className="flex flex-wrap gap-2">
                       <button type="button" className="studio-button" onClick={downloadPng}>
-                        <FileImage size={15} /> PNG (1200 px)
+                        <FileImage size={14} /> PNG
                       </button>
-                      <button type="button" className="studio-text-button" onClick={downloadSvg}>
-                        <Download size={15} /> SVG for print
+                      <button type="button" className="admin-outline-btn" onClick={downloadSvg}>
+                        <Download size={14} /> SVG for print
                       </button>
                       <button
                         type="button"
-                        className="studio-text-button"
+                        className="admin-outline-btn"
                         onClick={printSingleInsert}
                       >
-                        <Printer size={15} /> Print insert
+                        <Printer size={14} /> Print insert
                       </button>
                       <button
                         type="button"
-                        className="studio-text-button"
+                        className="admin-outline-btn"
                         onClick={() => void copyLink()}
                       >
-                        {copied ? <Check size={15} /> : <Copy size={15} />}
+                        {copied ? <Check size={14} /> : <Copy size={14} />}
                         {copied ? "Copied" : "Copy link"}
                       </button>
                     </div>
-
-                    <ul className="space-y-1.5 text-xs text-muted-foreground">
-                      <li>
-                        • Print the QR at least 2 cm wide, black on white, with clear space around
-                        it.
-                      </li>
-                      <li>
-                        • Put it on the back of the card or the envelope flap — flat, never glossy.
-                      </li>
-                      <li>• Test one printed copy with a phone before the full print run.</li>
-                    </ul>
                   </div>
                 </div>
               )}
 
               {tab === "guests" && (
-                <div className="space-y-4">
-                  <p className="text-sm text-muted-foreground">
-                    Paste a guest list to print one personalised insert per guest — each QR opens
-                    the invitation greeting them by name.
-                  </p>
-
+                <div className="space-y-3.5">
                   <label className="block text-xs font-medium text-muted-foreground">
-                    Guest names — one per line, or paste a CSV
+                    Guest names (one per line or CSV)
                     <textarea
                       value={listText}
                       onChange={(event) => {
                         setListText(event.target.value);
                         setListError("");
                       }}
-                      rows={7}
+                      rows={6}
                       placeholder={"Uncle Ahmed & Family\nAyesha Khan\nRizwan, Naaz & kids"}
-                      className="mt-1 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs text-foreground outline-none focus:border-[var(--studio-accent,#a05d48)]"
+                      className="mt-1.5 w-full resize-y rounded-lg border border-border bg-background px-3 py-2 font-mono text-xs text-foreground outline-none focus:border-foreground/50"
                     />
                   </label>
 
-                  <div className="flex flex-wrap items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2.5">
                     <input
                       ref={fileInput}
                       type="file"
@@ -368,10 +337,10 @@ export function CardPrintDialog({
                     />
                     <button
                       type="button"
-                      className="studio-text-button"
+                      className="admin-outline-btn"
                       onClick={() => fileInput.current?.click()}
                     >
-                      <Upload size={15} /> Import CSV
+                      <Upload size={14} /> Import CSV
                     </button>
                     <span className="text-xs text-muted-foreground" role="status">
                       {guestList.entries.length
@@ -379,14 +348,11 @@ export function CardPrintDialog({
                         : "No names yet"}
                       {guestList.skipped ? ` · ${guestList.skipped} skipped` : ""}
                       {guestList.truncated ? ` · first ${MAX_GUEST_ENTRIES} only` : ""}
-                      {guestList.entries.length
-                        ? ` · ${Math.ceil(guestList.entries.length / 8)} A4 sheet${Math.ceil(guestList.entries.length / 8) === 1 ? "" : "s"}`
-                        : ""}
                     </span>
                     {listText && (
                       <button
                         type="button"
-                        className="studio-text-button"
+                        className="ml-auto text-xs text-muted-foreground underline hover:text-foreground"
                         onClick={() => {
                           setListText("");
                           setListError("");
@@ -396,12 +362,6 @@ export function CardPrintDialog({
                       </button>
                     )}
                   </div>
-
-                  <p className="text-xs text-muted-foreground">
-                    A CSV with a <span className="font-medium">Name</span> column works too — extra
-                    columns are ignored, and duplicates are dropped. Eight inserts print per A4
-                    sheet with cut guides.
-                  </p>
 
                   {listError && (
                     <p role="alert" className="text-xs text-destructive">
@@ -415,7 +375,7 @@ export function CardPrintDialog({
                     disabled={!guestList.entries.length}
                     onClick={printGuestSheet}
                   >
-                    <Printer size={15} /> Print {guestList.entries.length || ""} QR insert
+                    <Printer size={14} /> Print {guestList.entries.length || ""} QR insert
                     {guestList.entries.length === 1 ? "" : "s"}
                   </button>
                 </div>
@@ -423,29 +383,25 @@ export function CardPrintDialog({
 
               {tab === "artwork" && (
                 <div className="space-y-4">
-                  <div className="rounded-xl border border-border bg-muted/30 p-4 text-sm">
-                    <p className="font-serif text-lg">A5 front &amp; back</p>
-                    <p className="mt-1 text-muted-foreground">
-                      {details.groomName} &amp; {details.brideName} · {themeLabel}
-                    </p>
-                    <ul className="mt-3 space-y-1 text-xs text-muted-foreground">
-                      <li>• Front: names, ceremony, date, venue and the QR.</li>
-                      <li>
-                        • Back: order of celebration, dress code, RSVP date, contact and notes.
-                      </li>
-                      <li>• Choose “Save as PDF” in the print dialog to send it to a shop.</li>
-                    </ul>
+                  <div className="flex items-center justify-between rounded-xl border border-border bg-muted/30 p-4">
+                    <div>
+                      <p className="font-medium">A5 front &amp; back</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {details.groomName} &amp; {details.brideName} · {themeLabel}
+                      </p>
+                    </div>
+                    <QrCode className="h-6 w-6 text-muted-foreground" aria-hidden="true" />
                   </div>
                   <div className="flex flex-wrap gap-2">
                     <button type="button" className="studio-button" onClick={printArtwork}>
-                      <FileText size={15} /> Print A5 artwork
+                      <FileText size={14} /> Print A5 artwork
                     </button>
                     <button
                       type="button"
-                      className="studio-text-button"
+                      className="admin-outline-btn"
                       onClick={() => setTab("qr")}
                     >
-                      <QrCode size={15} /> Just the QR
+                      <QrCode size={14} /> QR only
                     </button>
                   </div>
                 </div>

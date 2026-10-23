@@ -18,7 +18,22 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
-import { Search, MoreHorizontal, ChevronLeft, ChevronRight, Wallet } from "lucide-react";
+import {
+  Search,
+  MoreHorizontal,
+  ChevronLeft,
+  ChevronRight,
+  Copy,
+  ExternalLink,
+  Trash2,
+  Edit3,
+  Share2,
+  Eye,
+  HeartHandshake,
+  QrCode,
+  Plus,
+  RefreshCw,
+} from "lucide-react";
 import {
   InvitationDetailsFields,
   invitationEditorSections,
@@ -30,32 +45,15 @@ import {
   invitationFormForCard,
   type InvitationForm,
 } from "@/components/wedding/invitation-form-data";
+import { invitationExpiry } from "@/components/wedding/invitation-details";
+import { invitationArt } from "@/components/wedding/invitation-art";
 import {
-  getInvitationAssistantName,
-  getInvitationDetails,
-  invitationExpiry,
-} from "@/components/wedding/invitation-details";
-import { PersonalInvitation } from "@/components/wedding/invitation-template";
-import {
-  Copy,
-  ExternalLink,
-  Trash2,
-  Edit3,
-  Share2,
-  Eye,
-  HeartHandshake,
-  Sparkles,
-  Music2,
-  QrCode,
-} from "lucide-react";
-import {
-  invitationFrameworks,
   invitationThemeCategories,
   invitationThemes,
 } from "@/components/wedding/invitation-options";
 import { PlatformShell } from "@/components/platform/platform-shell";
 import { CardPrintDialog } from "@/components/platform/card-print-dialog";
-import { Plus, FileHeart, Globe2, FileEdit, ArrowRight } from "lucide-react";
+import { InvitationPreview } from "@/components/platform/invitation-preview";
 import { cleanupExpiredMemories, deleteSimranMemory } from "@/lib/simran-memory";
 
 type PartnerAllowance = {
@@ -80,10 +78,7 @@ type InvitationCard = {
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
-    meta: [
-      { title: "Your invitation studio — InvitingYou" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Studio — InvitingYou" }, { name: "robots", content: "noindex" }],
   }),
   component: Dashboard,
 });
@@ -107,12 +102,15 @@ export function Dashboard() {
   const [activeTab, setActiveTab] = useState<"invitations" | "templates" | "credits">(
     "invitations",
   );
+  const [templateCategory, setTemplateCategory] = useState<string>("all");
   const [editorSection, setEditorSection] = useState<InvitationEditorSection>("essentials");
   const editorInitial = useRef("");
   const editorScroll = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     if (editorScroll.current) editorScroll.current.scrollTop = 0;
   }, [editorSection]);
+
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [page, setPage] = useState(1);
@@ -126,13 +124,12 @@ export function Dashboard() {
   const currentPage = Math.min(page, pageCount);
   const visibleCards = filteredCards.slice((currentPage - 1) * pageSize, currentPage * pageSize);
   const editorIndex = invitationEditorSections.findIndex((item) => item.id === editorSection);
+
   function changeTab(next: "invitations" | "templates" | "credits") {
     setActiveTab(next);
   }
+
   function startNew(theme = emptyInvitationForm().theme) {
-    // Storybook themes open on the Grand Curtain stage; the two Hindu themes
-    // open on the Mandap stage with a Sanskrit wedding default. The layout and
-    // every word stay a free choice in the editor.
     const storybook = theme === "fairytale" || theme === "ballroom";
     const hindu = theme === "diya-utsav" || theme === "sacred-mandap";
     const next = {
@@ -154,11 +151,12 @@ export function Dashboard() {
     setEditorSection("essentials");
     setEditorOpen(true);
   }
+
   function closeEditor() {
     if (creating) return;
     if (
       JSON.stringify(form) !== editorInitial.current &&
-      !window.confirm("Discard your unsaved changes?")
+      !window.confirm("Discard unsaved changes?")
     )
       return;
     setEditorOpen(false);
@@ -182,20 +180,13 @@ export function Dashboard() {
       .eq("owner_id", user.id)
       .maybeSingle();
     setPartner(allowanceError ? null : (allowance as PartnerAllowance | null));
-    if (allowanceError)
-      setError(
-        "Unable to load your card credits. Please retry or contact your InvitingYou representative.",
-      );
-    // cleanup expired local memories first (never saved on server)
+    if (allowanceError) setError("Unable to load card credits.");
     cleanupExpiredMemories();
-    // auto-delete expired cards (client-side, server also has RPC)
     try {
       await supabase.rpc("delete_expired_invitations");
     } catch {
-      // Cleanup can fail offline; the dashboard and public route also hide expired cards.
+      // Offline-safe fallback
     }
-    // Defense in depth: RLS already restricts rows to the owner;
-    // always scope queries by owner_id so no other row can leak.
     const { data, error } = await supabase
       .from("invitation_cards")
       .select(
@@ -209,7 +200,6 @@ export function Dashboard() {
     } else {
       const filtered = (data as InvitationCard[]).filter((c) => {
         if (c.expires_at && new Date(c.expires_at).getTime() < Date.now()) {
-          // card expired -> will be deleted by RPC next load, hide for now and clear local memory
           deleteSimranMemory(c.id);
           return false;
         }
@@ -242,10 +232,8 @@ export function Dashboard() {
     e.preventDefault();
     if (creating) return;
     if (!canCreate) {
-      setError(
-        "No card credits available. Contact your InvitingYou representative for a ₹1,000 cash package (10 cards).",
-      );
-      toast.error("Partner access and a card credit are required.");
+      setError("No card credits available.");
+      toast.error("Card credit required.");
       return;
     }
     const title = form.title.trim();
@@ -260,7 +248,6 @@ export function Dashboard() {
     setError("");
     try {
       const slug = generateSlug(title);
-      // Store a new expiry based on this card's date, not the homepage date.
       const expires_at = invitationExpiry(content.date);
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
@@ -277,15 +264,11 @@ export function Dashboard() {
         .select()
         .single();
       if (error) {
-        if (error.code === "23505" || error.message.includes("credits")) {
-          setError(error.message);
-          toast.error(error.message);
-        } else {
-          setError(error.message);
-        }
+        setError(error.message);
+        toast.error(error.message);
         return;
       }
-      toast.success("Card created as draft (private). Only you can see it until published.");
+      toast.success("Draft saved");
       setCards((prev) => [data as InvitationCard, ...prev]);
       setForm(emptyInvitationForm());
       setEditorOpen(false);
@@ -319,13 +302,13 @@ export function Dashboard() {
         toast.error(error.message);
         return;
       }
-      toast.success("Card updated");
+      toast.success("Changes saved");
       setEditingId(null);
       setEditorOpen(false);
       setActiveTab("invitations");
       await load();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Unable to save changes. Please try again.");
+      setError(err instanceof Error ? err.message : "Unable to save changes.");
     } finally {
       setCreating(false);
     }
@@ -334,7 +317,7 @@ export function Dashboard() {
   async function togglePublish(card: InvitationCard) {
     const newStatus = card.status === "draft" ? "published" : "draft";
     if (newStatus === "published" && !invitationContentSchema.safeParse(card.content).success) {
-      const message = "Complete the required wedding details before publishing this card.";
+      const message = "Complete required wedding details before publishing.";
       setError(message);
       toast.error(message);
       startEdit(card);
@@ -350,17 +333,12 @@ export function Dashboard() {
       toast.error(error.message);
       return;
     }
-    toast.success(
-      newStatus === "published" ? "Published! Share your link." : "Moved back to draft (private).",
-    );
+    toast.success(newStatus === "published" ? "Published" : "Moved to draft");
     load();
   }
 
   async function handleDelete(card: InvitationCard) {
-    if (
-      !confirm(`Delete "${card.title}"? This cannot be undone and does not restore a card credit.`)
-    )
-      return;
+    if (!confirm(`Delete "${card.title}"? This cannot be undone.`)) return;
     const { error } = await supabase
       .from("invitation_cards")
       .delete()
@@ -371,7 +349,7 @@ export function Dashboard() {
       toast.error(error.message);
       return;
     }
-    toast.success("Card deleted");
+    toast.success("Deleted");
     setCards((prev) => prev.filter((c) => c.id !== card.id));
   }
 
@@ -391,78 +369,57 @@ export function Dashboard() {
   async function copyShare(card: InvitationCard) {
     const url = shareUrl(card);
     await navigator.clipboard.writeText(url);
-    toast.success("Share link copied!");
+    toast.success("Link copied");
   }
 
   if (loading || !user) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-4">
-        <p className="text-muted-foreground">Loading your account…</p>
+        <p className="text-sm text-muted-foreground">Loading…</p>
       </main>
     );
   }
 
   const username = getUsernameFromUser(user);
+  const publishedCount = cards.filter((c) => c.status === "published").length;
+  const draftCount = cards.filter((c) => c.status === "draft").length;
+  const visibleTemplates =
+    templateCategory === "all"
+      ? invitationThemes
+      : invitationThemes.filter((theme) => theme.category === templateCategory);
 
   return (
     <PlatformShell workspace activeSection={activeTab} onSectionChange={changeTab}>
-      <div className="studio-topbar">
-        <span>
-          Your workspace /{" "}
-          {activeTab === "invitations"
-            ? "Invitations"
-            : activeTab === "templates"
-              ? "Templates"
-              : "Credits"}
-        </span>
-        <div>
-          <span className="studio-status-dot" /> Your next chapter, organised
-        </div>
-      </div>
-      <main className="studio-content studio-dashboard compact-dashboard">
-        <header className="studio-dashboard-heading">
+      <main className="studio-content admin-main">
+        <header className="admin-header">
           <div>
-            <span className="studio-eyebrow">YOUR EXCLUSIVE PRINT-SHOP WORKSPACE</span>
-            <h1>Welcome back, {partner?.shop_name || username || "partner"}.</h1>
-            <p>Create digital invitations for your customers. Your shop, your workspace.</p>
+            <h1>{partner?.shop_name || username || "Studio"}</h1>
+            <div className="admin-metrics" aria-label="Workspace summary">
+              <span>
+                <strong>{fetching ? "—" : remaining}</strong> credits left
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>
+                <strong>{fetching ? "—" : publishedCount}</strong> published
+              </span>
+              <span aria-hidden="true">·</span>
+              <span>
+                <strong>{fetching ? "—" : draftCount}</strong> drafts
+              </span>
+            </div>
           </div>
           <button className="studio-button" disabled={!canCreate} onClick={() => startNew()}>
-            <Plus size={17} /> Create invitation
+            <Plus size={16} /> Create invitation
           </button>
         </header>
-        <div className="studio-stats">
-          {[
-            {
-              label: "Card credits remaining",
-              value: remaining,
-              icon: FileHeart,
-              note: `${partner?.cards_created ?? 0} of ${partner?.cards_purchased ?? 0} credits used`,
-            },
-            {
-              label: "Published & ready",
-              value: cards.filter((c) => c.status === "published").length,
-              icon: Globe2,
-              note: "Ready to share with your people",
-            },
-            {
-              label: "Works in progress",
-              value: cards.filter((c) => c.status === "draft").length,
-              icon: FileEdit,
-              note: "Private, until you say otherwise",
-            },
-          ].map((stat) => (
-            <div className="studio-stat" key={stat.label}>
-              <span className="studio-stat-icon">
-                <stat.icon size={20} />
-              </span>
-              <div>
-                <span>{stat.label}</span>
-                <strong>{fetching ? "—" : stat.value}</strong>
-                <p>{stat.note}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+
+        {!fetching && (!partner?.active || remaining === 0) && activeTab !== "credits" && (
+          <p className="dashboard-access-notice" role="status">
+            {!partner?.active ? "Account allowance inactive." : "0 credits remaining."}{" "}
+            <button onClick={() => changeTab("credits")}>View credits →</button>
+          </p>
+        )}
+
         <Tabs
           value={activeTab}
           onValueChange={(value) => changeTab(value as typeof activeTab)}
@@ -470,15 +427,12 @@ export function Dashboard() {
         >
           <TabsList aria-label="Workspace sections" className="dashboard-tabs">
             <TabsTrigger value="invitations">
-              <FileHeart size={15} /> Invitations <span>{cards.length}</span>
+              Invitations <span>{cards.length}</span>
             </TabsTrigger>
-            <TabsTrigger value="templates">
-              <Sparkles size={15} /> Templates
-            </TabsTrigger>
-            <TabsTrigger value="credits">
-              <Wallet size={15} /> Credits & access
-            </TabsTrigger>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsTrigger value="credits">Credits</TabsTrigger>
           </TabsList>
+
           <TabsContent value="invitations">
             <section
               id="my-invitations"
@@ -486,16 +440,15 @@ export function Dashboard() {
               className="dashboard-list-section"
             >
               <div className="dashboard-list-heading">
-                <div>
-                  <h2>Your invitations</h2>
-                  <p>{cards.length} active invitations</p>
-                </div>
+                <p className="text-xs font-medium text-muted-foreground">
+                  {cards.length} active invitations
+                </p>
                 <div className="dashboard-filters">
                   <label className="dashboard-search">
-                    <Search size={15} />
+                    <Search size={14} />
                     <input
                       aria-label="Search invitations"
-                      placeholder="Search invitations…"
+                      placeholder="Search…"
                       value={search}
                       onChange={(e) => {
                         setSearch(e.target.value);
@@ -511,36 +464,38 @@ export function Dashboard() {
                       setPage(1);
                     }}
                   >
-                    <option value="all">All statuses</option>
-                    <option value="draft">Drafts</option>
+                    <option value="all">All</option>
+                    <option value="draft">Draft</option>
                     <option value="published">Published</option>
                   </select>
                 </div>
               </div>
+
               {error && !editorOpen && (
-                <p role="alert" className="text-sm text-destructive p-4">
+                <p role="alert" className="px-5 py-3 text-sm text-destructive">
                   {error}
                 </p>
               )}
+
               {fetching ? (
-                <p className="p-8 text-sm text-muted-foreground" role="status">
-                  Loading invitations…
+                <p className="p-8 text-center text-sm text-muted-foreground" role="status">
+                  Loading…
                 </p>
               ) : visibleCards.length > 0 ? (
                 <div className="dashboard-invitation-list">
                   {visibleCards.map((card) => (
                     <article className="dashboard-invitation-row" key={card.id}>
-                      <span className="dashboard-card-icon" aria-hidden="true">
-                        <FileHeart size={21} />
-                      </span>
                       <div className="dashboard-row-title">
-                        <h3>{card.title}</h3>
+                        <div className="flex items-center gap-2.5">
+                          <h3>{card.title}</h3>
+                          <span className={`dashboard-card-status ${card.status}`}>
+                            {card.status}
+                          </span>
+                        </div>
                         <p>
-                          Updated {new Date(card.updated_at).toLocaleDateString("en-IN")} · /
-                          {card.slug}
+                          /{card.slug} · {new Date(card.updated_at).toLocaleDateString("en-IN")}
                         </p>
                       </div>
-                      <span className={`dashboard-card-status ${card.status}`}>{card.status}</span>
                       <div className="dashboard-row-actions">
                         <Button size="sm" variant="outline" onClick={() => setPreviewCard(card)}>
                           <Eye size={14} /> Preview
@@ -553,9 +508,8 @@ export function Dashboard() {
                           variant="outline"
                           onClick={() => setQrCard(card)}
                           aria-label={`Print card & QR for ${card.title}`}
-                          title={`Print card, guest QR sheets and artwork for ${card.title}`}
                         >
-                          <QrCode size={14} /> Print &amp; QR
+                          <QrCode size={14} /> QR
                         </Button>
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
@@ -564,35 +518,33 @@ export function Dashboard() {
                               size="sm"
                               aria-label={`More actions for ${card.title}`}
                             >
-                              <MoreHorizontal size={18} />
+                              <MoreHorizontal size={17} />
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onSelect={() => void togglePublish(card)}>
                               <Eye size={14} />{" "}
-                              {card.status === "draft"
-                                ? "Publish invitation"
-                                : "Unpublish invitation"}
+                              {card.status === "draft" ? "Publish" : "Move to draft"}
                             </DropdownMenuItem>
                             <DropdownMenuItem onSelect={() => setQrCard(card)}>
-                              <QrCode size={14} /> Print card &amp; QR
+                              <QrCode size={14} /> Print &amp; QR
                             </DropdownMenuItem>
                             <DropdownMenuItem
                               disabled={card.status !== "published"}
                               onSelect={() => void copyShare(card)}
                             >
-                              <Copy size={14} /> Copy share link
+                              <Copy size={14} /> Copy link
                             </DropdownMenuItem>
                             <DropdownMenuItem asChild>
                               <Link to="/profile" hash={`card-${card.id}`}>
-                                <HeartHandshake size={14} /> Guest responses
+                                <HeartHandshake size={14} /> Responses
                               </Link>
                             </DropdownMenuItem>
                             {card.status === "published" && (
                               <>
                                 <DropdownMenuItem asChild>
                                   <a href={shareUrl(card)} target="_blank" rel="noreferrer">
-                                    <ExternalLink size={14} /> View live invitation
+                                    <ExternalLink size={14} /> Open live link
                                   </a>
                                 </DropdownMenuItem>
                                 <DropdownMenuItem asChild>
@@ -611,7 +563,7 @@ export function Dashboard() {
                               className="text-destructive focus:text-destructive"
                               onSelect={() => void handleDelete(card)}
                             >
-                              <Trash2 size={14} /> Delete invitation
+                              <Trash2 size={14} /> Delete
                             </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
@@ -620,16 +572,14 @@ export function Dashboard() {
                   ))}
                 </div>
               ) : cards.length === 0 ? (
-                <div className="studio-empty dashboard-empty">
-                  <span>✧</span>
-                  <h3>Your next customer’s story starts here.</h3>
-                  <p>Create a private draft, personalise it, then share when ready.</p>
+                <div className="dashboard-empty">
+                  <h3>No invitations yet</h3>
                   <button
                     className="studio-button"
                     disabled={!canCreate}
                     onClick={() => startNew()}
                   >
-                    <Plus size={16} /> Create your first invitation
+                    <Plus size={15} /> Create first invitation
                   </button>
                 </div>
               ) : (
@@ -647,12 +597,13 @@ export function Dashboard() {
                   </button>
                 </div>
               )}
+
               {filteredCards.length > 0 && !fetching && (
                 <div className="dashboard-pagination">
                   <span>
                     {(currentPage - 1) * pageSize + 1}–
                     {Math.min(currentPage * pageSize, filteredCards.length)} of{" "}
-                    {filteredCards.length} invitations
+                    {filteredCards.length}
                   </span>
                   <div>
                     <button
@@ -660,7 +611,7 @@ export function Dashboard() {
                       disabled={currentPage === 1}
                       onClick={() => setPage(currentPage - 1)}
                     >
-                      <ChevronLeft size={16} />
+                      <ChevronLeft size={15} />
                     </button>
                     <span>
                       Page {currentPage} of {pageCount}
@@ -670,113 +621,93 @@ export function Dashboard() {
                       disabled={currentPage === pageCount}
                       onClick={() => setPage(currentPage + 1)}
                     >
-                      <ChevronRight size={16} />
+                      <ChevronRight size={15} />
                     </button>
                   </div>
                 </div>
               )}
             </section>
           </TabsContent>
+
           <TabsContent value="templates">
-            {" "}
-            <section id="collection" className="studio-collection">
-              <div className="studio-section-heading">
-                <div>
-                  <span className="studio-eyebrow">A LOOK THAT FEELS LIKE YOU</span>
-                  <h2>Find your invitation’s mood.</h2>
-                </div>
-                <span className="studio-collection-tag">
-                  {invitationThemes.length} themes · {invitationFrameworks.length} layouts
-                </span>
-              </div>
-              <nav className="studio-theme-jump" aria-label="Theme categories">
-                {invitationThemeCategories.map((category) => {
-                  const count = invitationThemes.filter(
-                    (theme) => theme.category === category.id,
-                  ).length;
-                  return (
-                    <a key={category.id} href={`#theme-group-${category.id}`}>
-                      {category.label} <span>{count}</span>
-                    </a>
-                  );
-                })}
-              </nav>
-              {invitationThemeCategories.map((category) => {
-                const themes = invitationThemes.filter((theme) => theme.category === category.id);
-                if (!themes.length) return null;
-                return (
-                  <div
+            <section id="collection" className="admin-templates-section">
+              <div className="flex flex-wrap gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setTemplateCategory("all")}
+                  className={`admin-chip ${templateCategory === "all" ? "is-active" : ""}`}
+                >
+                  All ({invitationThemes.length})
+                </button>
+                {invitationThemeCategories.map((category) => (
+                  <button
                     key={category.id}
-                    id={`theme-group-${category.id}`}
-                    className="studio-theme-group"
+                    type="button"
+                    onClick={() => setTemplateCategory(category.id)}
+                    className={`admin-chip ${templateCategory === category.id ? "is-active" : ""}`}
                   >
-                    <div className="studio-theme-group-head">
-                      <h3>{category.label}</h3>
-                      <p>{category.description}</p>
+                    {category.label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="admin-template-grid">
+                {visibleTemplates.map((theme) => (
+                  <button
+                    key={theme.id}
+                    type="button"
+                    disabled={!canCreate}
+                    onClick={() => startNew(theme.id)}
+                    className="admin-template-card group"
+                  >
+                    <div className="admin-template-thumb" style={{ backgroundColor: theme.swatch }}>
+                      <img
+                        src={invitationArt[theme.id]}
+                        alt=""
+                        loading="lazy"
+                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                      />
                     </div>
-                    <div className="studio-theme-options">
-                      {themes.map((theme) => (
-                        <button
-                          key={theme.id}
-                          disabled={!canCreate}
-                          onClick={() => startNew(theme.id)}
-                        >
-                          <span style={{ background: theme.swatch }} aria-hidden="true">
-                            ✧
-                          </span>
-                          <strong>{theme.label}</strong>
-                          <span>{theme.description}</span>
-                          <span className="studio-theme-action">
-                            Start with this theme <Plus size={12} />
-                          </span>
-                        </button>
-                      ))}
+                    <div className="admin-template-meta">
+                      <strong>{theme.label}</strong>
+                      <Plus size={14} aria-hidden="true" />
                     </div>
-                  </div>
-                );
-              })}
+                  </button>
+                ))}
+              </div>
             </section>
           </TabsContent>
+
           <TabsContent value="credits">
-            {" "}
             <section className="partner-credit-panel" aria-label="Partner card package">
               <div>
-                <span className="studio-eyebrow">EXCLUSIVE PARTNER PACKAGE</span>
-                <h2>₹1,000 cash. 10 digital cards.</h2>
+                <h2>Credits</h2>
                 <p>
-                  One credit is used when a new draft is created. Editing, publishing and sharing do
-                  not use extra credits. Deleting or expiry does not restore a credit.
+                  {partner?.cards_created ?? 0} of {partner?.cards_purchased ?? 0} used · ₹1,000
+                  cash = 10 cards (1 credit per new card).
                 </p>
               </div>
               <div className="partner-credit-balance">
                 <strong>{fetching ? "…" : remaining}</strong>
-                <span>credits remaining</span>
+                <span>remaining</span>
                 <button onClick={() => void load()} disabled={fetching}>
-                  Refresh balance
+                  <RefreshCw size={12} /> Refresh
                 </button>
               </div>
               {!fetching && (!partner?.active || remaining === 0) && (
                 <p className="partner-credit-warning" role="status">
                   {!partner
-                    ? "This account has no shop allowance yet. Your InvitingYou representative can add one."
+                    ? "No shop allowance yet — contact your InvitingYou representative."
                     : !partner.active
-                      ? "Your partner access is inactive."
-                      : "You have used all your card credits."}{" "}
-                  Every account created in Supabase starts with 10 card credits; additional packages
-                  are issued personally after cash payment—there is no online checkout.
+                      ? "Partner access is inactive."
+                      : "All credits used — contact your InvitingYou representative for another 10-card package."}
                 </p>
               )}
             </section>
           </TabsContent>
         </Tabs>
-        {!fetching && (!partner?.active || remaining === 0) && activeTab !== "credits" && (
-          <p className="dashboard-access-notice" role="status">
-            {!partner?.active
-              ? "No active card allowance on this account."
-              : "No card credits remaining."}{" "}
-            <button onClick={() => changeTab("credits")}>View credits & access →</button>
-          </p>
-        )}
+
+        {/* EDITOR MODAL */}
         <Dialog
           open={editorOpen}
           onOpenChange={(open) => {
@@ -792,10 +723,8 @@ export function Dashboard() {
           >
             <div className="dashboard-editor-header">
               <DialogTitle>{editingId ? "Edit invitation" : "New invitation"}</DialogTitle>
-              <DialogDescription>
-                {editingId
-                  ? "Changes to an existing invitation do not use another credit."
-                  : "Build your private draft. One credit is used only when you save it."}
+              <DialogDescription className="sr-only">
+                {editingId ? "Edit invitation details" : "Create a new invitation draft"}
               </DialogDescription>
             </div>
             <form
@@ -818,6 +747,7 @@ export function Dashboard() {
                   onSectionChange={setEditorSection}
                   value={form}
                   onChange={setForm}
+                  cardId={editingId ?? undefined}
                   simran={!!partner?.active}
                 />
               </div>
@@ -828,26 +758,22 @@ export function Dashboard() {
                   </p>
                 )}
                 <div className="dashboard-editor-controls">
-                  <span>
-                    Section {editorIndex + 1} of {invitationEditorSections.length}
-                  </span>
+                  <Button type="button" variant="ghost" onClick={closeEditor} disabled={creating}>
+                    Cancel
+                  </Button>
                   <div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      onClick={closeEditor}
-                      disabled={creating}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      disabled={editorIndex === 0 || creating}
-                      onClick={() => setEditorSection(invitationEditorSections[editorIndex - 1].id)}
-                    >
-                      Back
-                    </Button>
+                    {editorIndex > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        disabled={creating}
+                        onClick={() =>
+                          setEditorSection(invitationEditorSections[editorIndex - 1].id)
+                        }
+                      >
+                        Back
+                      </Button>
+                    )}
                     {editorIndex < invitationEditorSections.length - 1 && (
                       <Button
                         type="button"
@@ -860,7 +786,7 @@ export function Dashboard() {
                       </Button>
                     )}
                     <Button type="submit" disabled={creating || (!editingId && !canCreate)}>
-                      {creating ? "Saving…" : editingId ? "Save changes" : "Save draft · 1 credit"}
+                      {creating ? "Saving…" : editingId ? "Save" : "Create"}
                     </Button>
                   </div>
                 </div>
@@ -868,31 +794,34 @@ export function Dashboard() {
             </form>
           </DialogContent>
         </Dialog>
+
+        {/* PREVIEW MODAL */}
         <Dialog
           open={previewCard !== null}
           onOpenChange={(open) => {
             if (!open) setPreviewCard(null);
           }}
         >
-          <DialogContent className="max-h-[92dvh] w-[96vw] max-w-[1100px] gap-0 overflow-y-auto p-0 sm:max-w-[1100px]">
+          <DialogContent className="admin-preview-dialog">
             {previewCard && (
               <>
-                <div className="bg-background px-6 py-5">
-                  <DialogTitle className="font-serif text-2xl">
-                    {previewCard.title} — preview
-                  </DialogTitle>
-                  <DialogDescription className="mt-1">
-                    {previewCard.status === "draft"
-                      ? "Private draft: only you can see this preview. Publish to share a live link."
-                      : "This is what guests see at your published link."}
-                  </DialogDescription>
-                </div>
-                <PersonalInvitation
+                <DialogDescription className="sr-only">
+                  Preview of {previewCard.title}
+                </DialogDescription>
+                <InvitationPreview
                   title={previewCard.title}
                   content={previewCard.content}
-                  showGate={false}
-                  preview
                   cardId={previewCard.id}
+                  header={
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <DialogTitle className="truncate text-base font-semibold">
+                        {previewCard.title}
+                      </DialogTitle>
+                      <span className={`dashboard-card-status ${previewCard.status}`}>
+                        {previewCard.status}
+                      </span>
+                    </div>
+                  }
                 />
               </>
             )}

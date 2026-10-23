@@ -1,8 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useCallback, useEffect, useState } from "react";
-import { Download, HeartHandshake, LockKeyhole, RefreshCw, UserRound } from "lucide-react";
+import { Download, ExternalLink, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { PlatformShell } from "@/components/platform/platform-shell";
 import { supabase } from "@/lib/db";
 import { getUsernameFromUser, useAuth } from "@/lib/auth-context";
 import { downloadRsvps, rsvpFileName, summariseRsvps } from "@/lib/rsvp-export";
@@ -35,8 +35,6 @@ export function Profile() {
     setBusy(true);
     setError("");
     try {
-      // Defense in depth: RLS limits both reads; still filter cards by owner and
-      // replies by precisely those card ids. No guest-read or public profile endpoint.
       const { data: cardRows, error: cardError } = await supabase
         .from("invitation_cards")
         .select("id, title, slug, status")
@@ -60,9 +58,7 @@ export function Profile() {
       if (replyError) throw replyError;
       setReplies((replyRows || []) as Reply[]);
     } catch {
-      setError(
-        "We couldn't load your private guest replies. Please try again; if this continues, the database migration may still be pending.",
-      );
+      setError("Unable to load guest replies. Please try again.");
       setReplies([]);
     } finally {
       setBusy(false);
@@ -77,247 +73,214 @@ export function Profile() {
     if (user) void load();
   }, [loading, user, navigate, load]);
 
-  if (loading || !user)
+  if (loading || !user) {
     return (
-      <main className="flex min-h-screen items-center justify-center p-8">
-        Loading your profile…
+      <main className="flex min-h-screen items-center justify-center p-8 text-sm text-muted-foreground">
+        Loading…
       </main>
     );
+  }
+
   const summary = summariseRsvps(replies);
+  const username = getUsernameFromUser(user) || "Partner";
 
   return (
-    <main className="min-h-screen bg-background px-4 py-8 sm:px-6">
-      <div className="mx-auto max-w-5xl space-y-7">
-        <header className="flex flex-wrap items-start justify-between gap-4">
+    <PlatformShell workspace activePage="responses">
+      <main className="studio-content admin-main space-y-6">
+        <header className="admin-header">
           <div>
-            <Link to="/dashboard" className="text-sm text-gold underline underline-offset-4">
-              ← Your invitations
-            </Link>
-            <h1 className="mt-4 flex items-center gap-3 font-serif text-4xl">
-              <UserRound className="h-8 w-8 text-gold" /> Your profile
-            </h1>
-            <p className="mt-2 text-sm text-muted-foreground">
-              Your account and the private replies to cards you own.
+            <h1>Guest RSVPs</h1>
+            <p className="mt-1 text-xs text-muted-foreground">
+              {username}
+              {user.email ? ` · ${user.email}` : ""}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
             <Button
               type="button"
+              size="sm"
               variant="outline"
               disabled={!replies.length}
               onClick={() => downloadRsvps(replies, rsvpFileName("all-cards"))}
             >
-              <Download className="mr-2 h-4 w-4" /> Export all replies
+              <Download className="mr-1.5 h-3.5 w-3.5" /> Export all replies
             </Button>
             <Button
               type="button"
+              size="sm"
               variant="outline"
               disabled={busy}
               onClick={() => {
                 void load();
               }}
             >
-              <RefreshCw className={`mr-2 h-4 w-4 ${busy ? "animate-spin" : ""}`} /> Refresh replies
+              <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} /> Refresh
             </Button>
           </div>
         </header>
-        <Card>
-          <CardHeader>
-            <CardTitle className="font-serif text-2xl">Account</CardTitle>
-            <CardDescription>Visible only when signed in</CardDescription>
-          </CardHeader>
-          <CardContent className="grid gap-3 text-sm sm:grid-cols-2">
-            <p>
-              <span className="text-muted-foreground">Username</span>
-              <br />
-              <strong>{getUsernameFromUser(user) || "Your account"}</strong>
-            </p>
-            <p>
-              <span className="text-muted-foreground">Email</span>
-              <br />
-              <strong className="break-all">{user.email || "Not provided"}</strong>
-            </p>
-          </CardContent>
-        </Card>
-        <section aria-label="RSVP overview">
-          <div className="flex items-center gap-2">
-            <HeartHandshake className="h-6 w-6 text-gold" />
-            <h2 className="font-serif text-3xl">Guest RSVPs</h2>
-          </div>
-          <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
-            <LockKeyhole className="h-4 w-4" /> Only you can read the names, contact details,
-            dietary notes and messages for your cards.
+
+        {error && (
+          <p
+            role="alert"
+            className="rounded-xl border border-destructive/40 bg-destructive/10 px-4 py-3 text-sm text-destructive"
+          >
+            {error}
           </p>
-          {error && (
-            <p
-              role="alert"
-              className="mt-4 rounded-xl border border-destructive/40 bg-destructive/10 p-4 text-sm text-destructive"
-            >
-              {error}
-            </p>
-          )}
-          <div className="mt-5 grid gap-3 sm:grid-cols-3">
+        )}
+
+        <section aria-label="RSVP overview" className="space-y-3">
+          <div className="grid grid-cols-3 gap-3">
             {[
               { label: "Responses", value: summary.responses },
               { label: "Accepting", value: summary.accepting },
               { label: "Guests expected", value: summary.guestsExpected },
             ].map((stat) => (
-              <div key={stat.label} className="rounded-xl border border-gold/30 bg-card p-5">
-                <p className="font-serif text-4xl text-gold">{stat.value}</p>
-                <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                  {stat.label}
-                </p>
+              <div
+                key={stat.label}
+                className="rounded-xl border border-border bg-white px-4 py-3.5"
+              >
+                <p className="text-2xl font-semibold text-foreground">{stat.value}</p>
+                <p className="mt-0.5 text-xs text-muted-foreground">{stat.label}</p>
               </div>
             ))}
           </div>
+
           {summary.dietary.length > 0 && (
             <div
               role="region"
               aria-label="Dietary summary"
-              className="mt-3 rounded-xl border border-gold/30 bg-card p-4"
+              className="flex flex-wrap items-center gap-2 rounded-xl border border-border bg-white px-4 py-3"
             >
-              <p className="text-xs uppercase tracking-[0.18em] text-muted-foreground">
-                Dietary notes from guests
-              </p>
-              <div className="mt-2 flex flex-wrap gap-2">
-                {summary.dietary.map((entry) => (
-                  <span
-                    key={entry.label}
-                    className="rounded-full border border-gold/40 bg-background px-3 py-1 text-xs"
-                  >
-                    {entry.label} · {entry.count}
-                  </span>
-                ))}
-              </div>
+              <span className="text-xs font-medium text-muted-foreground">Dietary:</span>
+              {summary.dietary.map((entry) => (
+                <span
+                  key={entry.label}
+                  className="rounded-full border border-border bg-muted/50 px-2.5 py-0.5 text-xs"
+                >
+                  {entry.label} · {entry.count}
+                </span>
+              ))}
             </div>
           )}
         </section>
+
         {busy && (
           <p role="status" className="text-sm text-muted-foreground">
-            Loading private replies…
+            Loading…
           </p>
         )}
+
         {!busy && !cards.length && !error && (
-          <p className="rounded-xl border border-border p-8 text-center text-muted-foreground">
-            Create your first invitation to start collecting RSVPs.
-          </p>
+          <div className="rounded-xl border border-border bg-white p-8 text-center text-sm text-muted-foreground">
+            No invitations yet.
+          </div>
         )}
-        {!busy &&
-          cards.map((card) => {
-            const cardReplies = replies.filter((reply) => reply.card_id === card.id);
-            return (
-              <section
-                id={`card-${card.id}`}
-                key={card.id}
-                aria-label={`RSVPs for ${card.title}`}
-                className="scroll-mt-6 rounded-2xl border border-border bg-card p-5 sm:p-7"
-              >
-                {(() => {
-                  const cardSummary = summariseRsvps(cardReplies);
-                  return (
-                    <>
-                      <div className="flex flex-wrap items-center justify-between gap-2">
-                        <div>
-                          <h3 className="font-serif text-2xl">{card.title}</h3>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {card.status === "draft"
-                              ? "Private draft — previous replies remain visible to you"
-                              : "Published"}{" "}
-                            · {cardSummary.responses} response
-                            {cardSummary.responses === 1 ? "" : "s"}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap items-center gap-3">
-                          {cardSummary.responses > 0 && (
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => downloadRsvps(cardReplies, rsvpFileName(card.slug))}
-                            >
-                              <Download className="mr-2 h-4 w-4" /> CSV
-                            </Button>
-                          )}
-                          {card.status === "published" && (
-                            <Link
-                              to="/invite/$slug"
-                              params={{ slug: card.slug }}
-                              className="text-sm text-gold underline underline-offset-4"
-                            >
-                              Open invitation
-                            </Link>
-                          )}
-                        </div>
-                      </div>
-                      {cardSummary.responses > 0 && (
-                        <dl className="mt-4 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
-                          {[
-                            { label: "Attending", value: cardSummary.accepting },
-                            { label: "Guests", value: cardSummary.guestsExpected },
-                            { label: "Declined", value: cardSummary.declined },
-                            { label: "Dietary notes", value: cardSummary.dietary.length },
-                          ].map((stat) => (
-                            <div
-                              key={stat.label}
-                              className="rounded-lg border border-border bg-background px-3 py-2"
-                            >
-                              <dt className="text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-                                {stat.label}
-                              </dt>
-                              <dd className="font-serif text-xl">{stat.value}</dd>
-                            </div>
-                          ))}
-                        </dl>
-                      )}
-                    </>
-                  );
-                })()}
-                {!cardReplies.length && (
-                  <p className="mt-5 text-sm text-muted-foreground">
-                    No guest replies yet for this card.
-                  </p>
-                )}
-                <div className="mt-5 grid gap-3 sm:grid-cols-2">
-                  {cardReplies.map((reply) => (
-                    <article
-                      key={reply.id}
-                      className="rounded-xl border border-border bg-background p-5"
-                    >
-                      <div className="flex flex-wrap items-baseline justify-between gap-2">
-                        <h4 className="break-words font-serif text-xl">{reply.name}</h4>
-                        <span
-                          className={`rounded-full px-2 py-1 text-xs ${reply.attending ? "bg-emerald-100 text-emerald-900" : "bg-muted text-muted-foreground"}`}
-                        >
-                          {reply.attending
-                            ? `Attending · ${reply.guests} guest${reply.guests === 1 ? "" : "s"}`
-                            : "Unable to attend"}
+
+        {!busy && (
+          <div className="space-y-4">
+            {cards.map((card) => {
+              const cardReplies = replies.filter((reply) => reply.card_id === card.id);
+              const cardSummary = summariseRsvps(cardReplies);
+              return (
+                <section
+                  id={`card-${card.id}`}
+                  key={card.id}
+                  aria-label={`RSVPs for ${card.title}`}
+                  className="scroll-mt-6 rounded-xl border border-border bg-white p-5"
+                >
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-base font-semibold">{card.title}</h3>
+                        <span className={`dashboard-card-status ${card.status}`}>
+                          {card.status}
                         </span>
                       </div>
-                      <p className="mt-2 text-xs text-muted-foreground">
-                        {new Date(reply.created_at).toLocaleString()}
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        {cardSummary.responses} response{cardSummary.responses === 1 ? "" : "s"}
                       </p>
-                      {reply.contact && (
-                        <p className="mt-4 break-all text-sm">
-                          <span className="text-muted-foreground">Contact:</span> {reply.contact}
-                        </p>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      {cardSummary.responses > 0 && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="outline"
+                          onClick={() => downloadRsvps(cardReplies, rsvpFileName(card.slug))}
+                        >
+                          <Download className="mr-1.5 h-3.5 w-3.5" /> CSV
+                        </Button>
                       )}
-                      {reply.dietary && (
-                        <p className="mt-2 whitespace-pre-wrap text-sm">
-                          <span className="text-muted-foreground">Dietary:</span> {reply.dietary}
-                        </p>
+                      {card.status === "published" && (
+                        <Button asChild size="sm" variant="ghost">
+                          <Link to="/invite/$slug" params={{ slug: card.slug }}>
+                            <ExternalLink className="mr-1 h-3.5 w-3.5" /> Live card
+                          </Link>
+                        </Button>
                       )}
-                      {reply.message && (
-                        <p className="mt-3 whitespace-pre-wrap border-t border-border pt-3 font-serif italic">
-                          “{reply.message}”
-                        </p>
-                      )}
-                    </article>
-                  ))}
-                </div>
-              </section>
-            );
-          })}
-      </div>
-    </main>
+                    </div>
+                  </div>
+
+                  {cardSummary.responses > 0 && (
+                    <dl className="mt-3 grid grid-cols-2 gap-2 text-xs sm:grid-cols-4">
+                      {[
+                        { label: "Attending", value: cardSummary.accepting },
+                        { label: "Guests", value: cardSummary.guestsExpected },
+                        { label: "Declined", value: cardSummary.declined },
+                        { label: "Dietary notes", value: cardSummary.dietary.length },
+                      ].map((stat) => (
+                        <div
+                          key={stat.label}
+                          className="rounded-lg border border-border bg-muted/20 px-3 py-2"
+                        >
+                          <dt className="text-[11px] text-muted-foreground">{stat.label}</dt>
+                          <dd className="mt-0.5 text-base font-semibold">{stat.value}</dd>
+                        </div>
+                      ))}
+                    </dl>
+                  )}
+
+                  {!cardReplies.length ? (
+                    <p className="mt-3 text-xs text-muted-foreground">No replies yet.</p>
+                  ) : (
+                    <div className="mt-3 grid gap-2.5 sm:grid-cols-2">
+                      {cardReplies.map((reply) => (
+                        <article
+                          key={reply.id}
+                          className="rounded-lg border border-border bg-background p-3.5"
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <h4 className="break-words text-sm font-medium">{reply.name}</h4>
+                            <span
+                              className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${
+                                reply.attending
+                                  ? "bg-emerald-100 text-emerald-900"
+                                  : "bg-muted text-muted-foreground"
+                              }`}
+                            >
+                              {reply.attending ? `Attending · ${reply.guests}` : "Declined"}
+                            </span>
+                          </div>
+                          {(reply.contact || reply.dietary) && (
+                            <p className="mt-1.5 break-words text-xs text-muted-foreground">
+                              {[reply.contact, reply.dietary].filter(Boolean).join(" · ")}
+                            </p>
+                          )}
+                          {reply.message && (
+                            <p className="mt-2 whitespace-pre-wrap text-xs italic text-foreground/90">
+                              “{reply.message}”
+                            </p>
+                          )}
+                        </article>
+                      ))}
+                    </div>
+                  )}
+                </section>
+              );
+            })}
+          </div>
+        )}
+      </main>
+    </PlatformShell>
   );
 }

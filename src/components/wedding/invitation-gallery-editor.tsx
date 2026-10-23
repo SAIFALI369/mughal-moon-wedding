@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/db";
 import { compressPhoto } from "./photo-utils";
 import { toast } from "sonner";
@@ -8,11 +9,6 @@ type Row = { slot: number; image_data: string; caption: string; source: "host" |
 
 const HOST_PHOTO_CAP = 12;
 
-/**
- * Host-facing gallery manager inside the card editor. Photos live in the card's
- * own gallery table (never in another card's) and only the card's owner can add
- * or remove them; guests see a read-only gallery.
- */
 export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
   const [rows, setRows] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
@@ -36,12 +32,12 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
   async function add(files: FileList | null) {
     if (!files?.length || busy) return;
     if (!cardId) {
-      setNote("Save the card once, then return to add gallery photos.");
+      setNote("Save the card first to upload gallery photos.");
       return;
     }
     const room = HOST_PHOTO_CAP - rows.length;
     if (room <= 0) {
-      setNote(`The gallery already holds ${HOST_PHOTO_CAP} photos.`);
+      setNote(`Maximum ${HOST_PHOTO_CAP} photos reached.`);
       return;
     }
     setBusy(true);
@@ -59,11 +55,10 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
         saved += 1;
       }
       await load();
-      setNote(`${saved} gallery photo${saved === 1 ? "" : "s"} added.`);
-      toast.success("Gallery updated");
+      toast.success(`${saved} photo${saved === 1 ? "" : "s"} added`);
     } catch (error) {
       setNote(
-        `${saved ? `${saved} saved. ` : ""}${error instanceof Error ? error.message : "Could not add the photo."}`,
+        `${saved ? `${saved} saved. ` : ""}${error instanceof Error ? error.message : "Could not add photo."}`,
       );
     } finally {
       setBusy(false);
@@ -81,40 +76,40 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
       });
       if (error) throw error;
       await load();
-      setNote("Photo removed.");
     } catch {
-      toast.error("This photo could not be removed.");
+      toast.error("Could not remove photo.");
     } finally {
       setBusy(false);
     }
   }
 
   const hostCount = rows.filter((row) => row.source === "host").length;
-  const legacyGuestCount = rows.filter((row) => row.source === "guest").length;
 
   return (
-    <div className="rounded-xl border border-gold/40 bg-gold/5 p-4">
+    <div className="rounded-xl border border-border bg-card p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <p className="font-serif text-lg text-foreground">Shared gallery</p>
-          <p className="text-sm text-muted-foreground">
-            Your portraits appear first. Add up to {HOST_PHOTO_CAP} photos here. Guests can view the
-            gallery but cannot upload — only you can change it.
+          <p className="text-sm font-medium text-foreground">Gallery</p>
+          <p className="text-xs text-muted-foreground">
+            {cardId
+              ? `${hostCount} / ${HOST_PHOTO_CAP} photos`
+              : "Save card first to add gallery photos"}
           </p>
         </div>
-        <button
+        <Button
           type="button"
-          className="inline-flex items-center gap-2 rounded-full border border-gold px-4 py-2 text-xs uppercase tracking-[0.16em] text-gold transition hover:bg-gold/10 disabled:opacity-50"
+          size="sm"
+          variant="outline"
           disabled={busy || !cardId}
           onClick={() => inputRef.current?.click()}
         >
           {busy ? (
-            <Loader2 className="h-4 w-4 animate-spin" aria-hidden="true" />
+            <Loader2 className="mr-1.5 h-3.5 w-3.5 animate-spin" aria-hidden="true" />
           ) : (
-            <ImagePlus className="h-4 w-4" aria-hidden="true" />
+            <ImagePlus className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
           )}
-          {busy ? "Adding…" : "Add photo"}
-        </button>
+          {busy ? "Uploading…" : "Add photos"}
+        </Button>
         <input
           ref={inputRef}
           type="file"
@@ -126,14 +121,8 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
         />
       </div>
 
-      {!cardId && (
-        <p className="mt-3 text-xs text-muted-foreground">
-          Save this card once, then return here to add gallery photos.
-        </p>
-      )}
-
       {rows.length > 0 && (
-        <ul className="mt-4 grid grid-cols-3 gap-2 sm:grid-cols-6">
+        <ul className="mt-3 grid grid-cols-3 gap-2 sm:grid-cols-6">
           {rows.map((row) => (
             <li
               key={row.slot}
@@ -144,13 +133,10 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
                 alt={row.caption || `Gallery photo ${row.slot}`}
                 className="h-20 w-full object-cover"
               />
-              <span className="absolute left-1 top-1 rounded-full bg-background/85 px-1.5 text-[9px] uppercase tracking-wider text-gold">
-                {row.source}
-              </span>
               <button
                 type="button"
                 aria-label="Remove gallery photo"
-                className="absolute right-1 top-1 rounded-full bg-background/85 p-1 text-destructive"
+                className="absolute right-1 top-1 rounded-full bg-background/90 p-1 text-destructive shadow-sm"
                 disabled={busy}
                 onClick={() => void remove(row.slot)}
               >
@@ -161,14 +147,8 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
         </ul>
       )}
 
-      <p className="mt-3 text-xs text-muted-foreground">
-        {hostCount} of {HOST_PHOTO_CAP} photos added
-        {legacyGuestCount > 0
-          ? ` · ${legacyGuestCount} legacy guest photo${legacyGuestCount === 1 ? "" : "s"} (view only)`
-          : ""}
-      </p>
       {note && (
-        <p role="status" className="mt-1 text-xs text-gold">
+        <p role="status" className="mt-2 text-xs text-muted-foreground">
           {note}
         </p>
       )}
