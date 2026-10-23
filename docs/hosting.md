@@ -2,11 +2,11 @@
 
 This project is hosted with:
 
-| Layer | Provider | What it runs |
-| ----- | -------- | ------------ |
+| Layer                    | Provider                                                              | What it runs                                                                         |
+| ------------------------ | --------------------------------------------------------------------- | ------------------------------------------------------------------------------------ |
 | Database, Auth, Realtime | **Supabase** project `ibqkslwleelhijhujjcm` (region `ap-northeast-1`) | Postgres schema, username/password auth, Realtime publications, private RSVP storage |
-| AI concierge | **Supabase Edge Function** `wedding-concierge` | Server-side Gemini proxy for Simran |
-| Website / SSR | **Vercel** project `mughal-moon-wedding` | TanStack Start server rendering, static assets, API server functions |
+| AI concierge             | **Supabase Edge Function** `wedding-concierge`                        | Server-side Gemini proxy for Simran                                                  |
+| Website / SSR            | **Vercel** project `mughal-moon-wedding`                              | TanStack Start server rendering, static assets, API server functions                 |
 
 Production URLs:
 
@@ -72,13 +72,32 @@ supabase functions deploy wedding-concierge --project-ref ibqkslwleelhijhujjcm
 
 Set the server secret in **Supabase Dashboard → Edge Functions → Secrets** (or `supabase secrets set`):
 
-| Secret | Required | Purpose |
-| ------ | -------- | ------- |
-| `GEMINI_API_KEY` | For free-form AI replies | Google AI Studio key. Without it the chat still answers common greetings/music commands from the offline copy in the browser, and open-ended questions return a friendly "not configured" fallback. |
+| Secret           | Required    | Purpose                                                                                                                                        |
+| ---------------- | ----------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `GEMINI_API_KEY` | Optional    | Google AI Studio key. **No longer required** — see the free AI pool below.                                                                     |
 | `ALLOWED_ORIGIN` | Recommended | Exact production origin, e.g. `https://invitingyou.vercel.app`. Leave unset to accept any origin (CORS `*`) while the domain is being decided. |
-| `GEMINI_MODEL` | Optional | Defaults to `gemini-2.5-flash`. |
+| `GEMINI_MODEL`   | Optional    | Defaults to `gemini-2.5-flash`.                                                                                                                |
 
-The app server also has a fallback path (`src/components/wedding/gemini.server.ts`) that reads `GEMINI_API_KEY` from Vercel environment variables. Set the key in **both** places if you want the concierge to work when the Edge Function is unreachable.
+### Free AI pool (recommended)
+
+Simran answers through a pooled free tier rather than one key
+(`supabase/functions/_shared/free-router.ts`). Three keyless providers work with
+no signup at all, and every `*_API_KEY` below accepts a comma-separated list so
+each extra free account multiplies the allowance:
+
+`GEMINI_API_KEY`, `GROQ_API_KEY`, `OPENROUTER_API_KEY`, `CEREBRAS_API_KEY`,
+`MISTRAL_API_KEY`, `NVIDIA_API_KEY`, `CLOUDFLARE_ACCOUNT_ID` +
+`CLOUDFLARE_API_TOKEN`, `ZAI_API_KEY`, `COHERE_API_KEY`, `HF_TOKEN`,
+`MODELSCOPE_API_KEY`, `SILICONFLOW_API_KEY`, `AION_API_KEY`, `OLLAMA_API_KEY`.
+
+Pool controls: `AI_DAILY_LIMIT_HOMEPAGE` / `AI_DAILY_LIMIT_CARD` / `AI_DAILY_LIMIT_FORM`
+(default 100/100/40, `0` = no cap), `AI_BURST_PER_MINUTE`, `FREE_AI_PROVIDERS`,
+`FREE_AI_DISABLED_PROVIDERS`, `FREE_AI_ENABLE_KEYLESS`, `FREE_AI_ROUTES`.
+
+Full details: [free-ai-router.md](./free-ai-router.md). Probe the pool with
+`npm run ai:check`.
+
+The app server also has a fallback path (`src/components/wedding/gemini.server.ts`) that reads the same variables from Vercel. Set them in **both** places if you want the concierge to work when the Edge Function is unreachable.
 
 If you do not have the Supabase CLI, the same function can be deployed through the Supabase connector/API by bundling the function first:
 
@@ -96,18 +115,19 @@ Then upload `/tmp/wedding-concierge.bundle.ts` as the `wedding-concierge` functi
 
 Project: `mughal-moon-wedding` (`prj_wklzWAFEg7zl73Gg1QB52IGOUEPq`, team `team_Z0Mwp7VGEOtLGRPMxP3n7znB`).
 
-| Variable | Scope | Value |
-| -------- | ----- | ----- |
-| `SUPABASE_PROJECT_ID` | All | `ibqkslwleelhijhujjcm` |
-| `SUPABASE_URL` | All | `https://ibqkslwleelhijhujjcm.supabase.co` |
-| `SUPABASE_PUBLISHABLE_KEY` | All | Publishable key (`sb_publishable_…`) |
-| `SUPABASE_SERVICE_ROLE_KEY` | All, sensitive | Service-role key. Required by `src/integrations/supabase/client.server.ts` for admin server functions. Never expose to the browser. |
-| `VITE_SUPABASE_PROJECT_ID` | All | `ibqkslwleelhijhujjcm` |
-| `VITE_SUPABASE_URL` | All | `https://ibqkslwleelhijhujjcm.supabase.co` |
-| `VITE_SUPABASE_PUBLISHABLE_KEY` | All | Same publishable key |
-| `VITE_SITE_URL` | Production | `https://invitingyou.vercel.app` |
-| `GEMINI_API_KEY` | Production (optional) | Server fallback for the concierge |
-| `LOVABLE_DB_MIGRATION_URL` | Production (optional) | Only if you want `postbuild` to apply migrations during a Vercel build. Prefer the GitHub Actions job or the Supabase Dashboard. |
+| Variable                                         | Scope                 | Value                                                                                                                               |
+| ------------------------------------------------ | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
+| `SUPABASE_PROJECT_ID`                            | All                   | `ibqkslwleelhijhujjcm`                                                                                                              |
+| `SUPABASE_URL`                                   | All                   | `https://ibqkslwleelhijhujjcm.supabase.co`                                                                                          |
+| `SUPABASE_PUBLISHABLE_KEY`                       | All                   | Publishable key (`sb_publishable_…`)                                                                                                |
+| `SUPABASE_SERVICE_ROLE_KEY`                      | All, sensitive        | Service-role key. Required by `src/integrations/supabase/client.server.ts` for admin server functions. Never expose to the browser. |
+| `VITE_SUPABASE_PROJECT_ID`                       | All                   | `ibqkslwleelhijhujjcm`                                                                                                              |
+| `VITE_SUPABASE_URL`                              | All                   | `https://ibqkslwleelhijhujjcm.supabase.co`                                                                                          |
+| `VITE_SUPABASE_PUBLISHABLE_KEY`                  | All                   | Same publishable key                                                                                                                |
+| `VITE_SITE_URL`                                  | Production            | `https://invitingyou.vercel.app`                                                                                                    |
+| `GEMINI_API_KEY`                                 | Production (optional) | Server fallback for the concierge. Add any of the free-pool `*_API_KEY` values here too (see above).                                |
+| `AI_DAILY_LIMIT_HOMEPAGE`, `AI_DAILY_LIMIT_CARD` | Production (optional) | Daily answers per guest; default 100, `0` removes the cap                                                                           |
+| `LOVABLE_DB_MIGRATION_URL`                       | Production (optional) | Only if you want `postbuild` to apply migrations during a Vercel build. Prefer the GitHub Actions job or the Supabase Dashboard.    |
 
 `VITE_*` values are baked into the client bundle at build time, so change them in Vercel and redeploy; editing `.env` locally only affects local dev.
 
@@ -157,7 +177,7 @@ LOVABLE_DB_MIGRATION_URL = postgresql://postgres:[password]@db.ibqkslwleelhijhuj
 2. Submit an RSVP with a unique name → success toast; the wish appears on the wishes wall. A duplicate name is rejected by the unique index.
 3. `GET /sign-up` → create a username/password account → sign in at `/sign-in` → `/dashboard` loads.
 4. Create and publish an invitation card → open `/invite/<slug>` in a private window, submit the private RSVP, confirm the owner sees it in the dashboard.
-5. `GET /ai-concierge` and the homepage chat — offline greeting works without a Gemini key; with a key, an open-ended question returns a live answer.
+5. `GET /ai-concierge` and the homepage chat — offline greeting works with no configuration at all; an open-ended question returns a live answer from the free provider pool.
 6. `GET /cards/<id>` and `/invite-preview` load their previews.
 7. Check the browser console/network for CORS errors against `https://ibqkslwleelhijhujjcm.supabase.co`.
 
@@ -166,7 +186,7 @@ LOVABLE_DB_MIGRATION_URL = postgresql://postgres:[password]@db.ibqkslwleelhijhuj
 - **`Missing Supabase environment variable(s)`** — a `VITE_SUPABASE_*` value is missing in the build environment. Add it in Vercel and redeploy (Vite inlines values at build time).
 - **401/403 from PostgREST** — verify the publishable key belongs to project `ibqkslwleelhijhujjcm`; the old Lovable Cloud keys do not work here.
 - **Server functions fail with service-role errors** — `SUPABASE_SERVICE_ROLE_KEY` is missing or scoped to the wrong environment.
-- **Concierge returns "AI service is not configured"** — add `GEMINI_API_KEY` to the Edge Function secrets and to Vercel, then redeploy.
+- **Concierge returns "AI service is not configured"** — the provider pool is empty: you set `FREE_AI_ENABLE_KEYLESS=false` without adding any `*_API_KEY`. Add a key (or re-enable keyless) in the Edge Function secrets and in Vercel, then redeploy.
 - **CORS 403 from the Edge Function** — `ALLOWED_ORIGIN` does not match the site origin exactly (scheme + host, no trailing slash).
 - **RSVP duplicate error** — expected: one reply per normalized name.
 - **Build fails at `postbuild`** — confirm the modified `scripts/migrate.mjs` is deployed (it skips when no DB URL and `REQUIRE_DB_MIGRATIONS` is unset).

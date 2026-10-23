@@ -3,7 +3,7 @@
 ## Deployment checklist
 
 1. Apply `drizzle/migrations/0001_shared_guest_gallery.sql` **once** to the same Supabase project the invitation uses. Use the project's privileged SQL editor or the existing Drizzle migration runner. The migration is registered in `drizzle/migrations/meta/_journal.json`.
-2. Deploy the updated `wedding-concierge` Edge Function, including `supabase/functions/_shared/wedding.ts` and `_shared/music.ts`. Set a valid `GEMINI_API_KEY` in backend secrets for free-form requests. Never expose it as a `VITE_` variable.
+2. Deploy the updated `wedding-concierge` Edge Function, including `supabase/functions/_shared/wedding.ts`, `_shared/music.ts` and `_shared/free-router.ts`. Free-form requests use the pooled free tier, which works with no key at all; add `GEMINI_API_KEY` (or any other free `*_API_KEY`) to backend secrets to raise the ceiling. See [free-ai-router.md](./free-ai-router.md). Never expose a key as a `VITE_` variable.
 3. Deploy the updated application. Set public `VITE_SITE_URL` to the final HTTPS invitation origin before building, e.g. `https://your-invitation.example`, for absolute social-preview image URLs. Share-card metadata uses `/social-preview.jpg` when no origin is configured.
 4. Verify photo uploads on two different devices, the full five-photo state, Hindi/Urdu chat, an unknown song request, and browser-blocked playback.
 

@@ -5,6 +5,7 @@ The guest-facing AI assistant **Simran** at `/ai-concierge` supports English, Hi
 ## Files
 
 - `src/routes/ai-concierge.tsx` — TanStack Start page and `/ai-concierge` route for chatting with Simran.
+- `supabase/functions/_shared/free-router.ts` — the free-tier provider pool that every AI surface calls. See [free-ai-router.md](./free-ai-router.md).
 - `supabase/functions/wedding-concierge/gemini-key.ts` — non-secret defaults for the assistant name and Gemini model. Never paste credentials into this tracked file.
 - `supabase/.env` — Supabase environment file for setting `GEMINI_API_KEY` locally or pushing via `supabase secrets set --env-file supabase/.env`.
 - `supabase/functions/wedding-concierge/index.ts` — server-side Gemini proxy for Simran.
@@ -15,13 +16,24 @@ The invitation homepage links to Simran (`Ask Simran`). The page calls the funct
 supabase.functions.invoke("wedding-concierge", { body: { language, messages } });
 ```
 
-## Where to add your Gemini API key
+## Where to add API keys
+
+**A Gemini key is now optional.** Simran calls a pooled free tier
+(`supabase/functions/_shared/free-router.ts`) that rotates across ~14 free
+providers and falls back to three that need no key at all — so chat works on a
+fresh deploy with nothing configured. Adding free keys simply multiplies the
+allowance. Full setup, provider list and capacity maths:
+[free-ai-router.md](./free-ai-router.md).
+
+```sh
+npm run ai:check   # probe every route and see which ones answer
+```
 
 The checked-in key is an **intentionally invalid dummy**, not a working credential. It is present in the shared server-only config and `supabase/.env.example` so the setup locations are easy to find. Both backends use the shared `gemini-2.5-flash` model default.
 
 For local use, copy `supabase/.env.example` to `supabase/.env` (already prepared in this workspace) and replace the dummy value there. **Do not put a real key into `gemini-key.ts` or `.env.example`**, which are tracked by Git.
 
-Replies require a valid key on at least one backend:
+Each `*_API_KEY` accepts a comma-separated list, and every extra key is its own allowance:
 
 - **Production (recommended):** In **Supabase Dashboard → Edge Functions → Secrets**, set `GEMINI_API_KEY`. Deploy the function to the same project as `VITE_SUPABASE_URL`:
   ```sh
@@ -42,7 +54,7 @@ Both chat surfaces try the Edge Function first, then the app server. Each attemp
 - **Not configured:** Add the key to the backend secrets as above. An empty or dummy key cannot generate AI responses.
 - **400/404 from Gemini:** Check the configured model is supported by your account.
 - **401/403:** Check the key and API access restrictions.
-- **429:** The daily allowance was used (the reply states how many answers are left). This is the app's own limit, not Google billing; it resets 24 hours after the first message. Check Gemini quota/billing only when the backend logs report an upstream 429.
+- **429:** The guest's daily allowance was used (the reply states how many answers are left). This is the app's own limit; it resets 24 hours after the first message and is configured with `AI_DAILY_LIMIT_HOMEPAGE` / `AI_DAILY_LIMIT_CARD` (default 100 each, `0` = no cap). The router treats an upstream 429 the same way and silently moves to the next provider, so check provider quotas only when `npm run ai:check` or the backend logs report that every route is exhausted.
 - **Browser CORS or function not found:** Deploy the function and verify `ALLOWED_ORIGIN` matches your site.
 
 After deployment, test a greeting and a schedule question from both the homepage chat and `/ai-concierge`. Also test Hindi and Urdu. Do not paste keys into chat or browser code.
@@ -63,15 +75,15 @@ Creators' cards do **not** use Simran. Each published card has its own assistant
 
 A card's soundtrack is host-authored (up to five `https://` or `/audio/` links) and is played only after a guest presses play. Model playback markers are bounded to `play`, `pause`, `next` and a track number.
 
-Card chat works without a Gemini key on the app server: when `GEMINI_API_KEY` is absent, `askCardConcierge` forwards the question to the `wedding-concierge` Edge Function in `mode: "card"`, which loads the same published card and applies the same grounding. The app server only calls Gemini directly when it has its own key (for example local development with `supabase/.env`).
+Card chat works without any key of your own: when the pool has no keyed route configured, `askCardConcierge` forwards the question to the `wedding-concierge` Edge Function in `mode: "card"`, which loads the same published card, applies the same grounding and runs the same provider pool.
 
 ## Shared daily allowance
 
 One Postgres ledger (`public.ai_message_usage`, migration `0016_shared_ai_quota.sql`) is the single source of truth for every AI surface:
 
-- `public.consume_ai_message(scope, visitor, limit, window_hours)` atomically reserves an answer and returns `allowed`, `remaining`, `limit` and `resetsAt`.
+- `public.consume_ai_message(scope, visitor, limit, window_hours)` atomically reserves an answer and returns `allowed`, `remaining`, `limit` and `resetsAt`. A limit of `0` from `AI_DAILY_LIMIT_*` means "no cap" and skips the ledger.
 - `public.refund_ai_message(scope, visitor)` gives the reservation back when Gemini fails, so an error never costs a guest a message.
-- Scopes are `homepage` (5 answers/day) and `card:<slug>` (6 answers/day).
+- Scopes are `homepage` and `card:<slug>`. Both default to **100 answers/day** and are set by `AI_DAILY_LIMIT_HOMEPAGE` / `AI_DAILY_LIMIT_CARD`; `0` removes the cap. The client hides its counter and shows "Unlimited messages" when the server reports a limit of `0`.
 - The visitor key is a SHA-256 digest of a per-browser id stored in `localStorage` (`wedding-ai-visitor`), so guests behind one NAT, office or proxy do not share an allowance. Hosted clients that send no id fall back to the request IP.
 - The functions are `SECURITY DEFINER`, revoked from `anon`/`authenticated` and granted only to `service_role`.
 

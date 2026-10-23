@@ -1,4 +1,5 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import { dailyLimit } from "@/lib/ai-limits";
 import {
   READING_LABELS,
   readInvitationText,
@@ -203,20 +204,20 @@ export async function readNotesWithSimran({
   const admin = await requirePartnerAdmin(accessToken);
   const base = readInvitationText(text);
 
-  const { generateGeminiReply, hasGeminiConfig, reserveAiQuota, refundAiQuota } =
+  const { generateAiReply, hasGeminiConfig, reserveAiQuota, refundAiQuota } =
     await import("./gemini.server");
   if (!(await hasGeminiConfig())) {
     return { reading: base, aiAvailable: false, shopName: admin.shopName };
   }
 
   const scope = `form-reader:${admin.userId}`;
-  const { quota, hash } = await reserveAiQuota(scope, 40, visitor);
+  const { quota, hash } = await reserveAiQuota(scope, dailyLimit("AI_DAILY_LIMIT_FORM"), visitor);
   if (!quota.allowed) {
     return { reading: base, aiAvailable: false, shopName: admin.shopName };
   }
 
   try {
-    const reply = await generateGeminiReply({
+    const reply = await generateAiReply({
       systemInstruction: buildReaderInstruction(),
       messages: [{ role: "user", content: text.slice(0, 4000) }],
       maxOutputTokens: 900,

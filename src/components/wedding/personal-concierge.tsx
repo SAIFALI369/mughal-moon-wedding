@@ -17,7 +17,11 @@ import { getAiVisitorId } from "@/lib/ai-visitor";
 
 type Message = { role: "user" | "assistant"; text: string };
 
-const DAILY_LIMIT = 6;
+/**
+ * Starting value only — the server reports the real allowance on the first reply
+ * (`AI_DAILY_LIMIT_CARD`, default 100). `0` means no cap and hides the counter.
+ */
+const DAILY_LIMIT = 100;
 
 /**
  * The host-named concierge that belongs to this card. Guests can chat about this
@@ -43,6 +47,7 @@ export function PersonalConcierge({
   const [failedQuestion, setFailedQuestion] = useState<string | null>(null);
   // Start from the server-safe value, then hydrate the guest's local count after mount.
   const [remaining, setRemaining] = useState(DAILY_LIMIT);
+  const [limit, setLimit] = useState(DAILY_LIMIT);
   const requestLock = useRef(false);
   const logRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -98,7 +103,7 @@ export function PersonalConcierge({
         return;
       }
 
-      if (remaining <= 0) {
+      if (limit > 0 && remaining <= 0) {
         setMessages((current) => [...current, { role: "assistant", text: copy.limit }]);
         return;
       }
@@ -114,6 +119,7 @@ export function PersonalConcierge({
       setRemaining(
         typeof result.remaining === "number" ? result.remaining : Math.max(0, remaining - 1),
       );
+      if (typeof result.limit === "number" && result.limit > 0) setLimit(result.limit);
       const rendered = applyPersonalMusicReply(result.reply, value, details.songs.length);
       setMessages((current) => [...current, { role: "assistant", text: rendered }]);
     } catch (error: unknown) {
@@ -260,9 +266,9 @@ export function PersonalConcierge({
           </button>
         )}
         <p className="invite-concierge-note">{copy.note}</p>
-        {!preview && slug && (
+        {!preview && slug && limit > 0 && (
           <p className="invite-concierge-remaining" aria-live="polite">
-            {remaining} of {DAILY_LIMIT} AI answers left today
+            {remaining} of {limit} AI answers left today
           </p>
         )}
       </div>

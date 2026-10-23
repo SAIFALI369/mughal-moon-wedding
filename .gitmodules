@@ -1,0 +1,9 @@
+[submodule "third-party/free-llm-api-keys"]
+	path = third-party/free-llm-api-keys
+	url = https://github.com/freellms/free-llm-api-keys
+[submodule "third-party/freeroute"]
+	path = third-party/freeroute
+	url = https://github.com/neuralnexustech/freeroute
+[submodule "third-party/awesome-free-llm-apis"]
+	path = third-party/awesome-free-llm-apis
+	url = https://github.com/mnfst/awesome-free-llm-apis

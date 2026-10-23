@@ -7,6 +7,7 @@ Access is exclusive and issued personally. You create every account in Supabase,
 **Operator guide:** [`docs/print-shop-partners.md`](docs/print-shop-partners.md) — provision a shop, record a cash package, manage credits, and deploy the access controls. Card credits are consumed on new draft creation; deletion does not refund them.
 
 > AI concierge setup and deployment: [`docs/ai-concierge.md`](docs/ai-concierge.md)
+> Free, near-unlimited AI capacity for the concierge: [`docs/free-ai-router.md`](docs/free-ai-router.md) — the assistant pools ~14 permanent free tiers plus three keyless providers, so it answers with no key at all and scales as you add free keys.
 
 ---
 

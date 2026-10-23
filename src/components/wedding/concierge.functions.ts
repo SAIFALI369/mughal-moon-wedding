@@ -2,6 +2,7 @@ import { buildConciergeInstruction } from "../../../supabase/functions/_shared/c
 import { AI_NAME } from "../../../supabase/functions/wedding-concierge/gemini-key";
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import { dailyLimit } from "@/lib/ai-limits";
 
 const conciergeRequest = z.object({
   language: z.string().optional(),
@@ -21,12 +22,18 @@ const conciergeRequest = z.object({
     .optional(),
 });
 
-const HOMEPAGE_DAILY_LIMIT = 5;
+/**
+ * Answers per guest per day. Five used to be the whole budget because it was one
+ * Gemini key; the pooled free tier in `free-router` can afford far more. Lower it
+ * with `AI_DAILY_LIMIT_HOMEPAGE` if a deployment is being hammered, or set it to
+ * `0` to remove the cap entirely.
+ */
+const HOMEPAGE_DAILY_LIMIT = dailyLimit("AI_DAILY_LIMIT_HOMEPAGE");
 
 export const askSimranServer = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => conciergeRequest.parse(input))
   .handler(async ({ data }): Promise<{ reply: string; remaining: number; limit: number }> => {
-    const { generateGeminiReply, normalizeChatMessages, refundAiQuota, reserveAiQuota } =
+    const { generateAiReply, normalizeChatMessages, refundAiQuota, reserveAiQuota } =
       await import("./gemini.server");
 
     const language =
@@ -36,7 +43,7 @@ export const askSimranServer = createServerFn({ method: "POST" })
     const messages = normalizeChatMessages(data.messages);
     const memory = typeof data.memory === "string" ? data.memory.slice(0, 1000) : "";
 
-    // Five answers per guest per day keep token use bounded on both backends.
+    // The daily allowance is a Postgres ledger shared with the Edge Function.
     const { quota, hash } = await reserveAiQuota("homepage", HOMEPAGE_DAILY_LIMIT, data.visitor);
     if (!quota.allowed) {
       throw new Error(
@@ -46,7 +53,7 @@ export const askSimranServer = createServerFn({ method: "POST" })
 
     try {
       const systemInstruction = buildConciergeInstruction(AI_NAME, language, memory);
-      const reply = await generateGeminiReply({ systemInstruction, messages });
+      const reply = await generateAiReply({ systemInstruction, messages });
       return { reply, remaining: quota.remaining, limit: quota.limit };
     } catch (error) {
       // A failed answer must not use up one of the guest's messages.
