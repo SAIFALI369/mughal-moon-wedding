@@ -10,10 +10,7 @@ export const Route = createFileRoute("/storybook")({
       : ("royal-rajmahal" as const),
   }),
   head: () => ({
-    meta: [
-      { title: "Storybook invitations — three worlds to discover" },
-      { name: "robots", content: "noindex" },
-    ],
+    meta: [{ title: "Royal Editions — invitation themes" }, { name: "robots", content: "noindex" }],
   }),
   component: StorybookPreview,
 });
@@ -22,8 +19,8 @@ function StorybookPreview() {
   const navigate = Route.useNavigate();
   return (
     <>
-      <nav className="sb-preview-picker" aria-label="Storybook theme preview">
-        <label htmlFor="sb-theme">Explore a world</label>
+      <nav className="sb-preview-picker" aria-label="Theme preview">
+        <label htmlFor="sb-theme">Theme</label>
         <select
           id="sb-theme"
           value={theme}

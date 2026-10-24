@@ -13,6 +13,7 @@ export type SongSource =
       kind: "spotify";
       itemType: "track" | "playlist" | "album" | "episode";
       itemId: string;
+      spotifyUri: string;
       embedUrl: string;
       openUrl: string;
     };
@@ -81,6 +82,7 @@ export function resolveSongSource(value: string): SongSource | null {
       kind: "spotify",
       itemType,
       itemId,
+      spotifyUri: `spotify:${itemType}:${itemId}`,
       embedUrl: `https://open.spotify.com/embed/${itemType}/${itemId}?utm_source=generator&theme=0`,
       openUrl: `https://open.spotify.com/${itemType}/${itemId}`,
     };
@@ -116,6 +118,7 @@ export function resolveSongSource(value: string): SongSource | null {
         kind: "spotify",
         itemType,
         itemId,
+        spotifyUri: `spotify:${itemType}:${itemId}`,
         embedUrl: `https://open.spotify.com/embed/${itemType}/${itemId}?utm_source=generator&theme=0`,
         openUrl: `https://open.spotify.com/${itemType}/${itemId}`,
       };
@@ -139,15 +142,26 @@ export function isSafeSongUrl(value: string): boolean {
   return resolveSongSource(value) !== null;
 }
 
+export function defaultSongTitleForUrl(url: string, index = 0): string {
+  const source = resolveSongSource(url);
+  if (source?.kind === "youtube") return `YouTube Song ${index + 1}`;
+  if (source?.kind === "spotify") {
+    return source.itemType === "playlist" ? "Spotify Playlist" : `Spotify Track ${index + 1}`;
+  }
+  return `Wedding Song ${index + 1}`;
+}
+
 /** Lenient reader for older cards and hand-edited content. */
 export function sanitizeInvitationSongs(value: unknown): InvitationSong[] {
   if (!Array.isArray(value)) return [];
   return value
     .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
-    .map((item) => ({
-      title: typeof item.title === "string" ? item.title.trim().slice(0, 80) : "",
-      url: typeof item.url === "string" ? item.url.trim() : "",
-    }))
+    .map((item, index) => {
+      const url = typeof item.url === "string" ? item.url.trim() : "";
+      const rawTitle = typeof item.title === "string" ? item.title.trim().slice(0, 80) : "";
+      const title = rawTitle || (isSafeSongUrl(url) ? defaultSongTitleForUrl(url, index) : "");
+      return { title, url };
+    })
     .filter((song) => song.title.length > 0 && isSafeSongUrl(song.url))
     .slice(0, INVITATION_SONG_LIMIT);
 }

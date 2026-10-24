@@ -1,4 +1,4 @@
-import { isStorybook, storySound } from "./storybook";
+import { isStorybook } from "./storybook";
 import { useEffect, useRef, useState, type FormEvent } from "react";
 import confetti from "canvas-confetti";
 import { Ban, CheckCircle2, HeartHandshake } from "lucide-react";
@@ -162,11 +162,6 @@ export function InvitationRsvp({
     if (preview && theme && isStorybook(theme)) {
       setSubmitted(true);
       if (attending) celebrate();
-      if (
-        attending &&
-        document.querySelector(".personal-invite")?.getAttribute("data-sound") === "true"
-      )
-        storySound("chime");
       return;
     }
     const parsed = invitationRsvpSchema.safeParse({
@@ -194,13 +189,6 @@ export function InvitationRsvp({
       setAlreadyReplied(true);
       setSubmitted(true);
       if (attending) celebrate();
-      if (theme && isStorybook(theme)) {
-        if (
-          attending &&
-          document.querySelector(".personal-invite")?.getAttribute("data-sound") === "true"
-        )
-          storySound("chime");
-      }
     } catch (err: unknown) {
       const message =
         err && typeof err === "object" && "code" in err && err.code === "42501"
@@ -248,13 +236,7 @@ export function InvitationRsvp({
           </div>
         ) : submitted ? (
           <div role="status" className="text-center">
-            {!attending && theme && isStorybook(theme) ? (
-              <span className="sb-falling-leaf" aria-hidden="true">
-                ❧
-              </span>
-            ) : (
-              <CheckCircle2 className="mx-auto h-12 w-12 text-gold" aria-hidden="true" />
-            )}
+            <CheckCircle2 className="mx-auto h-12 w-12 text-gold" aria-hidden="true" />
             <h3 className="mt-5 font-serif text-3xl">Thank you for replying!</h3>
             <p className="mt-3 text-sm text-muted-foreground">
               {preview

@@ -8,9 +8,70 @@ import {
   type InvitationMusicCommand,
 } from "./invitation-music";
 
+type SpotifyPlaybackUpdate = {
+  data?: {
+    isPaused?: boolean;
+  };
+};
+
+type SpotifyEmbedController = {
+  play: () => void;
+  pause: () => void;
+  togglePlay?: () => void;
+  loadUri: (uri: string) => void;
+  destroy?: () => void;
+  addListener: (event: string, cb: (payload: SpotifyPlaybackUpdate) => void) => void;
+};
+
+type SpotifyIframeApi = {
+  createController: (
+    element: HTMLElement,
+    options: { uri: string; width?: string | number; height?: number },
+    callback: (controller: SpotifyEmbedController) => void,
+  ) => void;
+};
+
+declare global {
+  interface Window {
+    SpotifyIframeApi?: SpotifyIframeApi;
+    onSpotifyIframeApiReady?: (api: SpotifyIframeApi) => void;
+  }
+}
+
+let spotifyApiListeners: Array<(api: SpotifyIframeApi) => void> = [];
+
+function loadSpotifyIframeApi(onReady: (api: SpotifyIframeApi) => void): () => void {
+  if (typeof window === "undefined" || typeof document === "undefined") {
+    return () => {};
+  }
+  if (window.SpotifyIframeApi) {
+    onReady(window.SpotifyIframeApi);
+    return () => {};
+  }
+  spotifyApiListeners.push(onReady);
+  if (!document.getElementById("spotify-iframe-api-script")) {
+    const previous = window.onSpotifyIframeApiReady;
+    window.onSpotifyIframeApiReady = (api: SpotifyIframeApi) => {
+      window.SpotifyIframeApi = api;
+      previous?.(api);
+      const listeners = [...spotifyApiListeners];
+      spotifyApiListeners = [];
+      for (const listener of listeners) listener(api);
+    };
+    const script = document.createElement("script");
+    script.id = "spotify-iframe-api-script";
+    script.src = "https://open.spotify.com/embed/iframe-api/v1";
+    script.async = true;
+    document.head.appendChild(script);
+  }
+  return () => {
+    spotifyApiListeners = spotifyApiListeners.filter((cb) => cb !== onReady);
+  };
+}
+
 function postYouTubeCommand(
   iframe: HTMLIFrameElement | null,
-  func: "playVideo" | "pauseVideo" | "setVolume",
+  func: "playVideo" | "pauseVideo" | "unMute" | "setVolume",
   args: unknown[] = [],
 ) {
   iframe?.contentWindow?.postMessage(JSON.stringify({ event: "command", func, args }), "*");
@@ -19,7 +80,8 @@ function postYouTubeCommand(
 /**
  * The host's own soundtrack. Supports built-in instrumentals, direct HTTPS audio,
  * YouTube video/music links, and Spotify track/playlist/album links.
- * Never autoplays on page load: playback begins only after guest interaction.
+ * Pre-warms track 0 silently and starts playback automatically when the guest opens
+ * the invitation doors (or interacts with the card).
  */
 export function InvitationMusicPlayer({
   details,
@@ -32,35 +94,123 @@ export function InvitationMusicPlayer({
   const [open, setOpen] = useState(false);
   const [index, setIndex] = useState(0);
   const [playing, setPlaying] = useState(false);
-  const [embedActive, setEmbedActive] = useState(false);
-  const [volume, setVolume] = useState(0.35);
+  const [ytAutoplay, setYtAutoplay] = useState(false);
+  const [spotifyControllerReady, setSpotifyControllerReady] = useState(false);
+  const [volume, setVolume] = useState(0.45);
   const [status, setStatus] = useState("");
+
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const ytIframeRef = useRef<HTMLIFrameElement | null>(null);
+  const spotifyHostRef = useRef<HTMLDivElement | null>(null);
+  const spotifyControllerRef = useRef<SpotifyEmbedController | null>(null);
+  const spotifyLoadedUriRef = useRef<string | null>(null);
+  const pendingSpotifyPlayRef = useRef(false);
+  const spotifyFallbackTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const indexRef = useRef(0);
-  const volumeRef = useRef(0.35);
+  const playingRef = useRef(false);
+  const volumeRef = useRef(0.45);
+  const songsRef = useRef(songs);
+  songsRef.current = songs;
   const handlerRef = useRef<(command: InvitationMusicCommand) => void>(() => {});
 
+  function updatePlaying(next: boolean) {
+    playingRef.current = next;
+    setPlaying(next);
+  }
+
   function stopHtmlAudio() {
-    const audio = audioRef.current;
-    if (!audio) return;
-    audio.pause();
+    try {
+      audioRef.current?.pause();
+    } catch {
+      // Ignore environments without HTMLMediaElement.pause implementation
+    }
   }
 
   function ensureAudio() {
     if (audioRef.current) return audioRef.current;
     const audio = new Audio();
-    audio.preload = "metadata";
+    audio.preload = "auto";
     audio.volume = volumeRef.current;
-    audio.addEventListener("play", () => setPlaying(true));
-    audio.addEventListener("pause", () => setPlaying(false));
+    audio.addEventListener("play", () => updatePlaying(true));
+    audio.addEventListener("pause", () => updatePlaying(false));
+    audio.addEventListener("ended", () => {
+      if (songsRef.current.length > 1) {
+        handlerRef.current({ action: "next" });
+      } else {
+        audio.currentTime = 0;
+        void audio.play().catch(() => updatePlaying(false));
+      }
+    });
     audio.addEventListener("error", () => {
-      setPlaying(false);
+      updatePlaying(false);
       setStatus("That song couldn't load. Try another track.");
     });
     audioRef.current = audio;
     return audio;
   }
+
+  // Pre-warm audio track 0 on live cards so door-open click plays with zero buffering lag.
+  useEffect(() => {
+    if (inline || !songs.length) return;
+    const first = songs[0];
+    if (!first) return;
+    const source = resolveSongSource(first.url);
+    if (!source || source.kind === "audio") {
+      const audio = ensureAudio();
+      const targetSrc = source ? source.src : first.url;
+      if (audio.dataset["track"] !== `0:${targetSrc}`) {
+        audio.src = targetSrc;
+        audio.dataset["track"] = `0:${targetSrc}`;
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inline, songs[0]?.url]);
+
+  const boundedIndex = songs.length ? Math.min(index, songs.length - 1) : 0;
+  const current = songs[boundedIndex];
+  const currentSource = current ? resolveSongSource(current.url) : null;
+  const activeSpotifyUri = currentSource?.kind === "spotify" ? currentSource.spotifyUri : "";
+
+  // Initialize official Spotify EmbedController when the active track is a Spotify URI.
+  useEffect(() => {
+    if (!activeSpotifyUri) return;
+    const targetUri = activeSpotifyUri;
+
+    if (spotifyControllerRef.current) {
+      if (spotifyLoadedUriRef.current !== targetUri) {
+        spotifyLoadedUriRef.current = targetUri;
+        spotifyControllerRef.current.loadUri(targetUri);
+      }
+      if (pendingSpotifyPlayRef.current) {
+        pendingSpotifyPlayRef.current = false;
+        spotifyControllerRef.current.play();
+      }
+      return;
+    }
+
+    const cancel = loadSpotifyIframeApi((api) => {
+      const host = spotifyHostRef.current;
+      if (!host || spotifyControllerRef.current) return;
+      api.createController(host, { uri: targetUri, width: "100%", height: 80 }, (controller) => {
+        spotifyControllerRef.current = controller;
+        spotifyLoadedUriRef.current = targetUri;
+        setSpotifyControllerReady(true);
+        controller.addListener("playback_update", (event) => {
+          const paused = event?.data?.isPaused;
+          if (typeof paused === "boolean") {
+            updatePlaying(!paused);
+            if (!paused) setStatus("");
+          }
+        });
+        if (pendingSpotifyPlayRef.current) {
+          pendingSpotifyPlayRef.current = false;
+          controller.play();
+        }
+      });
+    });
+    return cancel;
+  }, [activeSpotifyUri]);
 
   function playIndex(nextIndex: number, autoplay = true) {
     if (!songs.length) return;
@@ -68,13 +218,14 @@ export function InvitationMusicPlayer({
     const nextSong = songs[bounded]!;
     const source = resolveSongSource(nextSong.url);
 
-    const trackChanged = indexRef.current !== bounded;
     indexRef.current = bounded;
     setIndex(bounded);
     setStatus("");
 
     if (!source || source.kind === "audio") {
-      setEmbedActive(false);
+      setYtAutoplay(false);
+      postYouTubeCommand(ytIframeRef.current, "pauseVideo");
+      spotifyControllerRef.current?.pause();
       const audio = ensureAudio();
       const targetSrc = source ? source.src : nextSong.url;
       if (audio.dataset["track"] !== `${bounded}:${targetSrc}`) {
@@ -84,9 +235,9 @@ export function InvitationMusicPlayer({
       if (autoplay) {
         void audio
           .play()
-          .then(() => setPlaying(true))
+          .then(() => updatePlaying(true))
           .catch(() => {
-            setPlaying(false);
+            updatePlaying(false);
             setStatus("Tap play once more to start the music.");
           });
       }
@@ -96,23 +247,46 @@ export function InvitationMusicPlayer({
     stopHtmlAudio();
 
     if (source.kind === "youtube") {
+      spotifyControllerRef.current?.pause();
       if (autoplay) {
-        if (embedActive && !trackChanged && ytIframeRef.current) {
+        if (ytIframeRef.current && bounded === boundedIndex) {
+          postYouTubeCommand(ytIframeRef.current, "unMute");
+          postYouTubeCommand(ytIframeRef.current, "setVolume", [
+            Math.round(volumeRef.current * 100),
+          ]);
           postYouTubeCommand(ytIframeRef.current, "playVideo");
+        } else {
+          setYtAutoplay(true);
         }
-        setEmbedActive(true);
-        setPlaying(true);
+        updatePlaying(true);
       } else {
-        setPlaying(false);
+        updatePlaying(false);
       }
       return;
     }
 
-    // Spotify tracks use Spotify's official embedded player controls
-    setEmbedActive(true);
-    setPlaying(false);
-    if (!inline) setOpen(true);
-    setStatus("Tap play inside the Spotify player above.");
+    // Spotify track / playlist / album
+    postYouTubeCommand(ytIframeRef.current, "pauseVideo");
+    if (autoplay) {
+      if (spotifyControllerRef.current) {
+        if (spotifyLoadedUriRef.current !== source.spotifyUri) {
+          spotifyLoadedUriRef.current = source.spotifyUri;
+          spotifyControllerRef.current.loadUri(source.spotifyUri);
+        }
+        spotifyControllerRef.current.play();
+        updatePlaying(true);
+      } else {
+        pendingSpotifyPlayRef.current = true;
+      }
+      if (!inline) {
+        if (spotifyFallbackTimerRef.current) clearTimeout(spotifyFallbackTimerRef.current);
+        spotifyFallbackTimerRef.current = setTimeout(() => {
+          if (!playingRef.current) {
+            setOpen(true);
+          }
+        }, 1600);
+      }
+    }
   }
 
   function pauseCurrent() {
@@ -120,27 +294,25 @@ export function InvitationMusicPlayer({
     const source = currentSong ? resolveSongSource(currentSong.url) : null;
     if (source?.kind === "youtube") {
       postYouTubeCommand(ytIframeRef.current, "pauseVideo");
-      setPlaying(false);
+      updatePlaying(false);
       return;
     }
-    audioRef.current?.pause();
-    setPlaying(false);
+    if (source?.kind === "spotify") {
+      pendingSpotifyPlayRef.current = false;
+      spotifyControllerRef.current?.pause();
+      updatePlaying(false);
+      return;
+    }
+    stopHtmlAudio();
+    updatePlaying(false);
   }
 
   function toggle() {
-    const currentSong = songs[indexRef.current];
-    const source = currentSong ? resolveSongSource(currentSong.url) : null;
     if (playing) {
       pauseCurrent();
       return;
     }
-    if (source?.kind === "spotify") {
-      setEmbedActive(true);
-      if (!inline) setOpen(true);
-      setStatus("Tap play inside the Spotify player above.");
-      return;
-    }
-    playIndex(indexRef.current);
+    playIndex(indexRef.current, true);
   }
 
   handlerRef.current = (command) => {
@@ -149,11 +321,11 @@ export function InvitationMusicPlayer({
       return;
     }
     if (command.action === "next") {
-      playIndex(indexRef.current + 1);
+      playIndex(indexRef.current + 1, true);
       return;
     }
     if (command.action === "play") {
-      playIndex(command.index ?? indexRef.current);
+      playIndex(command.index ?? indexRef.current, true);
     }
   };
 
@@ -174,22 +346,31 @@ export function InvitationMusicPlayer({
 
   useEffect(() => {
     return () => {
+      if (spotifyFallbackTimerRef.current) clearTimeout(spotifyFallbackTimerRef.current);
+      spotifyControllerRef.current?.destroy?.();
+      spotifyControllerRef.current = null;
       const audio = audioRef.current;
       if (!audio) return;
-      audio.pause();
-      audio.removeAttribute("src");
-      audio.load();
+      try {
+        audio.pause();
+        audio.removeAttribute("src");
+        audio.load();
+      } catch {
+        // Ignore non-browser media stubs during unmount
+      }
       audioRef.current = null;
     };
   }, []);
 
-  if (!songs.length) return null;
-  const boundedIndex = Math.min(index, songs.length - 1);
-  const current = songs[boundedIndex]!;
-  const currentSource = resolveSongSource(current.url);
+  if (!songs.length || !current) return null;
   const keepEmbedMounted =
-    embedActive && (currentSource?.kind === "youtube" || currentSource?.kind === "spotify");
+    !inline && (currentSource?.kind === "youtube" || currentSource?.kind === "spotify");
   const panelVisible = inline || open;
+
+  const youtubeSrc =
+    currentSource?.kind === "youtube"
+      ? `${currentSource.embedUrl}${ytAutoplay ? "&autoplay=1" : ""}`
+      : "";
 
   const panel = (
     <section
@@ -215,12 +396,12 @@ export function InvitationMusicPlayer({
         )}
       </div>
 
-      {currentSource?.kind === "youtube" && embedActive && (
+      {currentSource?.kind === "youtube" && (
         <div className="invite-music-embed-wrap">
           <iframe
-            key={currentSource.videoId}
+            key={`${currentSource.videoId}-${ytAutoplay ? "auto" : "ready"}`}
             ref={ytIframeRef}
-            src={`${currentSource.embedUrl}&autoplay=1`}
+            src={youtubeSrc}
             title={current.title}
             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
             referrerPolicy="strict-origin-when-cross-origin"
@@ -229,22 +410,28 @@ export function InvitationMusicPlayer({
               postYouTubeCommand(ytIframeRef.current, "setVolume", [
                 Math.round(volumeRef.current * 100),
               ]);
+              if (playingRef.current || ytAutoplay) {
+                postYouTubeCommand(ytIframeRef.current, "unMute");
+                postYouTubeCommand(ytIframeRef.current, "playVideo");
+              }
             }}
           />
         </div>
       )}
 
-      {currentSource?.kind === "spotify" && (panelVisible || embedActive) && (
+      {currentSource?.kind === "spotify" && (
         <div className="invite-music-embed-wrap">
-          <iframe
-            key={`${currentSource.itemType}-${currentSource.itemId}`}
-            src={currentSource.embedUrl}
-            title={current.title}
-            height="80"
-            allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
-            loading="lazy"
-            className="invite-music-embed invite-music-embed-spotify"
-          />
+          <div ref={spotifyHostRef} className="invite-music-spotify-host" />
+          {!spotifyControllerReady && (
+            <iframe
+              key={`${currentSource.itemType}-${currentSource.itemId}`}
+              src={`${currentSource.embedUrl}${pendingSpotifyPlayRef.current ? "&autoplay=1" : ""}`}
+              title={current.title}
+              height="80"
+              allow="autoplay; clipboard-write; encrypted-media; fullscreen; picture-in-picture"
+              className="invite-music-embed invite-music-embed-spotify"
+            />
+          )}
         </div>
       )}
 
@@ -262,7 +449,7 @@ export function InvitationMusicPlayer({
               key={`${song.url}-${songIndex}`}
               type="button"
               aria-pressed={boundedIndex === songIndex}
-              onClick={() => playIndex(songIndex)}
+              onClick={() => playIndex(songIndex, true)}
               className={`invite-music-track ${boundedIndex === songIndex ? "is-active" : ""}`}
             >
               <span className="invite-music-track-number">0{songIndex + 1}</span>
@@ -279,22 +466,20 @@ export function InvitationMusicPlayer({
       </div>
 
       <div className="invite-music-controls">
-        {currentSource?.kind !== "spotify" && (
-          <button
-            type="button"
-            className="invite-music-play"
-            aria-label={playing ? "Pause music" : "Play music"}
-            onClick={toggle}
-          >
-            {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-          </button>
-        )}
+        <button
+          type="button"
+          className="invite-music-play"
+          aria-label={playing ? "Pause music" : "Play music"}
+          onClick={toggle}
+        >
+          {playing ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+        </button>
         {songs.length > 1 && (
           <button
             type="button"
             className="invite-music-icon-button"
             aria-label="Next song"
-            onClick={() => playIndex(boundedIndex + 1)}
+            onClick={() => playIndex(boundedIndex + 1, true)}
           >
             <SkipForward className="h-4 w-4" />
           </button>
@@ -342,9 +527,7 @@ export function InvitationMusicPlayer({
               ? `Spotify · ${current.title}`
               : "Paused")}
       </p>
-      <p className="invite-music-hint">
-        Chosen by the host · plays only for you, only when you press play
-      </p>
+      <p className="invite-music-hint">Chosen by the host · tap pause anytime</p>
     </section>
   );
 

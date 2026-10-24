@@ -78,7 +78,7 @@ const extraEventSchema = z.object({
 });
 
 const songSchema = z.object({
-  title: z.string().trim().min(1, "Give the song a title").max(80),
+  title: z.string().trim().max(80).default("Wedding Song"),
   url: z
     .string()
     .trim()

@@ -60,8 +60,8 @@ export type InvitationLayout = (typeof invitationLayoutIds)[number];
 export const invitationThemeCategories = [
   {
     id: "keepsakes",
-    label: "Playable Keepsakes",
-    description: "Unbox, scratch, flip and discover your way through the story",
+    label: "Royal Editions",
+    description: "Palace arches, lotus sanctuary and temple brass in classic editorial poise",
   },
   {
     id: "signature",
@@ -115,7 +115,7 @@ export const invitationThemes: {
   {
     id: "royal-rajmahal",
     label: "Royal Rajmahal",
-    description: "Crimson palace, rose petals and a royal envelope",
+    description: "Crimson sandstone palace, antique gold arches and warm candlelight",
     swatch: "#751d30",
     category: "keepsakes",
     immersive: true,
@@ -123,7 +123,7 @@ export const invitationThemes: {
   {
     id: "lotus-goddess",
     label: "Lotus Goddess",
-    description: "Blush lotus pond, sage leaves and a keepsake box",
+    description: "Blush lotus sanctuary, sage botanicals and soft ivory gold",
     swatch: "#d6a8b4",
     category: "keepsakes",
     immersive: true,
@@ -131,7 +131,7 @@ export const invitationThemes: {
   {
     id: "calligraphy",
     label: "Calligraphy",
-    description: "Temple stone, brass lamps and an unfolding scroll",
+    description: "Carved temple stone, warm brass lamps and heirloom parchment",
     swatch: "#91663d",
     category: "keepsakes",
     immersive: true,
