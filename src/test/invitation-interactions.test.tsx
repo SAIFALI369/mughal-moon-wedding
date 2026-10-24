@@ -280,8 +280,12 @@ describe("invitation editor and guest reply", () => {
       ],
     });
     render(<InvitationMusicPlayer details={details} />);
+    // Track 0 YouTube iframe is pre-warmed (without autoplay=1) for instant door-open playback
+    const prewarmedYt = document.querySelector("iframe.invite-music-embed-youtube");
+    expect(prewarmedYt).not.toBeNull();
+    expect(prewarmedYt?.getAttribute("src")).not.toContain("autoplay=1");
+
     fireEvent.click(screen.getByRole("button", { name: "Open the invitation soundtrack" }));
-    expect(document.querySelector("iframe")).toBeNull();
 
     // Activate YouTube track
     fireEvent.click(screen.getByRole("button", { name: "Play music" }));

@@ -1,15 +1,5 @@
 import { ThemeCinema } from "./theme-cinema";
-import {
-  isStorybook,
-  StorybookEntry,
-  StorybookHero,
-  LivingMotifs,
-  ScratchStory,
-  FlipEvents,
-  VenueHunt,
-  StorybookAtmosphere,
-  StorybookSculpture,
-} from "./storybook";
+import { isStorybook, StorybookEntry, StorybookHero } from "./storybook";
 import { motion } from "framer-motion";
 import { useEffect, useState, type ReactNode } from "react";
 import {
@@ -82,7 +72,7 @@ import {
 } from "./invitation-ornaments";
 import { PersonalConcierge } from "./personal-concierge";
 import { InvitationMusicPlayer } from "./invitation-music-player";
-import { resolveSongSource } from "./invitation-music";
+import { sendInvitationMusicCommand } from "./invitation-music";
 import { InvitationGallery } from "./invitation-gallery";
 import { InvitationWishes } from "./invitation-wishes";
 
@@ -266,10 +256,7 @@ function InvitationExtras({
   preview?: boolean;
 }) {
   const assistantName = getInvitationAssistantName(details);
-  const showSoundtrackPlayer =
-    details.songs.length > 0 &&
-    (!isStorybook(details.theme) ||
-      details.songs.some((song) => resolveSongSource(song.url)?.kind !== "audio"));
+  const showSoundtrackPlayer = details.songs.length > 0;
   if (inline) {
     return (
       <section id="assistant" className="invite-section invite-extras px-6 py-20 sm:py-24">
@@ -354,6 +341,29 @@ export function PersonalInvitation({
   const layout = invitationLayoutFor(details.theme, details.framework);
   const interactive = isInteractiveLayout(layout);
   const storybook = isStorybook(details.theme);
+  const hasSongs = details.songs.length > 0;
+  const gateActive = !preview && showGate && details.elements.gate;
+
+  useEffect(() => {
+    if (preview || !hasSongs || gateActive) return;
+    let started = false;
+    const trigger = (event: Event) => {
+      if (started) return;
+      started = true;
+      window.removeEventListener("pointerdown", trigger, true);
+      window.removeEventListener("keydown", trigger, true);
+      const target = event.target instanceof Element ? event.target : null;
+      if (target?.closest(".invite-music-toggle, .invite-music-panel")) return;
+      sendInvitationMusicCommand({ action: "play", index: 0 });
+    };
+    window.addEventListener("pointerdown", trigger, { capture: true, once: true });
+    window.addEventListener("keydown", trigger, { capture: true, once: true });
+    return () => {
+      window.removeEventListener("pointerdown", trigger, true);
+      window.removeEventListener("keydown", trigger, true);
+    };
+  }, [preview, hasSongs, gateActive]);
+
   const guestName = useInvitedGuestName();
   const mascots = mascotsForTheme(details.theme);
   const play = (section: Parameters<typeof playfulCopy>[1]) => playfulCopy(layout, section);
@@ -403,11 +413,15 @@ export function PersonalInvitation({
       {!storybook && <ThemeBackdrop theme={details.theme} art={art} />}
       {!storybook && <ThemeCinema theme={details.theme} />}
       {storybook && (
-        <>
-          <LivingMotifs theme={details.theme} />
-          <StorybookAtmosphere details={details} />
-          <StorybookEntry details={details} enabled={showGate && details.elements.gate} />
-        </>
+        <StorybookEntry
+          details={details}
+          enabled={showGate && details.elements.gate}
+          onEnter={
+            !preview && hasSongs
+              ? () => sendInvitationMusicCommand({ action: "play", index: 0 })
+              : undefined
+          }
+        />
       )}
       {interactive && (
         <CardWorld
@@ -420,6 +434,9 @@ export function PersonalInvitation({
       {!storybook && showGate && !preview && details.elements.gate && (
         <Preloader
           onDone={() => {}}
+          onEnter={
+            hasSongs ? () => sendInvitationMusicCommand({ action: "play", index: 0 }) : undefined
+          }
           groomName={details.groomName}
           brideName={details.brideName}
           dateLine={gateDateLine}
@@ -486,7 +503,7 @@ export function PersonalInvitation({
       )}
 
       {storybook ? (
-        <StorybookHero details={details} />
+        <StorybookHero details={details} actions={actions} />
       ) : layout === "chhatri-dawn" ? (
         <ChhatriDawnStage
           details={details}
@@ -644,21 +661,17 @@ export function PersonalInvitation({
           <SectionHeading layout={layout} section="story" eyebrow="Our journey">
             The Story So Far
           </SectionHeading>
-          {storybook ? (
-            <ScratchStory details={details} />
-          ) : (
-            <motion.div {...fadeUp} className="invite-story-panel mx-auto max-w-4xl">
-              <Quote className="invite-story-quote h-10 w-10" aria-hidden="true" />
-              <p className="invite-story-text whitespace-pre-wrap">{details.story}</p>
-              <div className="invite-story-signoff">
-                <span className="invite-story-rule" aria-hidden="true" />
-                <span>
-                  {details.groomName} &amp; {details.brideName}
-                </span>
-                <span className="invite-story-rule" aria-hidden="true" />
-              </div>
-            </motion.div>
-          )}
+          <motion.div {...fadeUp} className="invite-story-panel mx-auto max-w-4xl">
+            <Quote className="invite-story-quote h-10 w-10" aria-hidden="true" />
+            <p className="invite-story-text whitespace-pre-wrap">{details.story}</p>
+            <div className="invite-story-signoff">
+              <span className="invite-story-rule" aria-hidden="true" />
+              <span>
+                {details.groomName} &amp; {details.brideName}
+              </span>
+              <span className="invite-story-rule" aria-hidden="true" />
+            </div>
+          </motion.div>
         </section>
       )}
 
@@ -674,14 +687,6 @@ export function PersonalInvitation({
         </div>
       )}
 
-      {storybook && (
-        <section className="sb-sculpture-interlude" aria-label="A keepsake to play with">
-          <p className="sb-eyebrow">A little wonder between chapters</p>
-          <StorybookSculpture details={details} compact />
-        </section>
-      )}
-      {storybook && details.elements.schedule && <FlipEvents details={details} />}
-      {storybook && details.elements.venueMap && <VenueHunt details={details} />}
       {interactive && <PlayTheCard layout={layout} details={details} guestName={guestName} />}
 
       <section
@@ -1036,7 +1041,7 @@ export function PersonalInvitation({
 
       {!preview && slug && <InvitationShare details={details} slug={slug} layout={layout} />}
 
-      {preview && !storybook ? (
+      {preview ? (
         <InvitationExtras details={details} inline preview={preview} />
       ) : (
         <InvitationExtras details={details} slug={slug} preview={preview} />

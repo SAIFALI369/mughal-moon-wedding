@@ -107,6 +107,7 @@ describe("host-named card assistant", () => {
       kind: "spotify",
       itemType: "track",
       itemId: "4uLU6hMCjMI75M1A2tKUQC",
+      spotifyUri: "spotify:track:4uLU6hMCjMI75M1A2tKUQC",
       embedUrl:
         "https://open.spotify.com/embed/track/4uLU6hMCjMI75M1A2tKUQC?utm_source=generator&theme=0",
       openUrl: "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC",

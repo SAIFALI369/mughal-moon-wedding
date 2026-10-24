@@ -25,6 +25,7 @@ import {
 import { processInvitationPortrait } from "./portrait-upload";
 import {
   INVITATION_SONG_LIMIT,
+  defaultSongTitleForUrl,
   resolveSongSource,
   suggestedInvitationSongs,
 } from "./invitation-music";
@@ -146,9 +147,17 @@ export function InvitationDetailsFields({
   function updateSong(index: number, patch: Partial<{ title: string; url: string }>) {
     onChange((form) => ({
       ...form,
-      songs: form.songs.map((song, position) =>
-        position === index ? { ...song, ...patch } : song,
-      ),
+      songs: form.songs.map((song, position) => {
+        if (position !== index) return song;
+        const nextUrl = patch.url ?? song.url;
+        const nextTitle =
+          patch.title !== undefined
+            ? patch.title
+            : !song.title.trim() && nextUrl.trim() && resolveSongSource(nextUrl)
+              ? defaultSongTitleForUrl(nextUrl, index)
+              : song.title;
+        return { ...song, ...patch, title: nextTitle };
+      }),
     }));
   }
 
@@ -926,9 +935,24 @@ export function InvitationDetailsFields({
           </div>
 
           {value.songs.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
-              <Music2 className="mx-auto mb-1.5 h-5 w-5 text-muted-foreground" aria-hidden="true" />
-              Pick a track above or add a YouTube / Spotify song link.
+            <div className="space-y-2.5 rounded-xl border border-dashed border-border p-4">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <Music2 className="h-4 w-4 shrink-0" aria-hidden="true" />
+                <span>Paste any YouTube, Spotify, or MP3 link to play when guests enter:</span>
+              </div>
+              <Input
+                id="song-quick-paste"
+                inputMode="url"
+                placeholder="https://youtu.be/… or https://open.spotify.com/track/…"
+                onChange={(event) => {
+                  const pasted = event.target.value.trim();
+                  if (!pasted) return;
+                  addSong({
+                    title: resolveSongSource(pasted) ? defaultSongTitleForUrl(pasted, 0) : "",
+                    url: pasted,
+                  });
+                }}
+              />
             </div>
           ) : (
             <div className="space-y-2.5">

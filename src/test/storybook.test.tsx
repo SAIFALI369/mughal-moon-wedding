@@ -1,14 +1,7 @@
-import { fireEvent, render, screen, cleanup, waitFor } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import {
-  StorybookEntry,
-  ScratchStory,
-  FlipEvents,
-  VenueHunt,
-  storybookThemes,
-  StorybookAtmosphere,
-} from "@/components/wedding/storybook";
+import { StorybookEntry, StorybookHero, storybookThemes } from "@/components/wedding/storybook";
 import { getInvitationDetails } from "@/components/wedding/invitation-details";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
 import { InvitationRsvp } from "@/components/wedding/invitation-rsvp";
@@ -17,16 +10,17 @@ import { invitationThemes } from "@/components/wedding/invitation-options";
 import { invitationArt } from "@/components/wedding/invitation-art";
 import { paletteForTheme } from "@/lib/print-sheets";
 import sample from "@/config/wedding.config.json";
+
 const insert = vi.hoisted(() => vi.fn(async () => ({ error: null })));
 vi.mock("@/lib/db", () => ({ supabase: { from: () => ({ insert }) } }));
+
 const details = getInvitationDetails(sample);
-let observe: ReturnType<typeof vi.fn>;
+
 beforeEach(() => {
-  observe = vi.fn();
   vi.stubGlobal(
     "IntersectionObserver",
     class {
-      observe = observe;
+      observe() {}
       disconnect() {}
       unobserve() {}
     },
@@ -40,84 +34,90 @@ beforeEach(() => {
   );
   insert.mockClear();
 });
+
 afterEach(() => {
   cleanup();
   vi.unstubAllGlobals();
   vi.useRealTimers();
 });
-describe("playable keepsake suite", () => {
+
+describe("royal editions suite", () => {
   it("accepts the central JSON config in the existing publishing schema", () => {
     expect(invitationContentSchema.safeParse(sample).success).toBe(true);
   });
-  it.each(storybookThemes)("registers %s with art, tradition and printable palette", (theme) => {
-    expect(invitationThemes.find((t) => t.id === theme)?.category).toBe("keepsakes");
-    expect(invitationArt[theme]).toMatch(/webp/);
-    expect(paletteForTheme(theme).ink).not.toBe(paletteForTheme("eid").ink);
-    const markup = renderToStaticMarkup(
-      <PersonalInvitation title={sample.title} content={{ ...sample, theme }} preview />,
-    );
-    for (const token of [
-      "sb-entry",
-      "sb-hero",
-      "sb-scratch",
-      "sb-flip",
-      "sb-hunt",
-      'id="rsvp"',
-      'id="wishes"',
-      'id="contact"',
-    ])
-      expect(markup).toContain(token);
-    expect(markup).not.toContain("invite-world-dock");
+
+  it.each(storybookThemes)(
+    "renders %s as a refined editorial invitation without gimmicks",
+    (theme) => {
+      expect(invitationThemes.find((t) => t.id === theme)?.category).toBe("keepsakes");
+      expect(invitationArt[theme]).toMatch(/webp/);
+      expect(paletteForTheme(theme).ink).not.toBe(paletteForTheme("eid").ink);
+
+      const markup = renderToStaticMarkup(
+        <PersonalInvitation title={sample.title} content={{ ...sample, theme }} preview />,
+      );
+
+      for (const token of [
+        "sb-entry",
+        "sb-door-left",
+        "sb-door-right",
+        "sb-hero",
+        "sb-hero-art",
+        "sb-hero-copy",
+        "invite-story-panel",
+        'id="celebration"',
+        'id="schedule"',
+        'id="venue"',
+        'id="rsvp"',
+        'id="wishes"',
+        'id="contact"',
+      ]) {
+        expect(markup).toContain(token);
+      }
+
+      for (const removedGimmick of [
+        "sb-package",
+        "sb-scratch",
+        "sb-flip",
+        "sb-hunt",
+        "sc-scene",
+        "sb-character",
+        "sb-falling-leaf",
+        "invite-world-dock",
+      ]) {
+        expect(markup).not.toContain(removedGimmick);
+      }
+    },
+  );
+
+  it("renders framed editorial artwork and couple copy in StorybookHero", () => {
+    for (const theme of storybookThemes) {
+      const html = renderToStaticMarkup(
+        <StorybookHero details={getInvitationDetails({ ...sample, theme })} />,
+      );
+      expect(html).toContain("sb-hero-frame");
+      expect(html).toContain("sb-hero-art");
+      expect(html).toContain("sb-hero-copy");
+      expect(html).not.toContain("sc-scene");
+      expect(html).not.toContain("cine-");
+    }
   });
-  it("opens on tap and restores body scroll after the opening animation", async () => {
+
+  it("opens architectural double doors on tap, fires onEnter synchronously, and restores scroll", () => {
     vi.useFakeTimers();
-    render(<StorybookEntry details={details} enabled />);
+    const onEnter = vi.fn();
+    render(<StorybookEntry details={details} enabled onEnter={onEnter} />);
     expect(document.body.style.overflow).toBe("hidden");
-    fireEvent.click(screen.getByRole("button", { name: "Open the envelope" }));
+
+    fireEvent.click(screen.getByRole("button", { name: /Open invitation/i }));
+    expect(onEnter).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("dialog").className).toContain("is-opening");
-    const { act } = await import("@testing-library/react");
-    act(() => vi.advanceTimersByTime(1200));
+
+    act(() => vi.advanceTimersByTime(1300));
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.body.style.overflow).not.toBe("hidden");
   });
-  it("provides a keyboard alternative to scratching", () => {
-    render(<ScratchStory details={details} />);
-    fireEvent.click(screen.getByRole("button", { name: "Reveal without scratching" }));
-    expect(screen.getByRole("status")).toHaveTextContent("A memory uncovered");
-    expect(document.querySelector("canvas")).toBeNull();
-    expect(screen.getByText(sample.story)).toBeVisible();
-  });
-  it("flips events both ways and exposes their details", () => {
-    render(<FlipEvents details={details} />);
-    const card = screen.getAllByRole("button")[0];
-    expect(card).toHaveAttribute("aria-expanded", "false");
-    fireEvent.click(card);
-    expect(card).toHaveAttribute("aria-expanded", "true");
-    expect(card).toHaveTextContent(sample.additionalEvents[0].time);
-    fireEvent.click(card);
-    expect(card).toHaveAttribute("aria-expanded", "false");
-  });
-  it("reveals venue objects separately and offers a show-all escape hatch", () => {
-    render(<VenueHunt details={details} />);
-    fireEvent.click(screen.getByRole("button", { name: "Find our place" }));
-    expect(screen.getByRole("link", { name: /Get directions/ })).toHaveAttribute(
-      "href",
-      sample.mapUrl,
-    );
-    expect(screen.getByRole("status")).toHaveTextContent("1 of 3");
-    fireEvent.click(screen.getByRole("button", { name: "Show all travel details" }));
-    expect(screen.getByRole("status")).toHaveTextContent("3 of 3");
-  });
-  it("does not construct an audio player until a consenting gesture", () => {
-    const Audio = vi.fn();
-    vi.stubGlobal("Audio", Audio);
-    render(<StorybookAtmosphere details={details} />);
-    expect(Audio).not.toHaveBeenCalled();
-    expect(screen.getByRole("button", { name: "Enable soundtrack and effects" })).toHaveAttribute(
-      "aria-pressed",
-      "false",
-    );
-  });
+
   it("demo RSVP validates names, celebrates locally, and never writes a row", async () => {
     render(<InvitationRsvp theme="royal-rajmahal" preview />);
     fireEvent.change(screen.getByLabelText("Your full name *"), {

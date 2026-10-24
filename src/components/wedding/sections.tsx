@@ -223,6 +223,7 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
 /* ───────── Preloader ───────── */
 export function Preloader({
   onDone,
+  onEnter,
   groomName = "Mohsin",
   brideName = "Simran",
   dateLine = "22–23 November 2026 · New Delhi",
@@ -232,6 +233,7 @@ export function Preloader({
   theme,
 }: {
   onDone: () => void;
+  onEnter?: () => void;
   groomName?: string;
   brideName?: string;
   dateLine?: string;
@@ -272,6 +274,7 @@ export function Preloader({
 
   function enter(withMusic: boolean) {
     if (opening) return;
+    onEnter?.();
     if (enableMusic) {
       window.dispatchEvent(new Event(withMusic ? "wedding:enter" : "wedding:enter-silent"));
     }
