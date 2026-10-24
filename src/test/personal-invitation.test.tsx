@@ -3,10 +3,14 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { describe, expect, it } from "vitest";
 import {
   buildInvitationCalendarUrl,
+  formatDdMmYyyyTyping,
   getInvitationDetails,
+  INVITATION_DATE_FORMAT_ERROR,
+  INVITATION_PAST_DATE_ERROR,
   invitationExpiry,
-  invitationSaveExpiry,
   parseInvitationDate,
+  parseStrictDdMmYyyy,
+  validateInvitationFormDate,
 } from "@/components/wedding/invitation-details";
 import { invitationContentSchema } from "@/components/wedding/invitation-schema";
 import { InvitationCover, PersonalInvitation } from "@/components/wedding/invitation-template";
@@ -30,51 +34,58 @@ describe("personal invitation details", () => {
     expect(details.theme).toBe("eid");
   });
 
-  it("accepts any date string in the form schema while parsing common formats for countdowns", () => {
-    expect(parseInvitationDate("26th November 2029")).toEqual({ year: 2029, month: 11, day: 26 });
-    expect(parseInvitationDate("26/11/2029")).toEqual({ year: 2029, month: 11, day: 26 });
-    expect(parseInvitationDate("26-11-2029")).toEqual({ year: 2029, month: 11, day: 26 });
-    expect(parseInvitationDate("26.11.29")).toEqual({ year: 2029, month: 11, day: 26 });
-    expect(parseInvitationDate("Sunday, 26th of Nov 2029")).toEqual({
-      year: 2029,
-      month: 11,
-      day: 26,
-    });
-    expect(parseInvitationDate("26 Sept 2029")).toEqual({ year: 2029, month: 9, day: 26 });
-    expect(parseInvitationDate("1st January 2029")).toEqual({ year: 2029, month: 1, day: 1 });
-    expect(parseInvitationDate("2nd Feb 2029")).toEqual({ year: 2029, month: 2, day: 2 });
-    expect(parseInvitationDate("3rd March, 2029")).toEqual({ year: 2029, month: 3, day: 3 });
-    expect(parseInvitationDate("November 26th, 2029")).toEqual({ year: 2029, month: 11, day: 26 });
-    expect(parseInvitationDate("15 December 2026")).toEqual({ year: 2026, month: 12, day: 15 });
-    expect(parseInvitationDate("December 15, 2026")).toEqual({ year: 2026, month: 12, day: 15 });
-    expect(parseInvitationDate("2026-12-15")).toEqual({ year: 2026, month: 12, day: 15 });
-    expect(parseInvitationDate("2026-02-30")).toBeNull();
-    expect(parseInvitationDate("31st February 2029")).toBeNull();
-    expect(parseInvitationDate("unknown day")).toBeNull();
+  it("accepts only future or today DD/MM/YYYY dates in the form schema and rejects past or non-DD/MM/YYYY dates", () => {
+    expect(parseStrictDdMmYyyy("26/11/2029")).toEqual({ year: 2029, month: 11, day: 26 });
+    expect(parseStrictDdMmYyyy("05/12/2029")).toEqual({ year: 2029, month: 12, day: 5 });
+    expect(parseStrictDdMmYyyy("5/12/2029")).toBeNull();
+    expect(parseStrictDdMmYyyy("26-11-2029")).toBeNull();
+    expect(parseStrictDdMmYyyy("2029-11-26")).toBeNull();
+    expect(parseStrictDdMmYyyy("26th November 2029")).toBeNull();
+    expect(parseStrictDdMmYyyy("31/02/2029")).toBeNull();
 
-    for (const anyDate of [
+    const fixedNow = new Date(2026, 9, 24, 15, 0, 0); // 24/10/2026 local
+    expect(validateInvitationFormDate("24/10/2026", fixedNow)).toBeNull();
+    expect(validateInvitationFormDate("25/10/2026", fixedNow)).toBeNull();
+    expect(validateInvitationFormDate("23/10/2026", fixedNow)).toBe(INVITATION_PAST_DATE_ERROR);
+    expect(validateInvitationFormDate("26-11-2029", fixedNow)).toBe(INVITATION_DATE_FORMAT_ERROR);
+
+    expect(formatDdMmYyyyTyping("26112029", "")).toBe("26/11/2029");
+    expect(formatDdMmYyyyTyping("261", "26")).toBe("26/1");
+
+    expect(
+      invitationContentSchema.safeParse({
+        ...content,
+        date: "26/11/2029",
+        rsvpDeadline: "10/11/2029",
+        additionalEvents: [
+          { title: "Mehndi", date: "25/11/2029", time: "6 PM", venue: "Lawn", address: "" },
+        ],
+      }).success,
+    ).toBe(true);
+
+    for (const wrongFormat of [
+      "26-11-2029",
+      "2029-11-26",
       "26th November 2029",
-      "26/11/2029",
-      "26-11-2026",
-      "Sunday, 26 Nov 2029",
-      "26 & 27 November 2029",
-      "Winter 2029",
-      "To be announced",
+      "6/11/2029",
+      "31/02/2029",
     ]) {
-      expect(
-        invitationContentSchema.safeParse({
-          ...content,
-          date: anyDate,
-          rsvpDeadline: anyDate,
-          additionalEvents: [
-            { title: "Mehndi", date: anyDate, time: "6 PM", venue: "Lawn", address: "" },
-          ],
-        }).success,
-      ).toBe(true);
+      const parsed = invitationContentSchema.safeParse({ ...content, date: wrongFormat });
+      expect(parsed.success).toBe(false);
+      if (!parsed.success) {
+        expect(parsed.error.issues[0]?.message).toBe(INVITATION_DATE_FORMAT_ERROR);
+      }
     }
 
-    expect(new Date(invitationSaveExpiry("To be announced")).getTime()).toBeGreaterThan(Date.now());
-    expect(new Date(invitationSaveExpiry("10 January 2020")).getTime()).toBeGreaterThan(Date.now());
+    const pastMain = invitationContentSchema.safeParse({ ...content, date: "01/01/2025" });
+    expect(pastMain.success).toBe(false);
+    if (!pastMain.success) {
+      expect(pastMain.error.issues[0]?.message).toBe(INVITATION_PAST_DATE_ERROR);
+    }
+
+    // Legacy saved cards still parse for countdowns & date plates on the invitation itself
+    expect(parseInvitationDate("15 December 2026")).toEqual({ year: 2026, month: 12, day: 15 });
+    expect(parseInvitationDate("26/11/2029")).toEqual({ year: 2029, month: 11, day: 26 });
   });
 
   it("uses this card's date, time, venue and message in the calendar, not the homepage event", () => {

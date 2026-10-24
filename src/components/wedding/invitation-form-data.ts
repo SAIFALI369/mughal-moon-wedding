@@ -1,5 +1,5 @@
 import type { InvitationContent } from "./invitation-schema";
-import { getInvitationDetails } from "./invitation-details";
+import { getInvitationDetails, toDdMmYyyyIfPossible } from "./invitation-details";
 import { defaultInvitationElements } from "./invitation-options";
 
 export type InvitationForm = InvitationContent & { title: string };
@@ -52,7 +52,12 @@ export function invitationFormForCard(title: string, content: unknown): Invitati
     title,
     groomName: field("groomName"),
     brideName: field("brideName"),
-    date: field("date"),
+    date: toDdMmYyyyIfPossible(field("date")),
+    rsvpDeadline: toDdMmYyyyIfPossible(details.rsvpDeadline),
+    additionalEvents: details.additionalEvents.map((event) => ({
+      ...event,
+      date: toDdMmYyyyIfPossible(event.date),
+    })),
     time: field("time"),
     venue: field("venue"),
     address: field("address"),

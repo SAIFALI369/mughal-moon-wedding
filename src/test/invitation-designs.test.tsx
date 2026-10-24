@@ -27,7 +27,7 @@ import {
 const basics = {
   groomName: "Ayaan",
   brideName: "Zara",
-  date: "15 December 2030",
+  date: "15/12/2030",
   time: "4:00 PM IST",
   venue: "Garden Pavilion",
   address: "Patna, Bihar",
@@ -126,7 +126,7 @@ describe("creator invitation design and input", () => {
     for (const required of [
       "Ayaan",
       "Zara",
-      "15 December 2030",
+      "15/12/2030",
       "4:00 PM IST",
       "Garden Pavilion",
       "Patna, Bihar",
@@ -256,12 +256,18 @@ describe("creator invitation design and input", () => {
     expect(invitationContentSchema.safeParse({ ...complete, date: "26/11/2029" }).success).toBe(
       true,
     );
+    expect(invitationContentSchema.safeParse({ ...complete, date: "2030-12-15" }).success).toBe(
+      false,
+    );
     expect(
-      invitationContentSchema.safeParse({ ...complete, date: "26 & 27 November 2029" }).success,
-    ).toBe(true);
+      invitationContentSchema.safeParse({ ...complete, date: "26th November 2029" }).success,
+    ).toBe(false);
+    expect(invitationContentSchema.safeParse({ ...complete, date: "01/01/2020" }).success).toBe(
+      false,
+    );
     expect(
       invitationContentSchema.safeParse({ ...complete, rsvpDeadline: "tomorrow" }).success,
-    ).toBe(true);
+    ).toBe(false);
     expect(
       invitationContentSchema.safeParse({
         ...complete,

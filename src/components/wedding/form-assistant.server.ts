@@ -1,6 +1,7 @@
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { dailyLimit } from "@/lib/ai-limits";
 import {
+  normalizeInvitationDate,
   READING_LABELS,
   readInvitationText,
   REQUIRED_READING_KEYS,
@@ -65,13 +66,16 @@ function asEvents(value: unknown): ReadEvent[] {
   if (!Array.isArray(value)) return [];
   return value
     .filter((item): item is Record<string, unknown> => !!item && typeof item === "object")
-    .map((item) => ({
-      title: asText(item.title, 80),
-      date: asText(item.date, 100),
-      time: asText(item.time, 100),
-      venue: asText(item.venue, 120),
-      address: asText(item.address, 200),
-    }))
+    .map((item) => {
+      const rawDate = asText(item.date, 100);
+      return {
+        title: asText(item.title, 80),
+        date: normalizeInvitationDate(rawDate)?.value ?? rawDate,
+        time: asText(item.time, 100),
+        venue: asText(item.venue, 120),
+        address: asText(item.address, 200),
+      };
+    })
     .filter((event) => event.title)
     .slice(0, 4);
 }
@@ -93,13 +97,16 @@ export function mergeSimranReading(base: InvitationReading, raw: RawReading): In
   );
 
   for (const key of Object.keys(READING_LABELS) as ReadingFieldKey[]) {
-    const value = asText(raw[key], key === "message" || key === "giftsNote" ? 600 : 200);
-    if (!value) continue;
+    const rawVal = asText(raw[key], key === "message" || key === "giftsNote" ? 600 : 200);
+    if (!rawVal) continue;
+    const normalized =
+      key === "date" || key === "rsvpDeadline" ? normalizeInvitationDate(rawVal) : null;
+    const value = normalized ? normalized.value : rawVal;
     byKey.set(key, {
       key,
       label: READING_LABELS[key],
       value,
-      ...(checks.has(key) ? { check: true } : {}),
+      ...(checks.has(key) || normalized?.check ? { check: true } : {}),
     });
   }
 
@@ -155,7 +162,7 @@ Shape (all string values are required keys; use "" when the text does not state 
 
 Rules:
 - Never invent a name, date, venue, phone number or link. If it is not written, leave it empty.
-- Dates must be written as "22 November 2026". Times as "4:00 PM" or "4:00 PM IST". Keep a stated zone.
+- Dates must be written as "DD/MM/YYYY" (for example "22/11/2029"). Times as "4:00 PM" or "4:00 PM IST". Keep a stated zone.
 - Names keep the text's own spelling; do not translate or transliterate.
 - "eventType" is the main ceremony: Nikah ceremony, Shubh Vivah, Wedding ceremony, Wedding reception, Engagement ceremony. Extra celebrations go in "additionalEvents" (sangeet, mehndi, haldi, walima…).
 - Put anything written after "gifts", "shagun" or "registry" in "giftsNote"; a live link in "livestreamUrl"; a maps link in "mapUrl"; a phone in "contactPhone"; a #tag in "hashtag".

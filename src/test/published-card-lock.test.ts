@@ -18,6 +18,7 @@ beforeAll(async () => {
   await db.exec(read("../../drizzle/migrations/0002_personal_invitation_cards.sql"));
   await db.exec(read("../../drizzle/migrations/0004_invitation_expiry_and_memory.sql"));
   await db.exec(read("../../drizzle/migrations/0018_lock_published_couple_identity.sql"));
+  await db.exec(read("../../drizzle/migrations/0019_dd_mm_yyyy_dates.sql"));
 }, 30_000);
 
 afterAll(() => db.close());
@@ -152,11 +153,31 @@ describe("published card couple-identity lock & ordinal date expiry", () => {
     );
     expect(new Date(rows[0]!.expires_at).getUTCFullYear()).toBe(2029);
     expect(new Date(rows[0]!.expires_at).getUTCMonth()).toBe(10); // November (0-indexed)
+
+    const ddMm = await db.query<{ expires_at: string }>(
+      `INSERT INTO public.invitation_cards (owner_id, title, slug, content)
+       VALUES ($1, 'DD/MM/YYYY Test', 'dd-mm-yyyy-2029', $2)
+       RETURNING expires_at`,
+      [
+        ownerId,
+        JSON.stringify({
+          groomName: "Ayaan",
+          brideName: "Zara",
+          date: "05/11/2029",
+        }),
+      ],
+    );
+    expect(new Date(ddMm.rows[0]!.expires_at).getUTCFullYear()).toBe(2029);
+    expect(new Date(ddMm.rows[0]!.expires_at).getUTCMonth()).toBe(10); // November, not May
+    expect(new Date(ddMm.rows[0]!.expires_at).getUTCDate()).toBe(6); // 5 Nov + 1 day
   });
 
   it("keeps drizzle and supabase migration copies byte-for-byte identical", () => {
     expect(read("../../drizzle/migrations/0018_lock_published_couple_identity.sql")).toBe(
       read("../../supabase/migrations/20261024000000_lock_published_couple_identity.sql"),
+    );
+    expect(read("../../drizzle/migrations/0019_dd_mm_yyyy_dates.sql")).toBe(
+      read("../../supabase/migrations/20261024010000_dd_mm_yyyy_dates.sql"),
     );
   });
 });

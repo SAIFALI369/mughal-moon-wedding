@@ -25,14 +25,14 @@ describe("reading a partner's notes", () => {
     const values = readingValues(reading);
     expect(values.groomName).toBe("Ayaan");
     expect(values.brideName).toBe("Zara");
-    expect(values.date).toBe("22 November 2026");
+    expect(values.date).toBe("22/11/2026");
     expect(values.time).toBe("4:00 PM");
     expect(values.venue).toBe("Jama Masjid Hall");
     expect(values.address).toBe("Patna, Bihar");
     expect(values.eventType).toBe("Nikah ceremony");
     expect(values.contactPhone).toBe("+91 98765 43210");
     expect(values.dressCode).toBe("Indian formal");
-    expect(values.rsvpDeadline).toBe("10 November 2026");
+    expect(values.rsvpDeadline).toBe("10/11/2026");
     expect(values.hashtag).toBe("#AyaanWedsZara");
     expect(readingCompleteness(reading).required).toBe(6);
     expect(reading.missing.map((item) => item.key)).not.toContain("groomName");
@@ -45,27 +45,27 @@ describe("reading a partner's notes", () => {
     const values = readingValues(reading);
     expect(values.groomName).toBe("Ayaan Khan");
     expect(values.brideName).toBe("Zara Sheikh");
-    expect(values.date).toBe("22 November 2026");
+    expect(values.date).toBe("22/11/2026");
     expect(values.venue).toBe("Jama Masjid Hall");
   });
 
   it("keeps an extra celebration separate from the main date", () => {
     const reading = readInvitationText(NOTE);
-    expect(reading.fields.find((field) => field.key === "date")?.value).toBe("22 November 2026");
+    expect(reading.fields.find((field) => field.key === "date")?.value).toBe("22/11/2026");
     expect(reading.events).toHaveLength(1);
     expect(reading.events[0]).toMatchObject({
       title: "Sangeet",
-      date: "20 November 2026",
+      date: "20/11/2026",
       time: "7:00 PM",
       venue: "Sharma House",
     });
   });
 
-  it("reads day-first numeric dates but asks the partner to check them", () => {
+  it("reads day-first numeric dates into DD/MM/YYYY and asks the partner to check ambiguous ones", () => {
     const ambiguous = normalizeInvitationDate("03/04/2027");
-    expect(ambiguous).toEqual({ value: "3 April 2027", check: true });
+    expect(ambiguous).toEqual({ value: "03/04/2027", check: true });
     const clear = normalizeInvitationDate("22/11/2026");
-    expect(clear).toEqual({ value: "22 November 2026", check: false });
+    expect(clear).toEqual({ value: "22/11/2026", check: false });
     expect(normalizeInvitationDate("31 February 2027")).toBeNull();
     expect(normalizeInvitationTime("7 pm")).toEqual({ value: "7:00 PM", check: false });
     expect(normalizeInvitationTime("16:30")).toEqual({ value: "4:30 PM", check: true });
@@ -87,7 +87,7 @@ describe("reading a partner's notes", () => {
     const draft = { ...emptyInvitationForm(), brideName: "Kept by hand" };
     const merged = mergeReadingIntoForm(draft, reading, ["groomName", "date", "venue"]);
     expect(merged.groomName).toBe("Ayaan");
-    expect(merged.date).toBe("22 November 2026");
+    expect(merged.date).toBe("22/11/2026");
     expect(merged.venue).toBe("Jama Masjid Hall");
     expect(merged.brideName).toBe("Kept by hand");
     expect(merged.address).toBe("");

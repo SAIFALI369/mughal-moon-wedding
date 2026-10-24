@@ -134,6 +134,13 @@
       "when": 1792800000000,
       "tag": "0018_lock_published_couple_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1792850000000,
+      "tag": "0019_dd_mm_yyyy_dates",
+      "breakpoints": true
     }
   ]
 }
