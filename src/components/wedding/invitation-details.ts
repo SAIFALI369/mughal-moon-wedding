@@ -151,7 +151,7 @@ export function getInvitationDetails(content: unknown): InvitationDetails {
         venue: stringField(value, "venue"),
         address: stringField(value, "address"),
       }))
-      .filter((event) => event.title && parseInvitationDate(event.date) && event.venue)
+      .filter((event) => event.title && event.date && event.venue)
       .slice(0, 4),
     groomPhoto: groomPhoto && isSafePortrait(groomPhoto) ? groomPhoto : null,
     bridePhoto: bridePhoto && isSafePortrait(bridePhoto) ? bridePhoto : null,
@@ -217,23 +217,56 @@ export function getInvitationMonogram(
   return { left: initial(details.groomName), right: initial(details.brideName) };
 }
 
-/** Accept ordinal dates ("26th November 2029"), plain written dates, and ISO dates without locale-dependent parsing. */
+/**
+ * Best-effort calendar parser for countdowns, date plates, and Google Calendar links.
+ * Supports ISO ("2029-11-26"), Indian/European numeric ("26/11/2029", "26-11-2029",
+ * "26.11.2029", "26/11/29"), ordinal & written dates ("26th November 2029",
+ * "Sunday, 26th of Nov 2029", "26-Nov-2029", "November 26th, 2029"), etc.
+ * Free-form dates that do not map to a single calendar day return `null` and
+ * still display verbatim across the invitation.
+ */
 export function parseInvitationDate(value: string): DateParts | null {
-  const input = value.trim();
+  const input = value
+    .trim()
+    .replace(
+      /^(?:monday|tuesday|wednesday|thursday|friday|saturday|sunday|mon|tue|tues|wed|thu|thur|thurs|fri|sat|sun)[,.\s-]+/i,
+      "",
+    )
+    .trim();
   let year: number;
   let month: number;
   let day: number;
-  const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(input);
-  const dayFirst = /^(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]+),?\s+(\d{4})$/i.exec(input);
-  const monthFirst = /^([a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})$/i.exec(input);
+  const iso = /^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})$/.exec(input);
+  const numericDayFirst = /^(\d{1,2})[-/.](\d{1,2})[-/.](\d{2}|\d{4})$/.exec(input);
+  const dayFirst =
+    /^(\d{1,2})(?:st|nd|rd|th)?(?:\s+of)?[\s/-]+([a-z]+)[,.\s/-]+(\d{2}|\d{4})$/i.exec(input);
+  const monthFirst = /^([a-z]+)[\s/-]+(\d{1,2})(?:st|nd|rd|th)?[,.\s/-]+(\d{2}|\d{4})$/i.exec(
+    input,
+  );
+
+  const normalizeYear = (raw: string) => {
+    const n = Number(raw);
+    return raw.length === 2 ? 2000 + n : n;
+  };
+  const lookupMonth = (raw: string) => {
+    const clean = raw.toLowerCase().replace(/\.$/, "");
+    if (clean === "sept") return 9;
+    return MONTHS.findIndex((item) => item === clean || item.slice(0, 3) === clean) + 1;
+  };
 
   if (iso) {
-    [, year, month, day] = iso.map(Number);
+    year = Number(iso[1]);
+    month = Number(iso[2]);
+    day = Number(iso[3]);
+  } else if (numericDayFirst) {
+    day = Number(numericDayFirst[1]);
+    month = Number(numericDayFirst[2]);
+    year = normalizeYear(numericDayFirst[3]);
   } else if (dayFirst || monthFirst) {
-    const name = (dayFirst?.[2] ?? monthFirst?.[1] ?? "").toLowerCase();
-    month = MONTHS.findIndex((item) => item === name || item.slice(0, 3) === name) + 1;
+    const name = dayFirst?.[2] ?? monthFirst?.[1] ?? "";
+    month = lookupMonth(name);
     day = Number(dayFirst?.[1] ?? monthFirst?.[2]);
-    year = Number(dayFirst?.[3] ?? monthFirst?.[3]);
+    year = normalizeYear((dayFirst?.[3] ?? monthFirst?.[3])!);
   } else {
     return null;
   }
@@ -381,4 +414,18 @@ export function invitationExpiry(dateText: string): string | null {
   return date
     ? new Date(Date.UTC(date.year, date.month - 1, date.day + 2) - 1).toISOString()
     : null;
+}
+
+/**
+ * Safe expiry timestamp when saving a card from the editor:
+ * uses `invitationExpiry` when the parsed date is in the future, and falls back
+ * to +365 days so custom free-form date text or past test dates never cause a
+ * newly saved card to be auto-deleted immediately.
+ */
+export function invitationSaveExpiry(dateText: string): string {
+  const parsed = invitationExpiry(dateText);
+  if (parsed && new Date(parsed).getTime() > Date.now()) {
+    return parsed;
+  }
+  return new Date(Date.now() + 365 * 24 * 60 * 60_000).toISOString();
 }

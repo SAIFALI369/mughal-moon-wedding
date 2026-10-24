@@ -248,18 +248,20 @@ describe("invitation editor and guest reply", () => {
     expect(screen.getByText("YouTube")).toBeInTheDocument();
   });
 
-  it("shows the 26th November 2029 date format error on invalid dates and accepts ordinal dates", () => {
+  it("accepts any date string in the editor without showing a date format error", () => {
     render(<Editor compact />);
     const dateInput = screen.getByLabelText("Date *");
-    fireEvent.change(dateInput, { target: { value: "invalid date" } });
-    expect(
-      screen.getByText("Date should be in this format: 26th November 2029"),
-    ).toBeInTheDocument();
-
-    fireEvent.change(dateInput, { target: { value: "26th November 2029" } });
-    expect(
-      screen.queryByText("Date should be in this format: 26th November 2029"),
-    ).not.toBeInTheDocument();
+    for (const sample of [
+      "26/11/2029",
+      "26-11-2029",
+      "26th November 2029",
+      "26 & 27 Nov 2029",
+      "Next winter",
+    ]) {
+      fireEvent.change(dateInput, { target: { value: sample } });
+      expect(dateInput).toHaveValue(sample);
+      expect(dateInput).not.toHaveAttribute("aria-invalid", "true");
+    }
   });
 
   it("plays YouTube and Spotify soundtrack embeds and keeps them mounted when minimized", () => {

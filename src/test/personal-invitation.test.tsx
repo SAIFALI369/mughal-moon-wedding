@@ -5,12 +5,10 @@ import {
   buildInvitationCalendarUrl,
   getInvitationDetails,
   invitationExpiry,
+  invitationSaveExpiry,
   parseInvitationDate,
 } from "@/components/wedding/invitation-details";
-import {
-  INVITATION_DATE_FORMAT_MESSAGE,
-  invitationContentSchema,
-} from "@/components/wedding/invitation-schema";
+import { invitationContentSchema } from "@/components/wedding/invitation-schema";
 import { InvitationCover, PersonalInvitation } from "@/components/wedding/invitation-template";
 
 const content = {
@@ -32,8 +30,17 @@ describe("personal invitation details", () => {
     expect(details.theme).toBe("eid");
   });
 
-  it("parses ordinal, ISO, and written dates and guides users to 26th November 2029 format", () => {
+  it("accepts any date string in the form schema while parsing common formats for countdowns", () => {
     expect(parseInvitationDate("26th November 2029")).toEqual({ year: 2029, month: 11, day: 26 });
+    expect(parseInvitationDate("26/11/2029")).toEqual({ year: 2029, month: 11, day: 26 });
+    expect(parseInvitationDate("26-11-2029")).toEqual({ year: 2029, month: 11, day: 26 });
+    expect(parseInvitationDate("26.11.29")).toEqual({ year: 2029, month: 11, day: 26 });
+    expect(parseInvitationDate("Sunday, 26th of Nov 2029")).toEqual({
+      year: 2029,
+      month: 11,
+      day: 26,
+    });
+    expect(parseInvitationDate("26 Sept 2029")).toEqual({ year: 2029, month: 9, day: 26 });
     expect(parseInvitationDate("1st January 2029")).toEqual({ year: 2029, month: 1, day: 1 });
     expect(parseInvitationDate("2nd Feb 2029")).toEqual({ year: 2029, month: 2, day: 2 });
     expect(parseInvitationDate("3rd March, 2029")).toEqual({ year: 2029, month: 3, day: 3 });
@@ -45,32 +52,29 @@ describe("personal invitation details", () => {
     expect(parseInvitationDate("31st February 2029")).toBeNull();
     expect(parseInvitationDate("unknown day")).toBeNull();
 
-    const validOrdinal = invitationContentSchema.safeParse({
-      ...content,
-      date: "26th November 2029",
-    });
-    expect(validOrdinal.success).toBe(true);
-
-    const invalidMainDate = invitationContentSchema.safeParse({
-      ...content,
-      date: "next winter",
-    });
-    expect(invalidMainDate.success).toBe(false);
-    if (!invalidMainDate.success) {
-      expect(invalidMainDate.error.issues[0]?.message).toBe(INVITATION_DATE_FORMAT_MESSAGE);
-      expect(INVITATION_DATE_FORMAT_MESSAGE).toBe(
-        "Date should be in this format: 26th November 2029",
-      );
+    for (const anyDate of [
+      "26th November 2029",
+      "26/11/2029",
+      "26-11-2026",
+      "Sunday, 26 Nov 2029",
+      "26 & 27 November 2029",
+      "Winter 2029",
+      "To be announced",
+    ]) {
+      expect(
+        invitationContentSchema.safeParse({
+          ...content,
+          date: anyDate,
+          rsvpDeadline: anyDate,
+          additionalEvents: [
+            { title: "Mehndi", date: anyDate, time: "6 PM", venue: "Lawn", address: "" },
+          ],
+        }).success,
+      ).toBe(true);
     }
 
-    const invalidRsvp = invitationContentSchema.safeParse({
-      ...content,
-      rsvpDeadline: "next week",
-    });
-    expect(invalidRsvp.success).toBe(false);
-    if (!invalidRsvp.success) {
-      expect(invalidRsvp.error.issues[0]?.message).toBe(INVITATION_DATE_FORMAT_MESSAGE);
-    }
+    expect(new Date(invitationSaveExpiry("To be announced")).getTime()).toBeGreaterThan(Date.now());
+    expect(new Date(invitationSaveExpiry("10 January 2020")).getTime()).toBeGreaterThan(Date.now());
   });
 
   it("uses this card's date, time, venue and message in the calendar, not the homepage event", () => {
