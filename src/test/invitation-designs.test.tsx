@@ -253,12 +253,15 @@ describe("creator invitation design and input", () => {
     ] as const) {
       expect(invitationContentSchema.safeParse({ ...complete, [key]: " " }).success).toBe(false);
     }
-    expect(invitationContentSchema.safeParse({ ...complete, date: "2030-02-30" }).success).toBe(
-      false,
+    expect(invitationContentSchema.safeParse({ ...complete, date: "26/11/2029" }).success).toBe(
+      true,
     );
     expect(
+      invitationContentSchema.safeParse({ ...complete, date: "26 & 27 November 2029" }).success,
+    ).toBe(true);
+    expect(
       invitationContentSchema.safeParse({ ...complete, rsvpDeadline: "tomorrow" }).success,
-    ).toBe(false);
+    ).toBe(true);
     expect(
       invitationContentSchema.safeParse({
         ...complete,

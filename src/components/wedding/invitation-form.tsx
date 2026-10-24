@@ -28,8 +28,6 @@ import {
   resolveSongSource,
   suggestedInvitationSongs,
 } from "./invitation-music";
-import { parseInvitationDate } from "./invitation-details";
-import { INVITATION_DATE_FORMAT_MESSAGE } from "./invitation-schema";
 import { InvitationCover } from "./invitation-template";
 import { InvitationGalleryEditor } from "./invitation-gallery-editor";
 import { SimranFormReader, applyReading } from "./form-assistant";
@@ -182,8 +180,6 @@ export function InvitationDetailsFields({
     onChange((form) => applyReading(form, next, allowed));
   }
 
-  const invalidDate = !!value.date.trim() && !parseInvitationDate(value.date);
-  const invalidRsvpDate = !!value.rsvpDeadline.trim() && !parseInvitationDate(value.rsvpDeadline);
   const invalidPhone = !!value.contactPhone.trim() && !/^[+0-9().\s-]*$/.test(value.contactPhone);
   const visibleThemes =
     themeCategory === "all"
@@ -338,14 +334,10 @@ export function InvitationDetailsFields({
                 id="card-date"
                 value={value.date}
                 onChange={(event) => change("date", event.target.value)}
-                placeholder="26th November 2029"
+                placeholder="26th November 2029 or 26/11/2029"
                 required
                 maxLength={100}
-                aria-invalid={invalidDate}
               />
-              {invalidDate && (
-                <p className="text-xs text-destructive">{INVITATION_DATE_FORMAT_MESSAGE}</p>
-              )}
             </div>
 
             <div className="space-y-1.5">
@@ -377,13 +369,9 @@ export function InvitationDetailsFields({
                 id="card-rsvpDeadline"
                 value={value.rsvpDeadline}
                 onChange={(event) => change("rsvpDeadline", event.target.value)}
-                placeholder="Optional (e.g. 10th November 2029)"
+                placeholder="Optional (any date)"
                 maxLength={100}
-                aria-invalid={invalidRsvpDate}
               />
-              {invalidRsvpDate && (
-                <p className="text-xs text-destructive">{INVITATION_DATE_FORMAT_MESSAGE}</p>
-              )}
             </div>
           </div>
 
@@ -738,46 +726,38 @@ export function InvitationDetailsFields({
                 </Button>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                {(["title", "date", "time", "venue", "address"] as const).map((key) => {
-                  const invalidEventDate =
-                    key === "date" && !!event.date.trim() && !parseInvitationDate(event.date);
-                  return (
-                    <div
-                      key={key}
-                      className={`space-y-1.5 ${key === "address" ? "sm:col-span-2" : ""}`}
-                    >
-                      <Label htmlFor={`event-${index}-${key}`}>
-                        {key === "title" ? "Event name" : key[0].toUpperCase() + key.slice(1)}
-                        {key !== "address" && " *"}
-                      </Label>
-                      <Input
-                        id={`event-${index}-${key}`}
-                        value={event[key]}
-                        required={key !== "address"}
-                        maxLength={key === "address" ? 200 : key === "venue" ? 120 : 100}
-                        aria-invalid={invalidEventDate || undefined}
-                        placeholder={
-                          key === "date"
-                            ? "26th November 2029"
-                            : key === "time"
-                              ? "7:00 PM IST"
-                              : undefined
-                        }
-                        onChange={(e) =>
-                          onChange((form) => ({
-                            ...form,
-                            additionalEvents: form.additionalEvents.map((item, i) =>
-                              i === index ? { ...item, [key]: e.target.value } : item,
-                            ),
-                          }))
-                        }
-                      />
-                      {invalidEventDate && (
-                        <p className="text-xs text-destructive">{INVITATION_DATE_FORMAT_MESSAGE}</p>
-                      )}
-                    </div>
-                  );
-                })}
+                {(["title", "date", "time", "venue", "address"] as const).map((key) => (
+                  <div
+                    key={key}
+                    className={`space-y-1.5 ${key === "address" ? "sm:col-span-2" : ""}`}
+                  >
+                    <Label htmlFor={`event-${index}-${key}`}>
+                      {key === "title" ? "Event name" : key[0].toUpperCase() + key.slice(1)}
+                      {key !== "address" && " *"}
+                    </Label>
+                    <Input
+                      id={`event-${index}-${key}`}
+                      value={event[key]}
+                      required={key !== "address"}
+                      maxLength={key === "address" ? 200 : key === "venue" ? 120 : 100}
+                      placeholder={
+                        key === "date"
+                          ? "Any date (e.g. 26th November 2029)"
+                          : key === "time"
+                            ? "7:00 PM IST"
+                            : undefined
+                      }
+                      onChange={(e) =>
+                        onChange((form) => ({
+                          ...form,
+                          additionalEvents: form.additionalEvents.map((item, i) =>
+                            i === index ? { ...item, [key]: e.target.value } : item,
+                          ),
+                        }))
+                      }
+                    />
+                  </div>
+                ))}
               </div>
             </div>
           ))}

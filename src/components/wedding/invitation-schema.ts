@@ -4,7 +4,7 @@ import {
   invitationFrameworkIds,
   invitationThemeIds,
 } from "./invitation-options";
-import { isSafePortrait, isSafeWebUrl, parseInvitationDate } from "./invitation-details";
+import { isSafePortrait, isSafeWebUrl } from "./invitation-details";
 import { INVITATION_SONG_LIMIT, isSafeSongUrl } from "./invitation-music";
 
 /**
@@ -31,16 +31,9 @@ const portraitSchema = z
   .nullable()
   .default(null);
 
-export const INVITATION_DATE_FORMAT_MESSAGE = "Date should be in this format: 26th November 2029";
-
 const extraEventSchema = z.object({
   title: z.string().trim().min(1, "Event name is required").max(100),
-  date: z
-    .string()
-    .trim()
-    .min(1, INVITATION_DATE_FORMAT_MESSAGE)
-    .max(100)
-    .refine((value) => !!parseInvitationDate(value), INVITATION_DATE_FORMAT_MESSAGE),
+  date: z.string().trim().min(1, "Event date is required").max(100),
   time: z.string().trim().min(1, "Event time is required").max(100),
   venue: z.string().trim().min(1, "Event venue is required").max(120),
   address: z.string().trim().max(200).default(""),
@@ -86,12 +79,7 @@ const optionalWebUrl = z
 export const invitationContentSchema = z.object({
   groomName: z.string().trim().min(1, "Groom's name is required").max(80),
   brideName: z.string().trim().min(1, "Bride's name is required").max(80),
-  date: z
-    .string()
-    .trim()
-    .min(1, "Wedding date is required")
-    .max(100)
-    .refine((value) => !!parseInvitationDate(value), INVITATION_DATE_FORMAT_MESSAGE),
+  date: z.string().trim().min(1, "Wedding date is required").max(100),
   time: z.string().trim().min(1, "Wedding time is required").max(100),
   venue: z.string().trim().min(1, "Venue is required").max(120),
   address: z.string().trim().min(1, "Venue address or city is required").max(200),
@@ -115,12 +103,7 @@ export const invitationContentSchema = z.object({
     .regex(/^[+0-9().\s-]*$/, "Use a phone number with digits, spaces or +")
     .default(""),
   arrivalNotes: z.string().trim().max(500).default(""),
-  rsvpDeadline: z
-    .string()
-    .trim()
-    .max(100)
-    .refine((value) => !value || !!parseInvitationDate(value), INVITATION_DATE_FORMAT_MESSAGE)
-    .default(""),
+  rsvpDeadline: z.string().trim().max(100).default(""),
   /** Optional end of the ceremony; improves the calendar block. */
   endTime: z.string().trim().max(100).default(""),
   mapUrl: optionalWebUrl,

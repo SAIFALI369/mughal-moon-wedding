@@ -47,7 +47,7 @@ import {
   preserveLockedCoupleIdentity,
   type InvitationForm,
 } from "@/components/wedding/invitation-form-data";
-import { invitationExpiry } from "@/components/wedding/invitation-details";
+import { invitationSaveExpiry } from "@/components/wedding/invitation-details";
 import { invitationArt } from "@/components/wedding/invitation-art";
 import {
   invitationThemeCategories,
@@ -250,7 +250,7 @@ export function Dashboard() {
     setError("");
     try {
       const slug = generateSlug(title);
-      const expires_at = invitationExpiry(content.date);
+      const expires_at = invitationSaveExpiry(content.date);
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
       const { data, error } = await supabase
@@ -297,7 +297,7 @@ export function Dashboard() {
     try {
       const { error } = await supabase
         .from("invitation_cards")
-        .update({ title, content, expires_at: invitationExpiry(content.date) })
+        .update({ title, content, expires_at: invitationSaveExpiry(content.date) })
         .eq("id", card.id)
         .eq("owner_id", user?.id ?? "");
       if (error) {
