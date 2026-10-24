@@ -66,11 +66,45 @@ export const updateInvitationCard = createServerFn({ method: "POST" })
     // Ensure ownership
     const { data: current, error: fetchError } = await supabase
       .from("invitation_cards")
-      .select("id, owner_id")
+      .select("id, owner_id, title, slug, status, published_at, content")
       .eq("id", data.id)
       .single();
     if (fetchError || !current) throw new Error("Card not found");
     if (current.owner_id !== userId) throw new Error("Not authorized to edit this card");
+
+    const locked = current.status === "published" || Boolean(current.published_at);
+    if (locked) {
+      if (data.title && data.title.trim() !== current.title.trim()) {
+        throw new Error(
+          "Couple names and card title are locked after publishing and cannot be changed.",
+        );
+      }
+      if (data.slug && data.slug.trim().toLowerCase() !== current.slug) {
+        throw new Error(
+          "Couple names and card title are locked after publishing and cannot be changed.",
+        );
+      }
+      if (data.content && typeof data.content === "object" && !Array.isArray(data.content)) {
+        const existingContent =
+          current.content && typeof current.content === "object" && !Array.isArray(current.content)
+            ? (current.content as Record<string, unknown>)
+            : {};
+        const incoming = data.content as Record<string, unknown>;
+        const oldGroom =
+          typeof existingContent.groomName === "string" ? existingContent.groomName.trim() : "";
+        const oldBride =
+          typeof existingContent.brideName === "string" ? existingContent.brideName.trim() : "";
+        const newGroom =
+          typeof incoming.groomName === "string" ? incoming.groomName.trim() : oldGroom;
+        const newBride =
+          typeof incoming.brideName === "string" ? incoming.brideName.trim() : oldBride;
+        if (newGroom !== oldGroom || newBride !== oldBride) {
+          throw new Error(
+            "Couple names and card title are locked after publishing and cannot be changed.",
+          );
+        }
+      }
+    }
     const patch: {
       title?: string;
       slug?: string;

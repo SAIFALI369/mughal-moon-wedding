@@ -127,6 +127,13 @@
       "when": 1792664911306,
       "tag": "0017_tighten_rsvp_insert_policy",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1792800000000,
+      "tag": "0018_lock_published_couple_identity",
+      "breakpoints": true
     }
   ]
 }

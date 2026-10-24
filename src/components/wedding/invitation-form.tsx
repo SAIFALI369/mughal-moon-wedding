@@ -5,7 +5,7 @@ import {
   type SetStateAction,
   type ReactNode,
 } from "react";
-import { Check, ImagePlus, Music2, Plus, Trash2 } from "lucide-react";
+import { Check, ImagePlus, Lock, Music2, Plus, Trash2 } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -23,8 +23,13 @@ import {
   invitationThemes,
 } from "./invitation-options";
 import { processInvitationPortrait } from "./portrait-upload";
-import { INVITATION_SONG_LIMIT, suggestedInvitationSongs } from "./invitation-music";
+import {
+  INVITATION_SONG_LIMIT,
+  resolveSongSource,
+  suggestedInvitationSongs,
+} from "./invitation-music";
 import { parseInvitationDate } from "./invitation-details";
+import { INVITATION_DATE_FORMAT_MESSAGE } from "./invitation-schema";
 import { InvitationCover } from "./invitation-template";
 import { InvitationGalleryEditor } from "./invitation-gallery-editor";
 import { SimranFormReader, applyReading } from "./form-assistant";
@@ -73,6 +78,7 @@ type Props = {
   onSectionChange?: (section: InvitationEditorSection) => void;
   cardId?: string;
   simran?: boolean;
+  coupleLocked?: boolean;
 };
 
 function EditorPanel({
@@ -101,6 +107,7 @@ export function InvitationDetailsFields({
   onSectionChange,
   cardId,
   simran = false,
+  coupleLocked = false,
 }: Props) {
   const [localSection, setLocalSection] = useState<InvitationEditorSection>("essentials");
   const [themeCategory, setThemeCategory] = useState<string>("all");
@@ -109,6 +116,9 @@ export function InvitationDetailsFields({
   const [showFullPreview, setShowFullPreview] = useState(false);
 
   function change(key: keyof InvitationForm, next: string) {
+    if (coupleLocked && (key === "title" || key === "groomName" || key === "brideName")) {
+      return;
+    }
     onChange((form) => ({ ...form, [key]: next }));
   }
 
@@ -166,10 +176,14 @@ export function InvitationDetailsFields({
   }
 
   function useReading(next: InvitationReading, accepted: string[]) {
-    onChange((form) => applyReading(form, next, accepted));
+    const allowed = coupleLocked
+      ? accepted.filter((key) => key !== "groomName" && key !== "brideName" && key !== "title")
+      : accepted;
+    onChange((form) => applyReading(form, next, allowed));
   }
 
   const invalidDate = !!value.date.trim() && !parseInvitationDate(value.date);
+  const invalidRsvpDate = !!value.rsvpDeadline.trim() && !parseInvitationDate(value.rsvpDeadline);
   const invalidPhone = !!value.contactPhone.trim() && !/^[+0-9().\s-]*$/.test(value.contactPhone);
   const visibleThemes =
     themeCategory === "all"
@@ -200,11 +214,29 @@ export function InvitationDetailsFields({
       {/* 1. DETAILS */}
       <EditorPanel compact={compact} section="essentials">
         <section aria-label="Wedding details" className="admin-form-section space-y-6">
-          <SimranFormReader enabled={simran} onApply={useReading} onJump={jumpToField} />
+          {coupleLocked ? (
+            <p
+              role="note"
+              className="flex items-center gap-2 rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs text-muted-foreground"
+            >
+              <Lock className="h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              <span>
+                Couple names and card title are locked after publishing. Design, music, photos, and
+                event details remain editable.
+              </span>
+            </p>
+          ) : (
+            <SimranFormReader enabled={simran} onApply={useReading} onJump={jumpToField} />
+          )}
 
           <div className="grid gap-4 sm:grid-cols-2">
             <div className="space-y-1.5 sm:col-span-2">
-              <Label htmlFor="card-title">Card title *</Label>
+              <Label htmlFor="card-title" className="inline-flex items-center gap-1.5">
+                Card title *
+                {coupleLocked && (
+                  <Lock className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
+                )}
+              </Label>
               <Input
                 id="card-title"
                 value={value.title}
@@ -212,11 +244,18 @@ export function InvitationDetailsFields({
                 placeholder="Ayaan & Zara"
                 required
                 maxLength={120}
+                disabled={coupleLocked}
+                readOnly={coupleLocked}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="card-groomName">Groom&apos;s name *</Label>
+              <Label htmlFor="card-groomName" className="inline-flex items-center gap-1.5">
+                Groom&apos;s name *
+                {coupleLocked && (
+                  <Lock className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
+                )}
+              </Label>
               <Input
                 id="card-groomName"
                 value={value.groomName}
@@ -225,11 +264,18 @@ export function InvitationDetailsFields({
                 required
                 maxLength={80}
                 autoComplete="off"
+                disabled={coupleLocked}
+                readOnly={coupleLocked}
               />
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="card-brideName">Bride&apos;s name *</Label>
+              <Label htmlFor="card-brideName" className="inline-flex items-center gap-1.5">
+                Bride&apos;s name *
+                {coupleLocked && (
+                  <Lock className="h-3 w-3 text-muted-foreground" aria-hidden="true" />
+                )}
+              </Label>
               <Input
                 id="card-brideName"
                 value={value.brideName}
@@ -238,6 +284,8 @@ export function InvitationDetailsFields({
                 required
                 maxLength={80}
                 autoComplete="off"
+                disabled={coupleLocked}
+                readOnly={coupleLocked}
               />
             </div>
 
@@ -290,15 +338,13 @@ export function InvitationDetailsFields({
                 id="card-date"
                 value={value.date}
                 onChange={(event) => change("date", event.target.value)}
-                placeholder="15 December 2026"
+                placeholder="26th November 2029"
                 required
                 maxLength={100}
                 aria-invalid={invalidDate}
               />
               {invalidDate && (
-                <p className="text-xs text-destructive">
-                  Enter a valid date (e.g. 15 December 2026).
-                </p>
+                <p className="text-xs text-destructive">{INVITATION_DATE_FORMAT_MESSAGE}</p>
               )}
             </div>
 
@@ -331,9 +377,13 @@ export function InvitationDetailsFields({
                 id="card-rsvpDeadline"
                 value={value.rsvpDeadline}
                 onChange={(event) => change("rsvpDeadline", event.target.value)}
-                placeholder="Optional (e.g. 1 December 2026)"
+                placeholder="Optional (e.g. 10th November 2029)"
                 maxLength={100}
+                aria-invalid={invalidRsvpDate}
               />
+              {invalidRsvpDate && (
+                <p className="text-xs text-destructive">{INVITATION_DATE_FORMAT_MESSAGE}</p>
+              )}
             </div>
           </div>
 
@@ -688,38 +738,46 @@ export function InvitationDetailsFields({
                 </Button>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                {(["title", "date", "time", "venue", "address"] as const).map((key) => (
-                  <div
-                    key={key}
-                    className={`space-y-1.5 ${key === "address" ? "sm:col-span-2" : ""}`}
-                  >
-                    <Label htmlFor={`event-${index}-${key}`}>
-                      {key === "title" ? "Event name" : key[0].toUpperCase() + key.slice(1)}
-                      {key !== "address" && " *"}
-                    </Label>
-                    <Input
-                      id={`event-${index}-${key}`}
-                      value={event[key]}
-                      required={key !== "address"}
-                      maxLength={key === "address" ? 200 : key === "venue" ? 120 : 100}
-                      placeholder={
-                        key === "date"
-                          ? "16 December 2026"
-                          : key === "time"
-                            ? "7:00 PM IST"
-                            : undefined
-                      }
-                      onChange={(e) =>
-                        onChange((form) => ({
-                          ...form,
-                          additionalEvents: form.additionalEvents.map((item, i) =>
-                            i === index ? { ...item, [key]: e.target.value } : item,
-                          ),
-                        }))
-                      }
-                    />
-                  </div>
-                ))}
+                {(["title", "date", "time", "venue", "address"] as const).map((key) => {
+                  const invalidEventDate =
+                    key === "date" && !!event.date.trim() && !parseInvitationDate(event.date);
+                  return (
+                    <div
+                      key={key}
+                      className={`space-y-1.5 ${key === "address" ? "sm:col-span-2" : ""}`}
+                    >
+                      <Label htmlFor={`event-${index}-${key}`}>
+                        {key === "title" ? "Event name" : key[0].toUpperCase() + key.slice(1)}
+                        {key !== "address" && " *"}
+                      </Label>
+                      <Input
+                        id={`event-${index}-${key}`}
+                        value={event[key]}
+                        required={key !== "address"}
+                        maxLength={key === "address" ? 200 : key === "venue" ? 120 : 100}
+                        aria-invalid={invalidEventDate || undefined}
+                        placeholder={
+                          key === "date"
+                            ? "26th November 2029"
+                            : key === "time"
+                              ? "7:00 PM IST"
+                              : undefined
+                        }
+                        onChange={(e) =>
+                          onChange((form) => ({
+                            ...form,
+                            additionalEvents: form.additionalEvents.map((item, i) =>
+                              i === index ? { ...item, [key]: e.target.value } : item,
+                            ),
+                          }))
+                        }
+                      />
+                      {invalidEventDate && (
+                        <p className="text-xs text-destructive">{INVITATION_DATE_FORMAT_MESSAGE}</p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}
@@ -799,9 +857,14 @@ export function InvitationDetailsFields({
           className={`space-y-4 ${compact ? "" : "border-t border-border pt-6"}`}
         >
           <div className="flex items-center justify-between gap-3">
-            <p className="text-sm font-medium text-foreground">
-              Songs ({value.songs.length}/{INVITATION_SONG_LIMIT})
-            </p>
+            <div>
+              <p className="text-sm font-medium text-foreground">
+                Songs ({value.songs.length}/{INVITATION_SONG_LIMIT})
+              </p>
+              <p className="text-xs text-muted-foreground">
+                Paste a YouTube link, Spotify link (Share → Copy song link), or MP3 URL.
+              </p>
+            </div>
             <Button
               type="button"
               size="sm"
@@ -809,7 +872,7 @@ export function InvitationDetailsFields({
               disabled={value.songs.length >= INVITATION_SONG_LIMIT}
               onClick={() => addSong()}
             >
-              <Plus className="mr-1 h-4 w-4" /> Add custom URL
+              <Plus className="mr-1 h-4 w-4" /> Add song link
             </Button>
           </div>
 
@@ -834,52 +897,78 @@ export function InvitationDetailsFields({
           {value.songs.length === 0 ? (
             <div className="rounded-xl border border-dashed border-border py-8 text-center text-sm text-muted-foreground">
               <Music2 className="mx-auto mb-1.5 h-5 w-5 text-muted-foreground" aria-hidden="true" />
-              Pick a track above or add an audio link.
+              Pick a track above or add a YouTube / Spotify song link.
             </div>
           ) : (
             <div className="space-y-2.5">
-              {value.songs.map((song, index) => (
-                <div
-                  key={index}
-                  className="grid gap-2.5 rounded-xl border border-border bg-card p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]"
-                >
-                  <div className="space-y-1">
-                    <Label htmlFor={`song-title-${index}`}>Title *</Label>
-                    <Input
-                      id={`song-title-${index}`}
-                      value={song.title}
-                      maxLength={80}
-                      required
-                      placeholder="Song title"
-                      onChange={(event) => updateSong(index, { title: event.target.value })}
-                    />
+              {value.songs.map((song, index) => {
+                const source = song.url.trim() ? resolveSongSource(song.url) : null;
+                const invalidSongUrl = !!song.url.trim() && !source;
+                const sourceLabel =
+                  source?.kind === "youtube"
+                    ? "YouTube"
+                    : source?.kind === "spotify"
+                      ? "Spotify"
+                      : source
+                        ? "Audio"
+                        : null;
+                return (
+                  <div
+                    key={index}
+                    className="grid gap-2.5 rounded-xl border border-border bg-card p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]"
+                  >
+                    <div className="space-y-1">
+                      <Label htmlFor={`song-title-${index}`}>Title *</Label>
+                      <Input
+                        id={`song-title-${index}`}
+                        value={song.title}
+                        maxLength={80}
+                        required
+                        placeholder="Song title"
+                        onChange={(event) => updateSong(index, { title: event.target.value })}
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <Label htmlFor={`song-url-${index}`}>Song link *</Label>
+                        {sourceLabel && (
+                          <span className="rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
+                            {sourceLabel}
+                          </span>
+                        )}
+                      </div>
+                      <Input
+                        id={`song-url-${index}`}
+                        value={song.url}
+                        maxLength={500}
+                        required
+                        inputMode="url"
+                        aria-invalid={invalidSongUrl || undefined}
+                        placeholder="https://youtu.be/… or https://open.spotify.com/track/…"
+                        onChange={(event) => updateSong(index, { url: event.target.value })}
+                      />
+                      {invalidSongUrl && (
+                        <p className="text-xs text-destructive">
+                          Paste a valid YouTube video/song link, Spotify track/playlist link, or
+                          https:// audio URL.
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex items-end">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="text-destructive"
+                        onClick={() => removeSong(index)}
+                        aria-label={`Remove song ${index + 1}`}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <Label htmlFor={`song-url-${index}`}>Audio URL *</Label>
-                    <Input
-                      id={`song-url-${index}`}
-                      value={song.url}
-                      maxLength={500}
-                      required
-                      inputMode="url"
-                      placeholder="https://… or /audio/…"
-                      onChange={(event) => updateSong(index, { url: event.target.value })}
-                    />
-                  </div>
-                  <div className="flex items-end">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      className="text-destructive"
-                      onClick={() => removeSong(index)}
-                      aria-label={`Remove song ${index + 1}`}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </section>

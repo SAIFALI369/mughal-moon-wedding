@@ -58,3 +58,49 @@ export function invitationFormForCard(title: string, content: unknown): Invitati
     address: field("address"),
   };
 }
+
+/**
+ * Once a card has been published (even if later paused back to draft),
+ * its couple identity (title, groomName, brideName) is permanently locked so a
+ * single partner card credit cannot be repurposed for another couple.
+ */
+export function isCardCoupleLocked(
+  card: { status?: string | null; published_at?: string | null } | null | undefined,
+): boolean {
+  return Boolean(card && (card.status === "published" || Boolean(card.published_at)));
+}
+
+export function preserveLockedCoupleIdentity(
+  nextTitle: string,
+  nextContent: InvitationContent,
+  card: {
+    status?: string | null;
+    published_at?: string | null;
+    title: string;
+    content: unknown;
+  },
+): { title: string; content: InvitationContent } {
+  if (!isCardCoupleLocked(card)) {
+    return { title: nextTitle, content: nextContent };
+  }
+  const existing =
+    card.content && typeof card.content === "object" && !Array.isArray(card.content)
+      ? (card.content as Record<string, unknown>)
+      : {};
+  const lockedGroom =
+    typeof existing.groomName === "string" && existing.groomName.trim()
+      ? existing.groomName.trim()
+      : nextContent.groomName;
+  const lockedBride =
+    typeof existing.brideName === "string" && existing.brideName.trim()
+      ? existing.brideName.trim()
+      : nextContent.brideName;
+  return {
+    title: card.title.trim() || nextTitle,
+    content: {
+      ...nextContent,
+      groomName: lockedGroom,
+      brideName: lockedBride,
+    },
+  };
+}

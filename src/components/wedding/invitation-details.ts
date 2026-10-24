@@ -217,15 +217,15 @@ export function getInvitationMonogram(
   return { left: initial(details.groomName), right: initial(details.brideName) };
 }
 
-/** Accept both the dashboard's displayed date and ISO dates without locale-dependent parsing. */
+/** Accept ordinal dates ("26th November 2029"), plain written dates, and ISO dates without locale-dependent parsing. */
 export function parseInvitationDate(value: string): DateParts | null {
   const input = value.trim();
   let year: number;
   let month: number;
   let day: number;
   const iso = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(input);
-  const dayFirst = /^(\d{1,2})\s+([a-z]+)\s+(\d{4})$/i.exec(input);
-  const monthFirst = /^([a-z]+)\s+(\d{1,2}),?\s+(\d{4})$/i.exec(input);
+  const dayFirst = /^(\d{1,2})(?:st|nd|rd|th)?\s+([a-z]+),?\s+(\d{4})$/i.exec(input);
+  const monthFirst = /^([a-z]+)\s+(\d{1,2})(?:st|nd|rd|th)?,?\s+(\d{4})$/i.exec(input);
 
   if (iso) {
     [, year, month, day] = iso.map(Number);

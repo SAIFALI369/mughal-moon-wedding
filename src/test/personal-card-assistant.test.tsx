@@ -9,6 +9,7 @@ import {
 import {
   INVITATION_SONG_LIMIT,
   isSafeSongUrl,
+  resolveSongSource,
   sanitizeInvitationSongs,
 } from "@/components/wedding/invitation-music";
 import { invitationContentSchema } from "@/components/wedding/invitation-schema";
@@ -72,13 +73,44 @@ describe("host-named card assistant", () => {
     });
   });
 
-  it("accepts safe song links and rejects script, data and oversized lists", () => {
+  it("accepts YouTube, Spotify and safe audio links while rejecting unsafe or incomplete URLs", () => {
     expect(isSafeSongUrl("/audio/moonlit-dua.mp3")).toBe(true);
     expect(isSafeSongUrl("https://cdn.example.com/a.mp3")).toBe(true);
+    expect(isSafeSongUrl("https://www.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(true);
+    expect(isSafeSongUrl("https://youtu.be/dQw4w9WgXcQ?si=abc123")).toBe(true);
+    expect(isSafeSongUrl("https://music.youtube.com/watch?v=dQw4w9WgXcQ")).toBe(true);
+    expect(isSafeSongUrl("https://www.youtube.com/shorts/dQw4w9WgXcQ")).toBe(true);
+    expect(isSafeSongUrl("https://www.youtube.com/")).toBe(false);
+    expect(isSafeSongUrl("https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?si=123")).toBe(
+      true,
+    );
+    expect(isSafeSongUrl("https://open.spotify.com/intl-en/playlist/37i9dQZF1DXcBWIGoYBM5M")).toBe(
+      true,
+    );
+    expect(isSafeSongUrl("spotify:track:4uLU6hMCjMI75M1A2tKUQC")).toBe(true);
+    expect(isSafeSongUrl("https://open.spotify.com/")).toBe(false);
     expect(isSafeSongUrl("javascript:alert(1)")).toBe(false);
     expect(isSafeSongUrl("data:audio/mp3;base64,AAAA")).toBe(false);
     expect(isSafeSongUrl("http://insecure.example.com/a.mp3")).toBe(false);
     expect(isSafeSongUrl("//evil.example.com/a.mp3")).toBe(false);
+
+    expect(resolveSongSource("https://youtu.be/dQw4w9WgXcQ?si=abc")).toEqual({
+      kind: "youtube",
+      videoId: "dQw4w9WgXcQ",
+      embedUrl:
+        "https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ?enablejsapi=1&playsinline=1&rel=0",
+      watchUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+    });
+    expect(
+      resolveSongSource("https://open.spotify.com/intl-hi/track/4uLU6hMCjMI75M1A2tKUQC?si=xyz"),
+    ).toEqual({
+      kind: "spotify",
+      itemType: "track",
+      itemId: "4uLU6hMCjMI75M1A2tKUQC",
+      embedUrl:
+        "https://open.spotify.com/embed/track/4uLU6hMCjMI75M1A2tKUQC?utm_source=generator&theme=0",
+      openUrl: "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC",
+    });
 
     const cleaned = sanitizeInvitationSongs([
       ...songs,

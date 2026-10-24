@@ -82,6 +82,7 @@ import {
 } from "./invitation-ornaments";
 import { PersonalConcierge } from "./personal-concierge";
 import { InvitationMusicPlayer } from "./invitation-music-player";
+import { resolveSongSource } from "./invitation-music";
 import { InvitationGallery } from "./invitation-gallery";
 import { InvitationWishes } from "./invitation-wishes";
 
@@ -265,6 +266,10 @@ function InvitationExtras({
   preview?: boolean;
 }) {
   const assistantName = getInvitationAssistantName(details);
+  const showSoundtrackPlayer =
+    details.songs.length > 0 &&
+    (!isStorybook(details.theme) ||
+      details.songs.some((song) => resolveSongSource(song.url)?.kind !== "audio"));
   if (inline) {
     return (
       <section id="assistant" className="invite-section invite-extras px-6 py-20 sm:py-24">
@@ -276,12 +281,10 @@ function InvitationExtras({
           dress code, the soundtrack or RSVP — answers come from this card only.
         </p>
         <div
-          className={`mx-auto grid max-w-5xl gap-6 ${details.songs.length ? "lg:grid-cols-[1.15fr_0.85fr]" : "max-w-2xl"}`}
+          className={`mx-auto grid max-w-5xl gap-6 ${showSoundtrackPlayer ? "lg:grid-cols-[1.15fr_0.85fr]" : "max-w-2xl"}`}
         >
           <PersonalConcierge details={details} slug={slug} preview={preview} inline />
-          {!isStorybook(details.theme) && details.songs.length > 0 && (
-            <InvitationMusicPlayer details={details} inline />
-          )}
+          {showSoundtrackPlayer && <InvitationMusicPlayer details={details} inline />}
         </div>
       </section>
     );
@@ -289,9 +292,7 @@ function InvitationExtras({
   return (
     <>
       <PersonalConcierge details={details} slug={slug} preview={preview} />
-      {!isStorybook(details.theme) && details.songs.length > 0 && (
-        <InvitationMusicPlayer details={details} />
-      )}
+      {showSoundtrackPlayer && <InvitationMusicPlayer details={details} />}
     </>
   );
 }

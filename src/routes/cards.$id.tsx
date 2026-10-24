@@ -16,6 +16,8 @@ import {
 import {
   emptyInvitationForm,
   invitationFormForCard,
+  isCardCoupleLocked,
+  preserveLockedCoupleIdentity,
   type InvitationForm,
 } from "@/components/wedding/invitation-form-data";
 import { invitationExpiry } from "@/components/wedding/invitation-details";
@@ -96,12 +98,15 @@ function CardEditor() {
         setSection(editorSectionForField(String(parsed.error.issues[0]?.path[0] ?? "title")));
         throw new Error(parsed.error.issues[0]?.message || "Complete required details.");
       }
+      const { title, content } = card
+        ? preserveLockedCoupleIdentity(form.title.trim(), parsed.data, card)
+        : { title: form.title.trim(), content: parsed.data };
       const { error } = await supabase
         .from("invitation_cards")
         .update({
-          title: form.title.trim(),
-          content: parsed.data,
-          expires_at: invitationExpiry(parsed.data.date),
+          title,
+          content,
+          expires_at: invitationExpiry(content.date),
         })
         .eq("id", id)
         .eq("owner_id", user?.id ?? "");
@@ -174,6 +179,7 @@ function CardEditor() {
               onChange={setForm}
               cardId={card.id}
               simran={simran}
+              coupleLocked={isCardCoupleLocked(card)}
             />
             <div className="flex items-center justify-between border-t border-border bg-muted/20 px-5 py-3">
               <Button

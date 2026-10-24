@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { InvitationDetails } from "../invitation-details";
+import { resolveSongSource } from "../invitation-music";
 /** Gesture consent unlocks sound. Scrolling never starts audio on its own. */
 export function StorybookAtmosphere({ details }: { details: InvitationDetails }) {
   const [sound, setSound] = useState(false);
@@ -12,7 +13,12 @@ export function StorybookAtmosphere({ details }: { details: InvitationDetails })
     );
     const play = () => {
       if (!audio.current) {
-        audio.current = new Audio(details.songs[0]?.url || "/audio/rosewater.mp3");
+        const directAudio = details.songs
+          .map((song) => resolveSongSource(song.url))
+          .find((source) => source?.kind === "audio");
+        audio.current = new Audio(
+          directAudio?.kind === "audio" ? directAudio.src : "/audio/rosewater.mp3",
+        );
         audio.current.loop = true;
         audio.current.volume = 0.18;
       }

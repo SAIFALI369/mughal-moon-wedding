@@ -14,6 +14,7 @@ import { Route as AiConciergeRouteImport } from './routes/ai-concierge'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as InvitePreviewRouteImport } from './routes/invite-preview'
+import { Route as PreviewFrameRouteImport } from './routes/preview-frame'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SignInRouteImport } from './routes/sign-in'
 import { Route as SignUpRouteImport } from './routes/sign-up'
@@ -44,6 +45,11 @@ const DemoRoute = DemoRouteImport.update({
 const InvitePreviewRoute = InvitePreviewRouteImport.update({
   id: '/invite-preview',
   path: '/invite-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PreviewFrameRoute = PreviewFrameRouteImport.update({
+  id: '/preview-frame',
+  path: '/preview-frame',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ProfileRoute = ProfileRouteImport.update({
@@ -83,6 +89,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
   '/invite-preview': typeof InvitePreviewRoute
+  '/preview-frame': typeof PreviewFrameRoute
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
   '/invite-preview': typeof InvitePreviewRoute
+  '/preview-frame': typeof PreviewFrameRoute
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
   '/invite-preview': typeof InvitePreviewRoute
+  '/preview-frame': typeof PreviewFrameRoute
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
   '/sign-up': typeof SignUpRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/demo'
     | '/invite-preview'
+    | '/preview-frame'
     | '/profile'
     | '/sign-in'
     | '/sign-up'
@@ -138,6 +148,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/demo'
     | '/invite-preview'
+    | '/preview-frame'
     | '/profile'
     | '/sign-in'
     | '/sign-up'
@@ -151,6 +162,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/demo'
     | '/invite-preview'
+    | '/preview-frame'
     | '/profile'
     | '/sign-in'
     | '/sign-up'
@@ -165,6 +177,7 @@ export interface RootRouteChildren {
   DashboardRoute: typeof DashboardRoute
   DemoRoute: typeof DemoRoute
   InvitePreviewRoute: typeof InvitePreviewRoute
+  PreviewFrameRoute: typeof PreviewFrameRoute
   ProfileRoute: typeof ProfileRoute
   SignInRoute: typeof SignInRoute
   SignUpRoute: typeof SignUpRoute
@@ -208,6 +221,13 @@ declare module '@tanstack/react-router' {
       path: '/invite-preview'
       fullPath: '/invite-preview'
       preLoaderRoute: typeof InvitePreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/preview-frame': {
+      id: '/preview-frame'
+      path: '/preview-frame'
+      fullPath: '/preview-frame'
+      preLoaderRoute: typeof PreviewFrameRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -261,6 +281,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardRoute: DashboardRoute,
   DemoRoute: DemoRoute,
   InvitePreviewRoute: InvitePreviewRoute,
+  PreviewFrameRoute: PreviewFrameRoute,
   ProfileRoute: ProfileRoute,
   SignInRoute: SignInRoute,
   SignUpRoute: SignUpRoute,
