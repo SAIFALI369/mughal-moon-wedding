@@ -2,6 +2,7 @@ import { createFileRoute, notFound } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
 import {
+  PhoneViewportFrame,
   PreviewDeviceToggle,
   usePhoneScreen,
   type PreviewDevice,
@@ -186,19 +187,10 @@ function DesignPreview() {
       </div>
       {!isPhone && effectiveDevice === "phone" ? (
         <div className="admin-preview-canvas is-phone-frame min-h-screen pt-16">
-          <div className="preview-phone-bezel">
-            <div className="preview-phone-notch" aria-hidden="true">
-              <span />
-            </div>
-            <div className="preview-phone-viewport">
-              <PersonalInvitation
-                title="Ayaan & Zara"
-                content={{ ...sampleContent, theme, framework }}
-                showGate={false}
-                preview
-              />
-            </div>
-          </div>
+          <PhoneViewportFrame
+            title="Ayaan & Zara"
+            content={{ ...sampleContent, theme, framework }}
+          />
         </div>
       ) : (
         <PersonalInvitation

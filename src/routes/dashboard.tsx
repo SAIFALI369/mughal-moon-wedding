@@ -43,6 +43,8 @@ import {
 import {
   emptyInvitationForm,
   invitationFormForCard,
+  isCardCoupleLocked,
+  preserveLockedCoupleIdentity,
   type InvitationForm,
 } from "@/components/wedding/invitation-form-data";
 import { invitationExpiry } from "@/components/wedding/invitation-details";
@@ -287,9 +289,10 @@ export function Dashboard() {
   async function handleUpdate(card: InvitationCard) {
     if (!editingId || creating) return;
     setError("");
-    const title = form.title.trim() || card.title;
-    const content = validContent();
-    if (!content) return;
+    const rawTitle = form.title.trim() || card.title;
+    const rawContent = validContent();
+    if (!rawContent) return;
+    const { title, content } = preserveLockedCoupleIdentity(rawTitle, rawContent, card);
     setCreating(true);
     try {
       const { error } = await supabase
@@ -380,6 +383,8 @@ export function Dashboard() {
     );
   }
 
+  const editingCard = editingId ? (cards.find((item) => item.id === editingId) ?? null) : null;
+  const editingCoupleLocked = isCardCoupleLocked(editingCard);
   const username = getUsernameFromUser(user);
   const publishedCount = cards.filter((c) => c.status === "published").length;
   const draftCount = cards.filter((c) => c.status === "draft").length;
@@ -749,6 +754,7 @@ export function Dashboard() {
                   onChange={setForm}
                   cardId={editingId ?? undefined}
                   simran={!!partner?.active}
+                  coupleLocked={editingCoupleLocked}
                 />
               </div>
               <div className="dashboard-editor-footer">

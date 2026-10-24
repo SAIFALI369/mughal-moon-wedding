@@ -3,7 +3,14 @@ import { useState } from "react";
 import { act, cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { InvitationDetailsFields } from "@/components/wedding/invitation-form";
-import { emptyInvitationForm } from "@/components/wedding/invitation-form-data";
+import {
+  emptyInvitationForm,
+  isCardCoupleLocked,
+  preserveLockedCoupleIdentity,
+} from "@/components/wedding/invitation-form-data";
+import { getInvitationDetails } from "@/components/wedding/invitation-details";
+import { InvitationMusicPlayer } from "@/components/wedding/invitation-music-player";
+import { PhoneViewportFrame } from "@/components/platform/invitation-preview";
 import { InvitationRsvp } from "@/components/wedding/invitation-rsvp";
 
 const { insert, from } = vi.hoisted(() => ({
@@ -12,9 +19,25 @@ const { insert, from } = vi.hoisted(() => ({
 }));
 vi.mock("@/lib/db", () => ({ supabase: { from } }));
 
-function Editor({ compact = false }: { compact?: boolean }) {
-  const [value, onChange] = useState(emptyInvitationForm);
-  return <InvitationDetailsFields compact={compact} value={value} onChange={onChange} />;
+function Editor({
+  compact = false,
+  coupleLocked = false,
+}: {
+  compact?: boolean;
+  coupleLocked?: boolean;
+}) {
+  const [value, onChange] = useState(() => ({
+    ...emptyInvitationForm(),
+    ...(coupleLocked ? { title: "Ayaan & Zara", groomName: "Ayaan", brideName: "Zara" } : {}),
+  }));
+  return (
+    <InvitationDetailsFields
+      compact={compact}
+      coupleLocked={coupleLocked}
+      value={value}
+      onChange={onChange}
+    />
+  );
 }
 
 beforeEach(() => {
@@ -179,6 +202,117 @@ describe("invitation editor and guest reply", () => {
     expect(await screen.findByText(/already with the host/i)).toBeInTheDocument();
     expect(screen.queryByLabelText("Your full name *")).not.toBeInTheDocument();
     expect(insert).toHaveBeenCalledOnce();
+  });
+
+  it("locks couple names and card title after publish while keeping design and music editable", () => {
+    expect(isCardCoupleLocked({ status: "draft", published_at: null })).toBe(false);
+    expect(isCardCoupleLocked({ status: "published", published_at: null })).toBe(true);
+    expect(isCardCoupleLocked({ status: "draft", published_at: "2026-10-24T00:00:00.000Z" })).toBe(
+      true,
+    );
+
+    const preserved = preserveLockedCoupleIdentity(
+      "New Couple",
+      { ...emptyInvitationForm(), groomName: "Rahul", brideName: "Priya", theme: "aladin" },
+      {
+        status: "published",
+        published_at: "2026-10-24T00:00:00.000Z",
+        title: "Ayaan & Zara",
+        content: { groomName: "Ayaan", brideName: "Zara" },
+      },
+    );
+    expect(preserved.title).toBe("Ayaan & Zara");
+    expect(preserved.content.groomName).toBe("Ayaan");
+    expect(preserved.content.brideName).toBe("Zara");
+    expect(preserved.content.theme).toBe("aladin");
+
+    render(<Editor compact coupleLocked />);
+    expect(
+      screen.getByText(/Couple names and card title are locked after publishing/i),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText(/Card title/i)).toBeDisabled();
+    expect(screen.getByLabelText(/Groom's name/i)).toBeDisabled();
+    expect(screen.getByLabelText(/Bride's name/i)).toBeDisabled();
+
+    // Design and Music remain editable
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Design" }), { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByRole("radio", { name: /Aladin/i }));
+    expect(screen.getByRole("radio", { name: /Aladin/i })).toBeChecked();
+
+    fireEvent.mouseDown(screen.getByRole("tab", { name: "Music" }), { button: 0, ctrlKey: false });
+    fireEvent.click(screen.getByRole("button", { name: /Add song link/i }));
+    fireEvent.change(screen.getByLabelText("Title *"), { target: { value: "Wedding Song" } });
+    fireEvent.change(screen.getByLabelText("Song link *"), {
+      target: { value: "https://youtu.be/dQw4w9WgXcQ" },
+    });
+    expect(screen.getByText("YouTube")).toBeInTheDocument();
+  });
+
+  it("shows the 26th November 2029 date format error on invalid dates and accepts ordinal dates", () => {
+    render(<Editor compact />);
+    const dateInput = screen.getByLabelText("Date *");
+    fireEvent.change(dateInput, { target: { value: "invalid date" } });
+    expect(
+      screen.getByText("Date should be in this format: 26th November 2029"),
+    ).toBeInTheDocument();
+
+    fireEvent.change(dateInput, { target: { value: "26th November 2029" } });
+    expect(
+      screen.queryByText("Date should be in this format: 26th November 2029"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("plays YouTube and Spotify soundtrack embeds and keeps them mounted when minimized", () => {
+    const details = getInvitationDetails({
+      groomName: "Ayaan",
+      brideName: "Zara",
+      date: "26th November 2029",
+      songs: [
+        { title: "YouTube Qawwali", url: "https://youtu.be/dQw4w9WgXcQ" },
+        {
+          title: "Spotify Track",
+          url: "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC?si=123",
+        },
+      ],
+    });
+    render(<InvitationMusicPlayer details={details} />);
+    fireEvent.click(screen.getByRole("button", { name: "Open the invitation soundtrack" }));
+    expect(document.querySelector("iframe")).toBeNull();
+
+    // Activate YouTube track
+    fireEvent.click(screen.getByRole("button", { name: "Play music" }));
+    const ytFrame = document.querySelector("iframe.invite-music-embed-youtube");
+    expect(ytFrame).not.toBeNull();
+    expect(ytFrame?.getAttribute("src")).toContain("youtube-nocookie.com/embed/dQw4w9WgXcQ");
+
+    // Closing the floating panel keeps the YouTube embed mounted so music keeps playing
+    fireEvent.click(screen.getByRole("button", { name: "Close music panel" }));
+    expect(document.querySelector("iframe.invite-music-embed-youtube")).not.toBeNull();
+
+    // Reopen and switch to Spotify track
+    fireEvent.click(screen.getByRole("button", { name: "Open the invitation soundtrack" }));
+    fireEvent.click(screen.getByRole("button", { name: /Spotify Track/i }));
+    const spFrame = document.querySelector("iframe.invite-music-embed-spotify");
+    expect(spFrame).not.toBeNull();
+    expect(spFrame?.getAttribute("src")).toContain(
+      "open.spotify.com/embed/track/4uLU6hMCjMI75M1A2tKUQC",
+    );
+  });
+
+  it("renders a real same-origin mobile viewport iframe in desktop browsers", () => {
+    const uaSpy = vi
+      .spyOn(window.navigator, "userAgent", "get")
+      .mockReturnValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36");
+    render(
+      <PhoneViewportFrame
+        title="Ayaan & Zara"
+        content={{ groomName: "Ayaan", brideName: "Zara", date: "26th November 2029" }}
+      />,
+    );
+    const iframe = document.querySelector("iframe.preview-phone-iframe");
+    expect(iframe).not.toBeNull();
+    expect(iframe?.getAttribute("src")).toMatch(/^\/preview-frame\?key=invitingyou-preview-/);
+    uaSpy.mockRestore();
   });
 
   it("refuses numbers, initials and placeholder names before writing anything", async () => {

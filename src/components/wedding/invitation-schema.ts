@@ -31,14 +31,16 @@ const portraitSchema = z
   .nullable()
   .default(null);
 
+export const INVITATION_DATE_FORMAT_MESSAGE = "Date should be in this format: 26th November 2029";
+
 const extraEventSchema = z.object({
   title: z.string().trim().min(1, "Event name is required").max(100),
   date: z
     .string()
     .trim()
-    .min(1)
+    .min(1, INVITATION_DATE_FORMAT_MESSAGE)
     .max(100)
-    .refine((value) => !!parseInvitationDate(value), "Use a real event date"),
+    .refine((value) => !!parseInvitationDate(value), INVITATION_DATE_FORMAT_MESSAGE),
   time: z.string().trim().min(1, "Event time is required").max(100),
   venue: z.string().trim().min(1, "Event venue is required").max(120),
   address: z.string().trim().max(200).default(""),
@@ -51,7 +53,10 @@ const songSchema = z.object({
     .trim()
     .min(1, "Add a song link")
     .max(500)
-    .refine(isSafeSongUrl, "Use an https:// audio link or a local /audio/ file"),
+    .refine(
+      isSafeSongUrl,
+      "Paste a valid YouTube song link, Spotify track/playlist link, or https:// audio URL",
+    ),
 });
 
 const elementsSchema = z.object({
@@ -86,10 +91,7 @@ export const invitationContentSchema = z.object({
     .trim()
     .min(1, "Wedding date is required")
     .max(100)
-    .refine(
-      (value) => !!parseInvitationDate(value),
-      "Use a real date, like 15 December 2026 or 2026-12-15",
-    ),
+    .refine((value) => !!parseInvitationDate(value), INVITATION_DATE_FORMAT_MESSAGE),
   time: z.string().trim().min(1, "Wedding time is required").max(100),
   venue: z.string().trim().min(1, "Venue is required").max(120),
   address: z.string().trim().min(1, "Venue address or city is required").max(200),
@@ -117,7 +119,7 @@ export const invitationContentSchema = z.object({
     .string()
     .trim()
     .max(100)
-    .refine((value) => !value || !!parseInvitationDate(value), "Use a real RSVP date")
+    .refine((value) => !value || !!parseInvitationDate(value), INVITATION_DATE_FORMAT_MESSAGE)
     .default(""),
   /** Optional end of the ceremony; improves the calendar block. */
   endTime: z.string().trim().max(100).default(""),
