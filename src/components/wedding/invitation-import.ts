@@ -267,7 +267,7 @@ function validDate(year: number, month: number, day: number): boolean {
 }
 
 function formatDate(year: number, month: number, day: number): string {
-  return `${day} ${MONTHS[month - 1]} ${year}`;
+  return `${String(day).padStart(2, "0")}/${String(month).padStart(2, "0")}/${String(year).padStart(4, "0")}`;
 }
 
 /**

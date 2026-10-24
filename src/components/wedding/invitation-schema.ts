@@ -4,7 +4,13 @@ import {
   invitationFrameworkIds,
   invitationThemeIds,
 } from "./invitation-options";
-import { isSafePortrait, isSafeWebUrl } from "./invitation-details";
+import {
+  INVITATION_DATE_FORMAT_ERROR,
+  INVITATION_PAST_DATE_ERROR,
+  isSafePortrait,
+  isSafeWebUrl,
+  validateInvitationFormDate,
+} from "./invitation-details";
 import { INVITATION_SONG_LIMIT, isSafeSongUrl } from "./invitation-music";
 
 /**
@@ -31,9 +37,41 @@ const portraitSchema = z
   .nullable()
   .default(null);
 
+export { INVITATION_DATE_FORMAT_ERROR, INVITATION_PAST_DATE_ERROR };
+
+function requiredStrictDateSchema(requiredMessage: string) {
+  return z
+    .string()
+    .trim()
+    .max(100)
+    .superRefine((value, ctx) => {
+      if (!value) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: requiredMessage });
+        return;
+      }
+      const error = validateInvitationFormDate(value);
+      if (error) {
+        ctx.addIssue({ code: z.ZodIssueCode.custom, message: error });
+      }
+    });
+}
+
+const optionalStrictDateSchema = z
+  .string()
+  .trim()
+  .max(100)
+  .superRefine((value, ctx) => {
+    if (!value) return;
+    const error = validateInvitationFormDate(value);
+    if (error) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: error });
+    }
+  })
+  .default("");
+
 const extraEventSchema = z.object({
   title: z.string().trim().min(1, "Event name is required").max(100),
-  date: z.string().trim().min(1, "Event date is required").max(100),
+  date: requiredStrictDateSchema("Event date is required"),
   time: z.string().trim().min(1, "Event time is required").max(100),
   venue: z.string().trim().min(1, "Event venue is required").max(120),
   address: z.string().trim().max(200).default(""),
@@ -79,7 +117,7 @@ const optionalWebUrl = z
 export const invitationContentSchema = z.object({
   groomName: z.string().trim().min(1, "Groom's name is required").max(80),
   brideName: z.string().trim().min(1, "Bride's name is required").max(80),
-  date: z.string().trim().min(1, "Wedding date is required").max(100),
+  date: requiredStrictDateSchema("Wedding date is required"),
   time: z.string().trim().min(1, "Wedding time is required").max(100),
   venue: z.string().trim().min(1, "Venue is required").max(120),
   address: z.string().trim().min(1, "Venue address or city is required").max(200),
@@ -103,7 +141,7 @@ export const invitationContentSchema = z.object({
     .regex(/^[+0-9().\s-]*$/, "Use a phone number with digits, spaces or +")
     .default(""),
   arrivalNotes: z.string().trim().max(500).default(""),
-  rsvpDeadline: z.string().trim().max(100).default(""),
+  rsvpDeadline: optionalStrictDateSchema,
   /** Optional end of the ceremony; improves the calendar block. */
   endTime: z.string().trim().max(100).default(""),
   mapUrl: optionalWebUrl,

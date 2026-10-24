@@ -248,20 +248,22 @@ describe("invitation editor and guest reply", () => {
     expect(screen.getByText("YouTube")).toBeInTheDocument();
   });
 
-  it("accepts any date string in the editor without showing a date format error", () => {
+  it("enforces DD/MM/YYYY format, auto-inserts slashes when typing digits, and rejects past dates", () => {
     render(<Editor compact />);
-    const dateInput = screen.getByLabelText("Date *");
-    for (const sample of [
-      "26/11/2029",
-      "26-11-2029",
-      "26th November 2029",
-      "26 & 27 Nov 2029",
-      "Next winter",
-    ]) {
-      fireEvent.change(dateInput, { target: { value: sample } });
-      expect(dateInput).toHaveValue(sample);
-      expect(dateInput).not.toHaveAttribute("aria-invalid", "true");
-    }
+    const dateInput = screen.getByLabelText("Date * (DD/MM/YYYY)");
+
+    fireEvent.change(dateInput, { target: { value: "26-11-2029" } });
+    expect(screen.getByText("Use DD/MM/YYYY format (e.g. 26/11/2029)")).toBeInTheDocument();
+
+    fireEvent.change(dateInput, { target: { value: "" } });
+    fireEvent.change(dateInput, { target: { value: "01/01/2025" } });
+    expect(screen.getByText("Past dates are not allowed")).toBeInTheDocument();
+
+    fireEvent.change(dateInput, { target: { value: "" } });
+    fireEvent.change(dateInput, { target: { value: "26112029" } });
+    expect(dateInput).toHaveValue("26/11/2029");
+    expect(screen.queryByText("Use DD/MM/YYYY format (e.g. 26/11/2029)")).not.toBeInTheDocument();
+    expect(screen.queryByText("Past dates are not allowed")).not.toBeInTheDocument();
   });
 
   it("plays YouTube and Spotify soundtrack embeds and keeps them mounted when minimized", () => {

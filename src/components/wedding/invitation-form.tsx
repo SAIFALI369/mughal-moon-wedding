@@ -28,6 +28,7 @@ import {
   resolveSongSource,
   suggestedInvitationSongs,
 } from "./invitation-music";
+import { formatDdMmYyyyTyping, validateInvitationFormDate } from "./invitation-details";
 import { InvitationCover } from "./invitation-template";
 import { InvitationGalleryEditor } from "./invitation-gallery-editor";
 import { SimranFormReader, applyReading } from "./form-assistant";
@@ -180,6 +181,18 @@ export function InvitationDetailsFields({
     onChange((form) => applyReading(form, next, allowed));
   }
 
+  const [touchedDates, setTouchedDates] = useState<Record<string, boolean>>({});
+  const markDateTouched = (fieldId: string) =>
+    setTouchedDates((prev) => (prev[fieldId] ? prev : { ...prev, [fieldId]: true }));
+  const dateFieldError = (raw: string, fieldId: string): string | null => {
+    const trimmed = raw.trim();
+    if (!trimmed) return null;
+    const shouldShow =
+      Boolean(touchedDates[fieldId]) || trimmed.length >= 10 || !/^[\d/]+$/.test(trimmed);
+    return shouldShow ? validateInvitationFormDate(trimmed) : null;
+  };
+  const mainDateError = dateFieldError(value.date, "card-date");
+  const rsvpDateError = dateFieldError(value.rsvpDeadline, "card-rsvpDeadline");
   const invalidPhone = !!value.contactPhone.trim() && !/^[+0-9().\s-]*$/.test(value.contactPhone);
   const visibleThemes =
     themeCategory === "all"
@@ -329,15 +342,21 @@ export function InvitationDetailsFields({
 
           <div className="grid gap-4 border-t border-border pt-6 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label htmlFor="card-date">Date *</Label>
+              <Label htmlFor="card-date">Date * (DD/MM/YYYY)</Label>
               <Input
                 id="card-date"
+                inputMode="numeric"
                 value={value.date}
-                onChange={(event) => change("date", event.target.value)}
-                placeholder="26th November 2029 or 26/11/2029"
+                onChange={(event) =>
+                  change("date", formatDdMmYyyyTyping(event.target.value, value.date))
+                }
+                onBlur={() => markDateTouched("card-date")}
+                placeholder="DD/MM/YYYY"
                 required
-                maxLength={100}
+                maxLength={10}
+                aria-invalid={Boolean(mainDateError)}
               />
+              {mainDateError && <p className="text-xs text-destructive">{mainDateError}</p>}
             </div>
 
             <div className="space-y-1.5">
@@ -364,14 +383,23 @@ export function InvitationDetailsFields({
             </div>
 
             <div className="space-y-1.5">
-              <Label htmlFor="card-rsvpDeadline">RSVP by</Label>
+              <Label htmlFor="card-rsvpDeadline">RSVP by (DD/MM/YYYY)</Label>
               <Input
                 id="card-rsvpDeadline"
+                inputMode="numeric"
                 value={value.rsvpDeadline}
-                onChange={(event) => change("rsvpDeadline", event.target.value)}
-                placeholder="Optional (any date)"
-                maxLength={100}
+                onChange={(event) =>
+                  change(
+                    "rsvpDeadline",
+                    formatDdMmYyyyTyping(event.target.value, value.rsvpDeadline),
+                  )
+                }
+                onBlur={() => markDateTouched("card-rsvpDeadline")}
+                placeholder="DD/MM/YYYY (optional)"
+                maxLength={10}
+                aria-invalid={Boolean(rsvpDateError)}
               />
+              {rsvpDateError && <p className="text-xs text-destructive">{rsvpDateError}</p>}
             </div>
           </div>
 
@@ -726,38 +754,61 @@ export function InvitationDetailsFields({
                 </Button>
               </div>
               <div className="grid gap-3 sm:grid-cols-2">
-                {(["title", "date", "time", "venue", "address"] as const).map((key) => (
-                  <div
-                    key={key}
-                    className={`space-y-1.5 ${key === "address" ? "sm:col-span-2" : ""}`}
-                  >
-                    <Label htmlFor={`event-${index}-${key}`}>
-                      {key === "title" ? "Event name" : key[0].toUpperCase() + key.slice(1)}
-                      {key !== "address" && " *"}
-                    </Label>
-                    <Input
-                      id={`event-${index}-${key}`}
-                      value={event[key]}
-                      required={key !== "address"}
-                      maxLength={key === "address" ? 200 : key === "venue" ? 120 : 100}
-                      placeholder={
-                        key === "date"
-                          ? "Any date (e.g. 26th November 2029)"
-                          : key === "time"
-                            ? "7:00 PM IST"
-                            : undefined
-                      }
-                      onChange={(e) =>
-                        onChange((form) => ({
-                          ...form,
-                          additionalEvents: form.additionalEvents.map((item, i) =>
-                            i === index ? { ...item, [key]: e.target.value } : item,
-                          ),
-                        }))
-                      }
-                    />
-                  </div>
-                ))}
+                {(["title", "date", "time", "venue", "address"] as const).map((key) => {
+                  const fieldId = `event-${index}-${key}`;
+                  const eventDateError =
+                    key === "date" ? dateFieldError(event.date, fieldId) : null;
+                  return (
+                    <div
+                      key={key}
+                      className={`space-y-1.5 ${key === "address" ? "sm:col-span-2" : ""}`}
+                    >
+                      <Label htmlFor={fieldId}>
+                        {key === "title"
+                          ? "Event name"
+                          : key === "date"
+                            ? "Date (DD/MM/YYYY)"
+                            : key[0].toUpperCase() + key.slice(1)}
+                        {key !== "address" && " *"}
+                      </Label>
+                      <Input
+                        id={fieldId}
+                        inputMode={key === "date" ? "numeric" : undefined}
+                        value={event[key]}
+                        required={key !== "address"}
+                        maxLength={
+                          key === "date"
+                            ? 10
+                            : key === "address"
+                              ? 200
+                              : key === "venue"
+                                ? 120
+                                : 100
+                        }
+                        aria-invalid={eventDateError ? true : undefined}
+                        placeholder={
+                          key === "date" ? "DD/MM/YYYY" : key === "time" ? "7:00 PM IST" : undefined
+                        }
+                        onBlur={key === "date" ? () => markDateTouched(fieldId) : undefined}
+                        onChange={(e) => {
+                          const nextVal =
+                            key === "date"
+                              ? formatDdMmYyyyTyping(e.target.value, event.date)
+                              : e.target.value;
+                          onChange((form) => ({
+                            ...form,
+                            additionalEvents: form.additionalEvents.map((item, i) =>
+                              i === index ? { ...item, [key]: nextVal } : item,
+                            ),
+                          }));
+                        }}
+                      />
+                      {eventDateError && (
+                        <p className="text-xs text-destructive">{eventDateError}</p>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </div>
           ))}

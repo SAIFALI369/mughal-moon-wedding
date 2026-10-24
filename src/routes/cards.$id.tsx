@@ -20,7 +20,7 @@ import {
   preserveLockedCoupleIdentity,
   type InvitationForm,
 } from "@/components/wedding/invitation-form-data";
-import { invitationSaveExpiry } from "@/components/wedding/invitation-details";
+import { invitationExpiry } from "@/components/wedding/invitation-details";
 import type { Database } from "@/integrations/supabase/types";
 
 type InvitationCard = Database["public"]["Tables"]["invitation_cards"]["Row"];
@@ -106,7 +106,7 @@ function CardEditor() {
         .update({
           title,
           content,
-          expires_at: invitationSaveExpiry(content.date),
+          expires_at: invitationExpiry(content.date),
         })
         .eq("id", id)
         .eq("owner_id", user?.id ?? "");

@@ -217,13 +217,83 @@ export function getInvitationMonogram(
   return { left: initial(details.groomName), right: initial(details.brideName) };
 }
 
+export const INVITATION_DATE_FORMAT_ERROR = "Use DD/MM/YYYY format (e.g. 26/11/2029)";
+export const INVITATION_PAST_DATE_ERROR = "Past dates are not allowed";
+
+/** Strictly parse only `xx/xx/xxxx` (`DD/MM/YYYY`) calendar dates. */
+export function parseStrictDdMmYyyy(value: string): DateParts | null {
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value.trim());
+  if (!match) return null;
+  const day = Number(match[1]);
+  const month = Number(match[2]);
+  const year = Number(match[3]);
+  if (year < 1000 || year > 9999 || month < 1 || month > 12 || day < 1 || day > 31) {
+    return null;
+  }
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year &&
+    date.getUTCMonth() === month - 1 &&
+    date.getUTCDate() === day
+    ? { year, month, day }
+    : null;
+}
+
+export function isPastDateParts(parts: DateParts, now: Date = new Date()): boolean {
+  const target = Date.UTC(parts.year, parts.month - 1, parts.day);
+  const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  return target < today;
+}
+
 /**
- * Best-effort calendar parser for countdowns, date plates, and Google Calendar links.
- * Supports ISO ("2029-11-26"), Indian/European numeric ("26/11/2029", "26-11-2029",
- * "26.11.2029", "26/11/29"), ordinal & written dates ("26th November 2029",
- * "Sunday, 26th of Nov 2029", "26-Nov-2029", "November 26th, 2029"), etc.
- * Free-form dates that do not map to a single calendar day return `null` and
- * still display verbatim across the invitation.
+ * Validate a required/filled editor date:
+ * - must be exact `DD/MM/YYYY` (`xx/xx/xxxx`)
+ * - must be a real calendar date
+ * - must not be in the past (today and future dates are accepted)
+ */
+export function validateInvitationFormDate(value: string, now: Date = new Date()): string | null {
+  const parsed = parseStrictDdMmYyyy(value);
+  if (!parsed) return INVITATION_DATE_FORMAT_ERROR;
+  if (isPastDateParts(parsed, now)) return INVITATION_PAST_DATE_ERROR;
+  return null;
+}
+
+export function formatDdMmYyyy(parts: DateParts): string {
+  return `${String(parts.day).padStart(2, "0")}/${String(parts.month).padStart(2, "0")}/${String(parts.year).padStart(4, "0")}`;
+}
+
+export function toDdMmYyyyIfPossible(value: string): string {
+  const trimmed = value.trim();
+  if (!trimmed) return "";
+  const parts = parseInvitationDate(trimmed);
+  return parts ? formatDdMmYyyy(parts) : trimmed;
+}
+
+/**
+ * Auto-insert `/` while typing digits forward into a `DD/MM/YYYY` input,
+ * without blocking backspace or hiding pasted invalid strings from validation.
+ */
+export function formatDdMmYyyyTyping(next: string, prev: string = ""): string {
+  if (!/^[\d/]*$/.test(next)) {
+    return next.slice(0, 100);
+  }
+  if (next.length <= prev.length) {
+    return next;
+  }
+  const digits = next.replace(/\D/g, "").slice(0, 8);
+  if (digits.length <= 2) {
+    return next.endsWith("/") && digits.length === 2 ? `${digits}/` : digits;
+  }
+  if (digits.length <= 4) {
+    const base = `${digits.slice(0, 2)}/${digits.slice(2)}`;
+    return next.endsWith("/") && digits.length === 4 ? `${base}/` : base;
+  }
+  return `${digits.slice(0, 2)}/${digits.slice(2, 4)}/${digits.slice(4, 8)}`;
+}
+
+/**
+ * Best-effort calendar parser for countdowns, date plates, Google Calendar links,
+ * and legacy saved cards. Supports `DD/MM/YYYY` ("26/11/2029") as well as older
+ * saved ISO and written dates.
  */
 export function parseInvitationDate(value: string): DateParts | null {
   const input = value
@@ -414,18 +484,4 @@ export function invitationExpiry(dateText: string): string | null {
   return date
     ? new Date(Date.UTC(date.year, date.month - 1, date.day + 2) - 1).toISOString()
     : null;
-}
-
-/**
- * Safe expiry timestamp when saving a card from the editor:
- * uses `invitationExpiry` when the parsed date is in the future, and falls back
- * to +365 days so custom free-form date text or past test dates never cause a
- * newly saved card to be auto-deleted immediately.
- */
-export function invitationSaveExpiry(dateText: string): string {
-  const parsed = invitationExpiry(dateText);
-  if (parsed && new Date(parsed).getTime() > Date.now()) {
-    return parsed;
-  }
-  return new Date(Date.now() + 365 * 24 * 60 * 60_000).toISOString();
 }

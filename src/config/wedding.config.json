@@ -4,7 +4,7 @@
   "framework": "moonlit",
   "groomName": "Aarav",
   "brideName": "Meera",
-  "date": "15 December 2030",
+  "date": "15/12/2030",
   "time": "6:00 PM IST",
   "endTime": "11:00 PM IST",
   "venue": "The Palace Courtyard",
@@ -22,21 +22,21 @@
   "contactName": "Ananya",
   "contactPhone": "+91 98765 43210",
   "arrivalNotes": "Please arrive 30 minutes before the ceremony. Contact the host for parking and accessibility assistance.",
-  "rsvpDeadline": "1 December 2030",
+  "rsvpDeadline": "01/12/2030",
   "hashtag": "#AaravAndMeera",
   "giftsNote": "Your presence and blessings are our greatest gifts.",
   "livestreamUrl": "",
   "additionalEvents": [
     {
       "title": "Mehndi",
-      "date": "13 December 2030",
+      "date": "13/12/2030",
       "time": "4:00 PM IST",
       "venue": "The Family Garden",
       "address": "Patna, Bihar"
     },
     {
       "title": "Sangeet",
-      "date": "14 December 2030",
+      "date": "14/12/2030",
       "time": "7:00 PM IST",
       "venue": "The Palace Courtyard",
       "address": "Patna, Bihar"

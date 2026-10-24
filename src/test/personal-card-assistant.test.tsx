@@ -20,7 +20,7 @@ import { buildCardConciergeInstruction } from "../../supabase/functions/_shared/
 const basics = {
   groomName: "Ayaan",
   brideName: "Zara",
-  date: "15 December 2030",
+  date: "15/12/2030",
   time: "4:00 PM IST",
   venue: "Garden Pavilion",
   address: "Patna, Bihar",
@@ -176,7 +176,7 @@ describe("host-named card assistant", () => {
       "Garden Pavilion",
     );
     expect(getInstantPersonalReply("When is the celebration?", details, "English")).toContain(
-      "15 December 2030",
+      "15/12/2030",
     );
     const playlist = getInstantPersonalReply("What songs are on the playlist?", details, "English");
     expect(playlist).toContain("Moonlit Dua");
