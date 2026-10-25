@@ -13,6 +13,7 @@ import type { InvitationTheme } from "./invitation-options";
 export type InvitationRite = "muslim" | "hindu" | "universal";
 
 export const themeRites: Record<InvitationTheme, InvitationRite> = {
+  "mughal-moon-film": "muslim",
   "royal-rajmahal": "hindu",
   "lotus-goddess": "hindu",
   calligraphy: "hindu",

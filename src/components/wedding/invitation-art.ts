@@ -19,6 +19,9 @@ import haldiBaag from "@/assets/themes/haldi-baag.webp";
 import vowsInInk from "@/assets/themes/vows-in-ink.webp";
 import chandBagh from "@/assets/themes/chand-bagh.webp";
 import melaMaidan from "@/assets/themes/mela-maidan.webp";
+import filmPalace from "@/assets/themes/film-palace.webp";
+import filmArch from "@/assets/themes/film-arch.webp";
+import filmCourtyard from "@/assets/themes/film-courtyard.webp";
 import type { InvitationTheme } from "./invitation-options";
 
 export const invitationArt: Record<InvitationTheme, string> = {
@@ -45,4 +48,16 @@ export const invitationArt: Record<InvitationTheme, string> = {
   "vows-in-ink": vowsInInk,
   "chand-bagh": chandBagh,
   "mela-maidan": melaMaidan,
+  "mughal-moon-film": filmPalace,
 };
+
+/**
+ * The three camera shots of "Mughal Moon — The Film". They are the theme's own
+ * artwork, so the opening film, the scroll-scrubbed stage and the act strip all
+ * use the same pictures and ship with the card.
+ */
+export const invitationFilmArt = {
+  palace: filmPalace,
+  arch: filmArch,
+  courtyard: filmCourtyard,
+} as const;

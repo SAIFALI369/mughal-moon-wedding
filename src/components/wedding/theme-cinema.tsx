@@ -7,6 +7,7 @@ import type { CSSProperties } from "react";
 type Effect = "lanterns" | "fireflies" | "diyas" | "petals" | "embers" | "snow" | "stars" | "confetti" | "grid" | "ink" | "rays";
 
 const effectByTheme: Record<string, Effect> = {
+  "mughal-moon-film": "lanterns",
   eid: "stars",
   mughal: "lanterns",
   classic: "petals",

@@ -50,7 +50,7 @@ const coverFor = (theme: string, framework = "royal-folio") =>
 
 describe("three signature structures", () => {
   it("registers the three themes, each with its own artwork and print palette", () => {
-    expect(invitationThemeIds).toHaveLength(23);
+    expect(invitationThemeIds).toHaveLength(24);
     for (const [theme, layout] of Object.entries(signatures)) {
       expect(invitationThemeIds).toContain(theme);
       expect(invitationArt[theme as keyof typeof invitationArt]).toBeTruthy();
@@ -79,7 +79,13 @@ describe("three signature structures", () => {
 
   it("keeps the older themes on exactly the structure they had", () => {
     for (const theme of invitationThemeIds) {
-      if (theme in signatures || theme === "chand-bagh" || theme === "mela-maidan") continue;
+      if (
+        theme in signatures ||
+        theme === "chand-bagh" ||
+        theme === "mela-maidan" ||
+        theme === "mughal-moon-film"
+      )
+        continue;
       const hindu = ["diya-utsav", "sacred-mandap", "kashi-ghat"].includes(theme);
       expect(invitationLayoutFor(theme, "moonlit")).toBe("moonlit");
       expect(invitationLayoutFor(theme, "curtain-call")).toBe("curtain-call");

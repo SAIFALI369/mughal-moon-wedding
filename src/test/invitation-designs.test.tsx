@@ -59,6 +59,8 @@ describe("creator invitation design and input", () => {
         // three redesigns cannot fall back into the same silhouette.
         if (["royal-rajmahal", "lotus-goddess", "calligraphy"].includes(theme))
           expect(page).toContain("sb-hero");
+        else if (theme === "mughal-moon-film" && framework !== "curtain-call")
+          expect(page).toContain("reel-stage");
         else if (framework === "curtain-call") expect(page).toContain("curtain-stage");
         else if (theme === "jharokha-dawn") expect(page).toContain("dawn-stage");
         else if (theme === "haldi-baag") expect(page).toContain("baag-stage");
