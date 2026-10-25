@@ -1,4 +1,5 @@
 export const invitationThemeIds = [
+  "mughal-moon-film",
   "eid",
   "mughal",
   "classic",
@@ -41,6 +42,7 @@ export type InvitationFramework = (typeof invitationFrameworkIds)[number];
  * they are not a recolour of the shared one.
  */
 export const invitationLayoutIds = [
+  "reel",
   "moonlit",
   "curtain-call",
   "mandap",
@@ -58,6 +60,11 @@ export type InvitationLayout = (typeof invitationLayoutIds)[number];
  * swatches. Order here is the order shown in the studio and the editor.
  */
 export const invitationThemeCategories = [
+  {
+    id: "cinema",
+    label: "Cinematic",
+    description: "A wedding invitation that opens as a short film",
+  },
   {
     id: "keepsakes",
     label: "Royal Editions",
@@ -112,6 +119,15 @@ export const invitationThemes: {
   /** Signature structure, used unless the host chooses the Grand Curtain. */
   layout?: InvitationLayout;
 }[] = [
+  {
+    id: "mughal-moon-film",
+    label: "Mughal Moon — The Film",
+    description: "A 20-second moonlit film, then a stage your scroll keeps scrubbing",
+    swatch: "#d8b26a",
+    category: "cinema",
+    immersive: true,
+    layout: "reel",
+  },
   {
     id: "royal-rajmahal",
     label: "Royal Rajmahal",

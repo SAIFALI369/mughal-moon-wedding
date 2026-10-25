@@ -26,6 +26,13 @@ export type PrintPalette = {
 };
 
 const PALETTES: Record<string, PrintPalette> = {
+  "mughal-moon-film": {
+    paper: "#f7efe2",
+    ink: "#141a26",
+    accent: "#9a7333",
+    soft: "#6c6357",
+    tint: "#e9dcc3",
+  },
   "royal-rajmahal": {
     paper: "#fff4e1",
     ink: "#451522",

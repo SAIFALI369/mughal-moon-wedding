@@ -44,7 +44,7 @@ const mandap = (details = hindu) =>
 
 describe("Hindu themes", () => {
   it("adds Diya Utsav and Sacred Mandap, with their own artwork", () => {
-    expect(invitationThemeIds).toHaveLength(23);
+    expect(invitationThemeIds).toHaveLength(24);
     const labels = invitationThemes.map((theme) => theme.label);
     expect(labels).toContain("Diya Utsav");
     expect(labels).toContain("Sacred Mandap");

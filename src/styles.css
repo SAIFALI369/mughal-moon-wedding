@@ -13534,3 +13534,1001 @@ body:has(.preview-frame-document) {
     animation: none;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Mughal Moon — The Film
+   The one theme whose invitation opens as a short film. Three photographs of a
+   moonlit palace, a camera that never stops moving, a letterbox and a score.
+   The guest taps once to start (which is what lets a phone play sound), can
+   pause, scrub or skip, and lands on a stage their thumb keeps scrubbing.
+   Reduced motion gets the title card and a still frame, never a moving picture.
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+.personal-invite[data-theme="mughal-moon-film"],
+.personal-invite-cover[data-theme="mughal-moon-film"] {
+  --background: oklch(0.16 0.028 268);
+  --foreground: oklch(0.96 0.014 86);
+  --muted: oklch(0.21 0.028 268);
+  --muted-foreground: oklch(0.79 0.02 86);
+  --card: oklch(0.21 0.03 268 / 0.72);
+  --card-foreground: oklch(0.96 0.014 86);
+  --popover: oklch(0.18 0.03 268);
+  --popover-foreground: oklch(0.96 0.014 86);
+  --primary: oklch(0.82 0.105 82);
+  --primary-foreground: oklch(0.15 0.03 268);
+  --secondary: oklch(0.24 0.03 268);
+  --secondary-foreground: oklch(0.96 0.014 86);
+  --burgundy: oklch(0.82 0.105 82);
+  --burgundy-deep: oklch(0.13 0.025 268);
+  --gold: oklch(0.82 0.105 82);
+  --gold-light: oklch(0.92 0.07 88);
+  --ivory: oklch(0.97 0.012 86);
+  --emerald: oklch(0.5 0.07 175);
+  --border: oklch(0.82 0.105 82 / 0.3);
+  --input: oklch(0.82 0.105 82 / 0.4);
+  --ring: var(--gold);
+  --gradient-gold: linear-gradient(110deg, #b98f4a, #e9cd8d 34%, #fff6dd 50%, #e9cd8d 66%, #b98f4a);
+  --shadow-gold: 0 26px 60px -26px oklch(0.82 0.105 82 / 0.38);
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --film-ivory: #f7efdf;
+  --film-gold: #e4c489;
+  --film-night: #05070d;
+}
+
+.personal-invite[data-theme="mughal-moon-film"] .invite-backdrop-art {
+  filter: blur(46px) brightness(0.4) saturate(1.05);
+  opacity: 0.9;
+}
+.personal-invite[data-theme="mughal-moon-film"] .invite-backdrop-veil {
+  background: linear-gradient(
+    180deg,
+    oklch(0.16 0.028 268 / 0.86),
+    oklch(0.14 0.03 268 / 0.96)
+  );
+}
+
+/* ── The player ───────────────────────────────────────────────────────────── */
+.film {
+  position: fixed;
+  inset: 0;
+  z-index: 120;
+  overflow: hidden;
+  background: var(--film-night, #05070d);
+  color: var(--film-ivory, #f7efdf);
+  isolation: isolate;
+  --font-display: "Cormorant Garamond", Georgia, serif;
+  --font-script: "Great Vibes", cursive;
+  --gradient-gold: linear-gradient(110deg, #b98f4a, #e9cd8d 34%, #fff6dd 50%, #e9cd8d 66%, #b98f4a);
+  transition:
+    opacity 0.6s ease,
+    filter 0.6s ease;
+}
+.film.is-exiting {
+  opacity: 0;
+  filter: brightness(1.6);
+  pointer-events: none;
+}
+.film-stage {
+  position: absolute;
+  inset: 0;
+}
+.film-shot {
+  position: absolute;
+  inset: 0;
+  will-change: opacity, transform;
+  transform-origin: 50% 56%;
+  backface-visibility: hidden;
+}
+.film-shot-fill,
+.film-shot-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+.film-shot-fill {
+  object-fit: cover;
+  filter: blur(34px) brightness(0.5) saturate(1.15);
+  transform: scale(1.14);
+}
+.film-shot-frame {
+  object-fit: contain;
+  filter: saturate(1.03) contrast(1.03);
+}
+
+/* Grade, halation and film stock. */
+.film-grade {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2;
+  background:
+    radial-gradient(122% 82% at 50% 36%, transparent 28%, rgba(4, 6, 12, 0.5) 76%, rgba(2, 3, 8, 0.94) 100%),
+    linear-gradient(180deg, rgba(4, 6, 13, 0.62) 0%, transparent 24%, transparent 60%, rgba(3, 5, 11, 0.82) 100%);
+}
+.film-leak {
+  position: absolute;
+  inset: -14%;
+  z-index: 2;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  filter: blur(34px);
+  background:
+    radial-gradient(46% 34% at 6% 4%, rgba(255, 176, 104, 0.5), transparent 62%),
+    radial-gradient(38% 30% at 96% 88%, rgba(255, 124, 86, 0.32), transparent 64%);
+  animation: film-leak-drift 15s ease-in-out infinite alternate;
+}
+@keyframes film-leak-drift {
+  from {
+    transform: translate3d(-1.5%, 0, 0) scale(1.02);
+  }
+  to {
+    transform: translate3d(2%, 1.4%, 0) scale(1.07);
+  }
+}
+.film-grain,
+.reel-grain {
+  position: absolute;
+  inset: -32%;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.17;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/></filter><rect width='220' height='220' filter='url(%23n)' opacity='0.6'/></svg>");
+  background-size: 220px 220px;
+  animation: film-grain-jump 0.72s steps(3) infinite;
+}
+@keyframes film-grain-jump {
+  0% {
+    background-position: 0 0;
+  }
+  33% {
+    background-position: -60px 42px;
+  }
+  66% {
+    background-position: 52px -34px;
+  }
+  100% {
+    background-position: -22px -70px;
+  }
+}
+.film-scratch {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  mix-blend-mode: screen;
+  background:
+    linear-gradient(90deg, transparent 0 18%, rgba(255, 246, 224, 0.34) 18.06%, transparent 18.2%),
+    linear-gradient(90deg, transparent 0 71%, rgba(255, 246, 224, 0.22) 71.05%, transparent 71.16%);
+  animation: film-scratch-flicker 2.8s steps(1) infinite;
+}
+@keyframes film-scratch-flicker {
+  0%,
+  42%,
+  100% {
+    opacity: 0.3;
+  }
+  43%,
+  46% {
+    opacity: 0.62;
+  }
+  47%,
+  88% {
+    opacity: 0.16;
+  }
+  89%,
+  92% {
+    opacity: 0.5;
+  }
+}
+
+/* The letterbox: it closes the frame, then opens to hand over to the card. */
+.film-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 9svh;
+  z-index: 3;
+  background: #04060c;
+  transition: height 0.9s cubic-bezier(0.2, 0.65, 0.2, 1);
+  pointer-events: none;
+}
+.film-bar-top {
+  top: 0;
+}
+.film-bar-bottom {
+  bottom: 0;
+}
+.film-bar[data-open="true"] {
+  height: 2.2svh;
+}
+
+/* Credit card. */
+.film-credit {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.7rem;
+  padding: 0 8vw;
+  text-align: center;
+  pointer-events: none;
+  font-family: var(--font-display);
+}
+.film-credit-studio {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.62rem;
+  letter-spacing: 0.52em;
+  text-transform: uppercase;
+  color: var(--film-gold);
+  text-indent: 0.52em;
+}
+.film-credit-rule {
+  width: 68px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(228, 196, 137, 0.85), transparent);
+}
+.film-credit-presents {
+  font-size: clamp(1.2rem, 4vw, 1.7rem);
+  font-style: italic;
+  color: var(--film-ivory);
+}
+.film-credit-line {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.58rem;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(247, 239, 223, 0.66);
+}
+
+/* Subtitles. */
+.film-captions {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(9svh + 7svh);
+  z-index: 4;
+  padding: 0 7vw;
+  text-align: center;
+  pointer-events: none;
+}
+.film-captions p {
+  margin: 0 auto;
+  max-width: 34rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1.08rem, 3.7vw, 1.65rem);
+  line-height: 1.5;
+  color: #fdf7ea;
+  text-wrap: balance;
+  text-shadow:
+    0 2px 22px rgba(0, 0, 0, 0.92),
+    0 0 2px rgba(0, 0, 0, 0.9);
+  transition: opacity 0.24s linear;
+}
+.film-captions p + p {
+  margin-top: 0.42rem;
+  font-size: clamp(0.86rem, 3vw, 1.15rem);
+  letter-spacing: 0.01em;
+  color: rgba(253, 247, 234, 0.9);
+}
+
+/* Title card. */
+.film-title {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  padding: 12svh 6vw 15svh;
+  text-align: center;
+  pointer-events: none;
+}
+.film-title-overline {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.6rem;
+  letter-spacing: 0.42em;
+  text-transform: uppercase;
+  color: var(--film-gold);
+  text-indent: 0.42em;
+}
+.film-title-names {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0 0.16em;
+  margin: 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.5rem, 10.5vw, 6rem);
+  line-height: 0.96;
+  letter-spacing: 0.01em;
+  color: #fdf8ec;
+  text-shadow: 0 12px 54px rgba(0, 0, 0, 0.8);
+}
+.film-amp {
+  font-family: var(--font-script);
+  font-size: 0.66em;
+  line-height: 1;
+  background: var(--gradient-gold);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  padding: 0 0.04em;
+}
+.film-title-plate {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.4rem;
+  max-width: 34rem;
+}
+.film-title-date {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1rem, 3.4vw, 1.4rem);
+  color: var(--film-ivory);
+}
+.film-title-rule {
+  width: 54px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(228, 196, 137, 0.8), transparent);
+}
+.film-title-venue {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.58rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: var(--film-gold);
+  line-height: 1.8;
+}
+.film-title-hashtag {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.9rem;
+  color: rgba(247, 239, 223, 0.72);
+}
+.film-enter {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 1.1rem;
+  pointer-events: auto;
+  transition: opacity 0.7s ease;
+}
+.film-enter-button {
+  min-height: 48px;
+  padding: 0.9rem 1.9rem;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 246, 221, 0.55);
+  background: var(--gradient-gold);
+  color: #1c1408;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease;
+}
+.film-enter-button:hover,
+.film-enter-button:focus-visible {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 22px 44px -20px rgba(233, 205, 141, 0.75);
+}
+.film-enter-note {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.92rem;
+  color: rgba(247, 239, 223, 0.72);
+}
+
+/* The poster: what a guest sees before the film starts. */
+.film-poster {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 13svh 7vw calc(9svh + env(safe-area-inset-bottom));
+  text-align: center;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.film-poster-phase .film-grade {
+  background:
+    radial-gradient(120% 80% at 50% 32%, transparent 22%, rgba(4, 6, 12, 0.6) 72%, rgba(2, 3, 8, 0.95) 100%),
+    linear-gradient(180deg, rgba(4, 6, 13, 0.7) 0%, transparent 30%, transparent 55%, rgba(3, 5, 11, 0.92) 100%);
+}
+.film-marquee {
+  position: absolute;
+  inset: 5svh 5vw;
+  pointer-events: none;
+}
+.film-marquee span {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  border: 1px solid rgba(228, 196, 137, 0.55);
+}
+.film-marquee span:first-child {
+  top: 0;
+  left: 0;
+  border-right: 0;
+  border-bottom: 0;
+}
+.film-marquee span:last-child {
+  right: 0;
+  bottom: 0;
+  border-left: 0;
+  border-top: 0;
+}
+.film-poster-kicker {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.58rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: var(--film-gold);
+  text-indent: 0.4em;
+}
+.film-blessing {
+  font-size: clamp(1.05rem, 4vw, 1.4rem);
+  color: rgba(255, 246, 221, 0.9);
+  line-height: 1.9;
+}
+.film-poster-names {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0;
+  margin: 0.2rem 0 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.5rem, 11vw, 5rem);
+  line-height: 0.94;
+  color: #fdf8ec;
+  text-shadow: 0 14px 50px rgba(0, 0, 0, 0.85);
+}
+.film-poster-names .film-amp {
+  font-size: 0.62em;
+  margin: 0.02em 0;
+}
+.film-poster-line {
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(0.9rem, 3.2vw, 1.1rem);
+  color: rgba(247, 239, 223, 0.82);
+  max-width: 30rem;
+}
+.film-poster-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.85rem;
+  margin-top: 0.6rem;
+  width: 100%;
+}
+.film-play {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-height: 56px;
+  padding: 0.6rem 1.5rem 0.6rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(228, 196, 137, 0.55);
+  background: rgba(9, 13, 22, 0.55);
+  backdrop-filter: blur(16px);
+  color: var(--film-ivory);
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.3s ease,
+    box-shadow 0.3s ease,
+    border-color 0.3s ease;
+}
+.film-play:hover,
+.film-play:focus-visible {
+  transform: translateY(-2px);
+  border-color: rgba(255, 246, 221, 0.9);
+  box-shadow: 0 22px 46px -22px rgba(233, 205, 141, 0.7);
+}
+.film-play-icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 999px;
+  background: var(--gradient-gold);
+  color: #1c1408;
+  box-shadow: 0 0 0 6px rgba(228, 196, 137, 0.12);
+}
+.film-play small {
+  display: block;
+  margin-top: 2px;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.55rem;
+  letter-spacing: 0.26em;
+  text-transform: uppercase;
+  color: rgba(247, 239, 223, 0.62);
+}
+.film-poster-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem 1.1rem;
+}
+.film-ghost {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  min-height: 44px;
+  padding: 0 0.4rem;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.58rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(247, 239, 223, 0.72);
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.film-ghost:hover,
+.film-ghost:focus-visible {
+  color: #fff6dd;
+}
+.film-poster-foot {
+  margin-top: 0.35rem;
+  padding: 0 6vw;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.86rem;
+  color: rgba(247, 239, 223, 0.6);
+}
+
+/* Player controls. */
+.film-controls {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 7;
+  padding: 1rem 0.8rem calc(1.9svh + env(safe-area-inset-bottom));
+}
+.film-controls-row {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  max-width: 60rem;
+  margin: 0 auto;
+  padding: 0.4rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(228, 196, 137, 0.18);
+  background: rgba(7, 10, 18, 0.58);
+  backdrop-filter: blur(18px);
+}
+.film-icon {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 999px;
+  color: #f0e6d2;
+  background: none;
+  border: 0;
+  cursor: pointer;
+  transition: background 0.25s ease;
+}
+.film-icon:hover,
+.film-icon:focus-visible {
+  background: rgba(228, 196, 137, 0.16);
+}
+.film-rail {
+  position: relative;
+  flex: 1;
+  height: 24px;
+  min-width: 3rem;
+  display: flex;
+  align-items: center;
+}
+.film-rail::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(247, 239, 223, 0.22);
+}
+.film-rail-fill {
+  position: absolute;
+  left: 0;
+  height: 2px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #b98f4a, #ffeec4);
+}
+.film-tick {
+  position: absolute;
+  top: 50%;
+  width: 18px;
+  height: 18px;
+  margin-top: -9px;
+  margin-left: -9px;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.film-tick::after {
+  content: "";
+  display: block;
+  width: 6px;
+  height: 6px;
+  margin: 6px;
+  border-radius: 999px;
+  background: rgba(247, 239, 223, 0.45);
+  transition:
+    background 0.25s ease,
+    box-shadow 0.25s ease;
+}
+.film-tick[data-active="true"]::after {
+  background: #f3d79a;
+  box-shadow: 0 0 10px rgba(243, 215, 154, 0.9);
+}
+.film-time {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.56rem;
+  letter-spacing: 0.12em;
+  font-variant-numeric: tabular-nums;
+  color: rgba(247, 239, 223, 0.68);
+  white-space: nowrap;
+}
+
+/* ── The stage: the same film, scrubbed by the thumb ──────────────────────── */
+.reel-stage {
+  position: relative;
+  height: 320svh;
+  background: #05070d;
+}
+.reel-sticky {
+  position: sticky;
+  top: 0;
+  height: 100svh;
+  overflow: hidden;
+  isolation: isolate;
+}
+.reel-frames {
+  position: absolute;
+  inset: 0;
+}
+.reel-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 44%;
+  will-change: transform;
+}
+.reel-grade {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 80% at 50% 34%, transparent 26%, rgba(4, 6, 12, 0.52) 74%, rgba(2, 3, 8, 0.94) 100%),
+    linear-gradient(180deg, rgba(4, 6, 13, 0.6) 0%, transparent 26%, transparent 56%, rgba(3, 5, 11, 0.9) 100%);
+}
+.reel-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  z-index: 3;
+  background: #04060c;
+  pointer-events: none;
+}
+.reel-bar-top {
+  top: 0;
+}
+.reel-bar-bottom {
+  bottom: 0;
+}
+.reel-copy {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 13svh 6vw 15svh;
+  text-align: center;
+}
+.reel-kicker {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.56rem;
+  letter-spacing: 0.36em;
+  text-transform: uppercase;
+  color: var(--film-gold, #e4c489);
+  text-indent: 0.36em;
+}
+.reel-act-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.95rem;
+  color: rgba(247, 239, 223, 0.78);
+}
+.reel-names {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: center;
+  gap: 0 0.16em;
+  margin: 0.15rem 0 0;
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(2.3rem, 8.6vw, 5.4rem);
+  line-height: 0.96;
+  color: #fdf8ec;
+  text-shadow: 0 14px 54px rgba(0, 0, 0, 0.8);
+}
+.reel-amp {
+  font-family: var(--font-script);
+  font-size: 0.64em;
+  line-height: 1;
+  background: var(--gradient-gold, linear-gradient(110deg, #b98f4a, #ffeec4 50%, #b98f4a));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.reel-date {
+  margin-top: 0.5rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: clamp(1rem, 3.4vw, 1.35rem);
+  color: #f7efdf;
+}
+.reel-venue {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.56rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--film-gold, #e4c489);
+  line-height: 1.9;
+}
+.reel-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6rem;
+  margin-top: 1.2rem;
+}
+.reel-replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-height: 44px;
+  padding: 0 1.1rem;
+  border-radius: 999px;
+  border: 1px solid rgba(247, 239, 223, 0.28);
+  background: rgba(7, 10, 18, 0.42);
+  backdrop-filter: blur(12px);
+  color: #f7efdf;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.58rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition:
+    border-color 0.3s ease,
+    transform 0.3s ease;
+}
+.reel-replay:hover,
+.reel-replay:focus-visible {
+  border-color: rgba(255, 246, 221, 0.8);
+  transform: translateY(-1px);
+}
+.reel-acts {
+  position: absolute;
+  left: 50%;
+  bottom: calc(3.4rem + env(safe-area-inset-bottom));
+  translate: -50% 0;
+  z-index: 6;
+  display: flex;
+  gap: 1rem;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.5rem;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: rgba(247, 239, 223, 0.72);
+  white-space: nowrap;
+}
+.reel-acts span {
+  transition: opacity 0.3s ease;
+}
+.reel-scroll {
+  position: absolute;
+  left: 50%;
+  bottom: calc(1.1rem + env(safe-area-inset-bottom));
+  translate: -50% 0;
+  z-index: 6;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.5rem;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  color: var(--film-gold, #e4c489);
+  text-align: center;
+}
+.reel-stage[data-reduced="true"] .reel-frames:not(:first-of-type) .reel-frame,
+.reel-stage[data-reduced="true"] .reel-bar {
+  display: none;
+}
+.reel-stage[data-reduced="true"] .reel-copy {
+  opacity: 1 !important;
+}
+
+/* ── The act strip between sections ───────────────────────────────────────── */
+.reel-interlude {
+  position: relative;
+  overflow: hidden;
+  background: #080b13;
+  border-block: 1px solid rgba(228, 196, 137, 0.16);
+  padding: 0.5rem 0;
+}
+.reel-perf {
+  height: 16px;
+  background-color: #0d1119;
+  background-image: radial-gradient(
+    ellipse 4px 3px at 10px 8px,
+    rgba(247, 239, 223, 0.24) 62%,
+    transparent 64%
+  );
+  background-size: 20px 16px;
+}
+.reel-strip {
+  overflow: hidden;
+  padding: 0.55rem 0;
+  background: #0d1119;
+}
+.reel-strip-track {
+  display: flex;
+  gap: 0.7rem;
+  width: max-content;
+  animation: reel-roll 52s linear infinite;
+}
+.reel-strip:hover .reel-strip-track {
+  animation-play-state: paused;
+}
+@keyframes reel-roll {
+  from {
+    transform: translate3d(0, 0, 0);
+  }
+  to {
+    transform: translate3d(calc(-50% - 0.35rem), 0, 0);
+  }
+}
+.reel-cell {
+  position: relative;
+  width: min(56vw, 240px);
+  aspect-ratio: 3 / 4;
+  flex: none;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid rgba(228, 196, 137, 0.2);
+  background: #070a12;
+}
+.reel-cell img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: saturate(0.94) contrast(1.04) brightness(0.92);
+}
+.reel-cell figcaption {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 1.4rem 0.7rem 0.65rem;
+  background: linear-gradient(transparent, rgba(4, 6, 12, 0.92));
+}
+.reel-cell figcaption span {
+  display: block;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.48rem;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--film-gold, #e4c489);
+}
+.reel-cell figcaption small {
+  display: block;
+  margin-top: 0.22rem;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  color: #f3ead9;
+}
+
+/* Phone-first trims: the film is composed for a 9:19.5 screen. */
+@media (max-width: 560px) {
+  .film-title-names,
+  .film-poster-names {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .film-title-plate {
+    gap: 0.4rem;
+  }
+  .film-captions {
+    bottom: calc(9svh + 5svh);
+  }
+  .film-credit-line {
+    letter-spacing: 0.22em;
+  }
+  .reel-acts {
+    display: none;
+  }
+  .reel-names {
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+  .film-time {
+    display: none;
+  }
+  .reel-stage {
+    height: 300svh;
+  }
+}
+@media (min-width: 900px) {
+  .film-bar {
+    height: 7svh;
+  }
+  /* A portrait film on a wide screen: the whole frame, glowing into the dark. */
+  .film-shot-fill {
+    filter: blur(56px) brightness(0.34) saturate(1.2);
+  }
+  .film-controls {
+    padding-bottom: 2.2rem;
+  }
+  .reel-frame {
+    object-position: 50% 40%;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .film-grain,
+  .reel-grain,
+  .film-leak,
+  .film-scratch,
+  .reel-strip-track {
+    animation: none !important;
+  }
+  .film-enter,
+  .film-bar {
+    transition: none;
+  }
+}

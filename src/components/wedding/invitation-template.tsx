@@ -37,6 +37,8 @@ import {
 import { invitationArt } from "./invitation-art";
 import { CouplePortraits, InvitationStage } from "./invitation-stage";
 import { CurtainStage } from "./invitation-curtain";
+import { MughalMoonFilm } from "./invitation-film-player";
+import { ReelInterlude, ReelStage } from "./invitation-reel";
 import { LivingScene, MandapStage, riteBlessing } from "./invitation-rite";
 import { InvitationRsvp } from "./invitation-rsvp";
 import {
@@ -365,6 +367,22 @@ export function PersonalInvitation({
   }, [preview, hasSongs, gateActive]);
 
   const guestName = useInvitedGuestName();
+  const isFilmTheme = details.theme === "mughal-moon-film";
+  // The film *is* the gate for this theme: it opens on the poster, plays once,
+  // and hands over to the card. A studio preview never covers itself — the host
+  // can still start the film from the stage's own play button.
+  const [filmOpen, setFilmOpen] = useState(isFilmTheme && gateActive);
+  const [filmSeen, setFilmSeen] = useState(false);
+  const openFilm = () => {
+    setFilmOpen(true);
+    window.dispatchEvent(new CustomEvent("invite:close-music"));
+  };
+  const enterFromFilm = () => {
+    setFilmOpen(false);
+    setFilmSeen(true);
+    window.dispatchEvent(new Event("wedding:revealed"));
+    if (hasSongs && !preview) sendInvitationMusicCommand({ action: "play", index: 0 });
+  };
   const mascots = mascotsForTheme(details.theme);
   const play = (section: Parameters<typeof playfulCopy>[1]) => playfulCopy(layout, section);
   const monogram = getInvitationMonogram(details);
@@ -430,7 +448,10 @@ export function PersonalInvitation({
           guestName={guestName}
         />
       )}
-      {!storybook && showGate && !preview && details.elements.gate && (
+      {isFilmTheme && filmOpen && (
+        <MughalMoonFilm details={details} preview={preview} onEnter={enterFromFilm} />
+      )}
+      {!storybook && !isFilmTheme && showGate && !preview && details.elements.gate && (
         <Preloader
           onDone={() => window.dispatchEvent(new Event("wedding:revealed"))}
           onEnter={
@@ -507,6 +528,15 @@ export function PersonalInvitation({
       >
         {storybook ? (
           <StorybookHero details={details} actions={actions} />
+        ) : layout === "reel" ? (
+          <ReelStage
+            details={details}
+            actions={actions}
+            scrollTo={scrollTo}
+            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+            onReplay={openFilm}
+            replayLabel={filmSeen ? "Replay the film" : "Play the film"}
+          />
         ) : layout === "chhatri-dawn" ? (
           <ChhatriDawnStage
             details={details}
@@ -626,7 +656,11 @@ export function PersonalInvitation({
         </div>
       )}
 
-      <LayoutInterlude layout={layout} details={details} />
+      {layout === "reel" ? (
+        <ReelInterlude details={details} />
+      ) : (
+        <LayoutInterlude layout={layout} details={details} />
+      )}
       <WorldInterlude layout={layout} details={details} />
 
       {details.elements.message && (
