@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiConciergeRouteImport } from './routes/ai-concierge'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DemoRouteImport } from './routes/demo'
+import { Route as DownloadRouteImport } from './routes/download'
 import { Route as InvitePreviewRouteImport } from './routes/invite-preview'
+import { Route as OfflineStudioRouteImport } from './routes/offline-studio'
 import { Route as PreviewFrameRouteImport } from './routes/preview-frame'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as SignInRouteImport } from './routes/sign-in'
@@ -42,9 +44,19 @@ const DemoRoute = DemoRouteImport.update({
   path: '/demo',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DownloadRoute = DownloadRouteImport.update({
+  id: '/download',
+  path: '/download',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const InvitePreviewRoute = InvitePreviewRouteImport.update({
   id: '/invite-preview',
   path: '/invite-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OfflineStudioRoute = OfflineStudioRouteImport.update({
+  id: '/offline-studio',
+  path: '/offline-studio',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PreviewFrameRoute = PreviewFrameRouteImport.update({
@@ -88,7 +100,9 @@ export interface FileRoutesByFullPath {
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
+  '/download': typeof DownloadRoute
   '/invite-preview': typeof InvitePreviewRoute
+  '/offline-studio': typeof OfflineStudioRoute
   '/preview-frame': typeof PreviewFrameRoute
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
@@ -102,7 +116,9 @@ export interface FileRoutesByTo {
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
+  '/download': typeof DownloadRoute
   '/invite-preview': typeof InvitePreviewRoute
+  '/offline-studio': typeof OfflineStudioRoute
   '/preview-frame': typeof PreviewFrameRoute
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
@@ -117,7 +133,9 @@ export interface FileRoutesById {
   '/ai-concierge': typeof AiConciergeRoute
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
+  '/download': typeof DownloadRoute
   '/invite-preview': typeof InvitePreviewRoute
+  '/offline-studio': typeof OfflineStudioRoute
   '/preview-frame': typeof PreviewFrameRoute
   '/profile': typeof ProfileRoute
   '/sign-in': typeof SignInRoute
@@ -133,7 +151,9 @@ export interface FileRouteTypes {
     | '/ai-concierge'
     | '/dashboard'
     | '/demo'
+    | '/download'
     | '/invite-preview'
+    | '/offline-studio'
     | '/preview-frame'
     | '/profile'
     | '/sign-in'
@@ -147,7 +167,9 @@ export interface FileRouteTypes {
     | '/ai-concierge'
     | '/dashboard'
     | '/demo'
+    | '/download'
     | '/invite-preview'
+    | '/offline-studio'
     | '/preview-frame'
     | '/profile'
     | '/sign-in'
@@ -161,7 +183,9 @@ export interface FileRouteTypes {
     | '/ai-concierge'
     | '/dashboard'
     | '/demo'
+    | '/download'
     | '/invite-preview'
+    | '/offline-studio'
     | '/preview-frame'
     | '/profile'
     | '/sign-in'
@@ -176,7 +200,9 @@ export interface RootRouteChildren {
   AiConciergeRoute: typeof AiConciergeRoute
   DashboardRoute: typeof DashboardRoute
   DemoRoute: typeof DemoRoute
+  DownloadRoute: typeof DownloadRoute
   InvitePreviewRoute: typeof InvitePreviewRoute
+  OfflineStudioRoute: typeof OfflineStudioRoute
   PreviewFrameRoute: typeof PreviewFrameRoute
   ProfileRoute: typeof ProfileRoute
   SignInRoute: typeof SignInRoute
@@ -216,11 +242,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DemoRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/download': {
+      id: '/download'
+      path: '/download'
+      fullPath: '/download'
+      preLoaderRoute: typeof DownloadRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/invite-preview': {
       id: '/invite-preview'
       path: '/invite-preview'
       fullPath: '/invite-preview'
       preLoaderRoute: typeof InvitePreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/offline-studio': {
+      id: '/offline-studio'
+      path: '/offline-studio'
+      fullPath: '/offline-studio'
+      preLoaderRoute: typeof OfflineStudioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/preview-frame': {
@@ -280,7 +320,9 @@ const rootRouteChildren: RootRouteChildren = {
   AiConciergeRoute: AiConciergeRoute,
   DashboardRoute: DashboardRoute,
   DemoRoute: DemoRoute,
+  DownloadRoute: DownloadRoute,
   InvitePreviewRoute: InvitePreviewRoute,
+  OfflineStudioRoute: OfflineStudioRoute,
   PreviewFrameRoute: PreviewFrameRoute,
   ProfileRoute: ProfileRoute,
   SignInRoute: SignInRoute,

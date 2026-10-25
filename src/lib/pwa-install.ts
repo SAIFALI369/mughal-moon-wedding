@@ -1,0 +1,274 @@
+import { useEffect, useState } from "react";
+import { invitationArt } from "@/components/wedding/invitation-art";
+import { suggestedInvitationSongs } from "@/components/wedding/invitation-music";
+
+interface BeforeInstallPromptEvent extends Event {
+  readonly platforms: string[];
+  readonly userChoice: Promise<{ outcome: "accepted" | "dismissed"; platform: string }>;
+  prompt(): Promise<void>;
+}
+
+let deferredPromptEvent: BeforeInstallPromptEvent | null = null;
+let swRegistered = false;
+let cacheReadyGlobal = false;
+const promptSubscribers = new Set<() => void>();
+
+function notifyPromptSubscribers() {
+  for (const fn of promptSubscribers) fn();
+}
+
+function isTestDom(): boolean {
+  if (typeof window === "undefined" || typeof navigator === "undefined") return true;
+  return /jsdom|happy-dom/i.test(navigator.userAgent);
+}
+
+export function isStandaloneApp(): boolean {
+  if (typeof window === "undefined") return false;
+  const standaloneMedia = window.matchMedia?.("(display-mode: standalone)")?.matches ?? false;
+  const iosStandalone = Boolean((navigator as { standalone?: boolean }).standalone);
+  return standaloneMedia || iosStandalone;
+}
+
+function collectStudioAssetUrls(): string[] {
+  const urls = new Set<string>([
+    "/",
+    "/offline-studio",
+    "/download",
+    "/dashboard",
+    "/preview-frame",
+    "/sign-in",
+    "/manifest.webmanifest",
+    "/icon-192.png",
+    "/icon-512.png",
+    ...Object.values(invitationArt),
+    ...suggestedInvitationSongs.map((s) => s.url),
+  ]);
+
+  if (typeof document !== "undefined") {
+    document.querySelectorAll<HTMLScriptElement>("script[src]").forEach((el) => {
+      if (el.src && el.src.startsWith(window.location.origin)) urls.add(el.src);
+    });
+    document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href]').forEach((el) => {
+      if (el.href && el.href.startsWith(window.location.origin)) urls.add(el.href);
+    });
+  }
+
+  return Array.from(urls);
+}
+
+export async function precacheOfflineStudio(): Promise<boolean> {
+  if (isTestDom() || !("serviceWorker" in navigator)) return false;
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const worker = registration.active || registration.waiting || registration.installing;
+    worker?.postMessage({
+      type: "PRECACHE_STUDIO",
+      urls: collectStudioAssetUrls(),
+    });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+export function registerOfflineServiceWorker(): void {
+  if (swRegistered || isTestDom()) return;
+  swRegistered = true;
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredPromptEvent = event as BeforeInstallPromptEvent;
+    notifyPromptSubscribers();
+  });
+
+  window.addEventListener("appinstalled", () => {
+    deferredPromptEvent = null;
+    notifyPromptSubscribers();
+  });
+
+  if (!("serviceWorker" in navigator)) return;
+
+  navigator.serviceWorker.addEventListener("message", (event) => {
+    if (event.data?.type === "OFFLINE_CACHE_READY") {
+      cacheReadyGlobal = true;
+      notifyPromptSubscribers();
+    }
+  });
+
+  const doRegister = () => {
+    navigator.serviceWorker
+      .register("/sw.js", { scope: "/" })
+      .then(() => {
+        void precacheOfflineStudio();
+      })
+      .catch(() => {
+        // Ignore service worker registration restrictions in sandboxed contexts
+      });
+  };
+
+  if (document.readyState === "complete") {
+    doRegister();
+  } else {
+    window.addEventListener("load", doRegister, { once: true });
+  }
+}
+
+export function useOnlineStatus(): boolean {
+  const [online, setOnline] = useState<boolean>(() =>
+    typeof navigator === "undefined" ? true : navigator.onLine !== false,
+  );
+
+  useEffect(() => {
+    const onOnline = () => setOnline(true);
+    const onOffline = () => setOnline(false);
+    window.addEventListener("online", onOnline);
+    window.addEventListener("offline", onOffline);
+    return () => {
+      window.removeEventListener("online", onOnline);
+      window.removeEventListener("offline", onOffline);
+    };
+  }, []);
+
+  return online;
+}
+
+export function useOfflineAppInstaller() {
+  const [, setTick] = useState(0);
+  const [installing, setInstalling] = useState(false);
+
+  useEffect(() => {
+    registerOfflineServiceWorker();
+    return () => {};
+  }, []);
+
+  useEffect(() => {
+    const rerender = () => setTick((n) => n + 1);
+    promptSubscribers.add(rerender);
+    return () => {
+      promptSubscribers.delete(rerender);
+    };
+  }, []);
+
+  async function installNativeApp(): Promise<"accepted" | "dismissed" | "unavailable"> {
+    if (!deferredPromptEvent) return "unavailable";
+    setInstalling(true);
+    try {
+      await deferredPromptEvent.prompt();
+      const choice = await deferredPromptEvent.userChoice;
+      if (choice.outcome === "accepted") {
+        deferredPromptEvent = null;
+        notifyPromptSubscribers();
+      }
+      return choice.outcome;
+    } finally {
+      setInstalling(false);
+    }
+  }
+
+  return {
+    canNativeInstall: Boolean(deferredPromptEvent),
+    isInstalled: isStandaloneApp(),
+    cacheReady: cacheReadyGlobal,
+    installing,
+    installNativeApp,
+    warmOfflineCache: precacheOfflineStudio,
+  };
+}
+
+/**
+ * Generates and downloads a standalone desktop/mobile launcher (`InvitingYou-Offline-Studio.html`)
+ * that opens the cached Offline Studio directly from the user's Desktop or Downloads folder.
+ */
+export function buildOfflineLauncherHtml(origin: string): string {
+  const safeOrigin = origin.replace(/\/+$/, "");
+  const studioUrl = `${safeOrigin}/offline-studio?source=launcher`;
+  return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>InvitingYou — Offline Studio Launcher</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background: #f5f4ed;
+      color: #253329;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    }
+    .card {
+      max-width: 440px;
+      width: 100%;
+      background: #fdfcf8;
+      border: 1px solid #e4e3d6;
+      border-radius: 14px;
+      padding: 32px 28px;
+      text-align: center;
+      box-shadow: 0 20px 50px -28px rgba(0, 0, 0, 0.14);
+    }
+    .seal {
+      width: 56px;
+      height: 56px;
+      margin: 0 auto 16px;
+      border-radius: 50%;
+      background: #260e17;
+      color: #d6ad62;
+      display: grid;
+      place-items: center;
+      font-size: 24px;
+      border: 2px solid #d6ad62;
+    }
+    h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
+    p { font-size: 13px; line-height: 1.6; color: #646c5f; margin-bottom: 22px; }
+    a.btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      min-height: 44px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      background: #253329;
+      color: #fff;
+      text-decoration: none;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .note { margin-top: 14px; font-size: 11px; color: #8a8e80; margin-bottom: 0; }
+  </style>
+  <script>
+    window.addEventListener("DOMContentLoaded", function () {
+      setTimeout(function () {
+        window.location.replace(${JSON.stringify(studioUrl)});
+      }, 350);
+    });
+  </script>
+</head>
+<body>
+  <main class="card">
+    <div class="seal" aria-hidden="true">☾</div>
+    <h1>InvitingYou Offline Studio</h1>
+    <p>Opening your offline invitation workspace. Create, edit, and preview cards without internet — connect only when ready to publish.</p>
+    <a class="btn" href="${studioUrl}">Launch Offline Studio</a>
+    <p class="note">Keep this file on your Desktop for instant access.</p>
+  </main>
+</body>
+</html>`;
+}
+
+export function downloadOfflineStudioLauncher(): void {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+  const html = buildOfflineLauncherHtml(window.location.origin);
+  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const anchor = document.createElement("a");
+  anchor.href = url;
+  anchor.download = "InvitingYou-Offline-Studio.html";
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}

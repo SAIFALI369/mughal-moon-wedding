@@ -4,6 +4,7 @@ import {
   ArrowUpRight,
   Check,
   ChevronDown,
+  Download,
   Globe2,
   Heart,
   MousePointer2,
@@ -252,6 +253,30 @@ export function Home() {
           <Link to="/sign-in" className="studio-button">
             Access your studio <ArrowRight size={16} />
           </Link>
+        </section>
+        <section
+          id="download-app"
+          aria-label="Download offline studio app"
+          className="studio-download-banner"
+        >
+          <div className="studio-download-copy">
+            <span className="studio-eyebrow">
+              <span /> OFFLINE STUDIO APP
+            </span>
+            <h2>Design offline. Publish when online.</h2>
+            <p>
+              Download the InvitingYou Offline App for your shop counter. Create, edit, and preview
+              every theme without Wi-Fi—internet is only needed when you publish.
+            </p>
+          </div>
+          <div className="studio-download-actions">
+            <Link to="/download" className="studio-button">
+              <Download size={16} /> Download offline app
+            </Link>
+            <Link to="/offline-studio" className="studio-text-button">
+              Open offline studio <ArrowUpRight size={15} />
+            </Link>
+          </div>
         </section>
         {loading && (
           <span className="sr-only" role="status">

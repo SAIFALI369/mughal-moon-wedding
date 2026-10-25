@@ -16,6 +16,31 @@ const AuthContext = createContext<AuthContextValue>({
   signOut: async () => {},
 });
 
+const OFFLINE_USER_KEY = "invitingyou:offline-user:v1";
+
+function cacheOfflineUser(user: User | null) {
+  if (typeof window === "undefined") return;
+  try {
+    if (user) {
+      window.localStorage.setItem(OFFLINE_USER_KEY, JSON.stringify(user));
+    } else {
+      window.localStorage.removeItem(OFFLINE_USER_KEY);
+    }
+  } catch {
+    // Ignore storage errors
+  }
+}
+
+function readCachedOfflineUser(): User | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(OFFLINE_USER_KEY);
+    return raw ? (JSON.parse(raw) as User) : null;
+  } catch {
+    return null;
+  }
+}
+
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [user, setUser] = useState<User | null>(null);
@@ -23,13 +48,48 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
-    supabase.auth.getSession().then(({ data }) => {
-      if (!mounted) return;
-      setSession(data.session);
-      setUser(data.session?.user ?? null);
-      setLoading(false);
-    });
-    const { data: sub } = supabase.auth.onAuthStateChange((_event, nextSession) => {
+    supabase.auth
+      .getSession()
+      .then(({ data }) => {
+        if (!mounted) return;
+        const resolvedUser =
+          data.session?.user ??
+          (typeof navigator !== "undefined" && navigator.onLine === false
+            ? readCachedOfflineUser()
+            : null);
+        if (data.session?.user) cacheOfflineUser(data.session.user);
+        setSession(data.session);
+        setUser(resolvedUser);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (!mounted) return;
+        const fallback =
+          typeof navigator !== "undefined" && navigator.onLine === false
+            ? readCachedOfflineUser()
+            : null;
+        setUser(fallback);
+        setLoading(false);
+      });
+    const { data: sub } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      if (nextSession?.user) {
+        cacheOfflineUser(nextSession.user);
+      } else if (event === "SIGNED_OUT") {
+        cacheOfflineUser(null);
+      }
+      if (
+        !nextSession &&
+        event !== "SIGNED_OUT" &&
+        typeof navigator !== "undefined" &&
+        navigator.onLine === false
+      ) {
+        const fallback = readCachedOfflineUser();
+        if (fallback) {
+          setUser(fallback);
+          setLoading(false);
+          return;
+        }
+      }
       setSession(nextSession);
       setUser(nextSession?.user ?? null);
       setLoading(false);
@@ -41,7 +101,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   async function signOut() {
-    await supabase.auth.signOut();
+    cacheOfflineUser(null);
+    try {
+      await supabase.auth.signOut();
+    } catch {
+      // Allow signing out locally even if offline
+    }
     setSession(null);
     setUser(null);
   }

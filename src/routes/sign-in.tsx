@@ -8,6 +8,12 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/sign-in")({
+  validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
+    redirect:
+      typeof search.redirect === "string" && search.redirect.startsWith("/")
+        ? search.redirect
+        : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Sign in — InvitingYou" },
@@ -27,6 +33,7 @@ const INVALID_CREDENTIALS = "Invalid username/email or password";
 
 function SignIn() {
   const navigate = useNavigate();
+  const { redirect } = Route.useSearch();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
   const [busy, setBusy] = useState(false);
@@ -91,7 +98,9 @@ function SignIn() {
       }
 
       toast.success("Signed in");
-      await navigate({ to: "/dashboard", replace: true });
+      const destination =
+        redirect === "/offline-studio" ? ("/offline-studio" as const) : ("/dashboard" as const);
+      await navigate({ to: destination, replace: true });
     } catch (err: unknown) {
       console.error("Sign-in failed", err);
       setError("Sign-in failed. Check your connection and try again.");
