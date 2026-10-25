@@ -1,6 +1,8 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { invitationArt } from "@/components/wedding/invitation-art";
 import { suggestedInvitationSongs } from "@/components/wedding/invitation-music";
+
+export const OFFLINE_APP_VERSION = "2.0";
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -37,9 +39,12 @@ function collectStudioAssetUrls(): string[] {
     "/dashboard",
     "/preview-frame",
     "/sign-in",
+    "/demo",
+    "/storybook?theme=royal-rajmahal",
     "/manifest.webmanifest",
     "/icon-192.png",
     "/icon-512.png",
+    "/apple-touch-icon.png",
     ...Object.values(invitationArt),
     ...suggestedInvitationSongs.map((s) => s.url),
   ]);
@@ -56,13 +61,16 @@ function collectStudioAssetUrls(): string[] {
   return Array.from(urls);
 }
 
-export async function precacheOfflineStudio(): Promise<boolean> {
+export async function precacheOfflineStudio(forceUpdate = false): Promise<boolean> {
   if (isTestDom() || !("serviceWorker" in navigator)) return false;
   try {
     const registration = await navigator.serviceWorker.ready;
+    if (forceUpdate) {
+      await registration.update().catch(() => {});
+    }
     const worker = registration.active || registration.waiting || registration.installing;
     worker?.postMessage({
-      type: "PRECACHE_STUDIO",
+      type: forceUpdate ? "FORCE_UPDATE_CACHE" : "PRECACHE_STUDIO",
       urls: collectStudioAssetUrls(),
     });
     return true;
@@ -97,14 +105,29 @@ export function registerOfflineServiceWorker(): void {
 
   const doRegister = () => {
     navigator.serviceWorker
-      .register("/sw.js", { scope: "/" })
-      .then(() => {
+      .register("/sw.js", { scope: "/", updateViaCache: "none" })
+      .then((registration) => {
+        void registration.update().catch(() => {});
+        registration.waiting?.postMessage({ type: "SKIP_WAITING" });
+        registration.addEventListener("updatefound", () => {
+          const installingWorker = registration.installing;
+          if (!installingWorker) return;
+          installingWorker.addEventListener("statechange", () => {
+            if (installingWorker.state === "installed") {
+              installingWorker.postMessage({ type: "SKIP_WAITING" });
+            }
+          });
+        });
         void precacheOfflineStudio();
       })
       .catch(() => {
         // Ignore service worker registration restrictions in sandboxed contexts
       });
   };
+
+  window.addEventListener("online", () => {
+    void precacheOfflineStudio(true);
+  });
 
   if (document.readyState === "complete") {
     doRegister();
@@ -135,6 +158,7 @@ export function useOnlineStatus(): boolean {
 export function useOfflineAppInstaller() {
   const [, setTick] = useState(0);
   const [installing, setInstalling] = useState(false);
+  const [updatingCache, setUpdatingCache] = useState(false);
 
   useEffect(() => {
     registerOfflineServiceWorker();
@@ -147,6 +171,17 @@ export function useOfflineAppInstaller() {
     return () => {
       promptSubscribers.delete(rerender);
     };
+  }, []);
+
+  const warmOfflineCache = useCallback(() => precacheOfflineStudio(false), []);
+
+  const refreshOfflineCache = useCallback(async () => {
+    setUpdatingCache(true);
+    try {
+      return await precacheOfflineStudio(true);
+    } finally {
+      setUpdatingCache(false);
+    }
   }, []);
 
   async function installNativeApp(): Promise<"accepted" | "dismissed" | "unavailable"> {
@@ -166,28 +201,31 @@ export function useOfflineAppInstaller() {
   }
 
   return {
+    version: OFFLINE_APP_VERSION,
     canNativeInstall: Boolean(deferredPromptEvent),
     isInstalled: isStandaloneApp(),
     cacheReady: cacheReadyGlobal,
     installing,
+    updatingCache,
     installNativeApp,
-    warmOfflineCache: precacheOfflineStudio,
+    warmOfflineCache,
+    refreshOfflineCache,
   };
 }
 
 /**
  * Generates and downloads a standalone desktop/mobile launcher (`InvitingYou-Offline-Studio.html`)
- * that opens the cached Offline Studio directly from the user's Desktop or Downloads folder.
+ * that opens the latest cached Offline Studio directly from the user's Desktop or Downloads folder.
  */
 export function buildOfflineLauncherHtml(origin: string): string {
   const safeOrigin = origin.replace(/\/+$/, "");
-  const studioUrl = `${safeOrigin}/offline-studio?source=launcher`;
+  const studioUrl = `${safeOrigin}/offline-studio?source=launcher&v=${encodeURIComponent(OFFLINE_APP_VERSION)}`;
   return `<!doctype html>
 <html lang="en">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>InvitingYou — Offline Studio Launcher</title>
+  <title>InvitingYou — Offline Studio v${OFFLINE_APP_VERSION}</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
@@ -212,7 +250,7 @@ export function buildOfflineLauncherHtml(origin: string): string {
     .seal {
       width: 56px;
       height: 56px;
-      margin: 0 auto 16px;
+      margin: 0 auto 14px;
       border-radius: 50%;
       background: #260e17;
       color: #d6ad62;
@@ -220,6 +258,18 @@ export function buildOfflineLauncherHtml(origin: string): string {
       place-items: center;
       font-size: 24px;
       border: 2px solid #d6ad62;
+    }
+    .badge {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 3px 9px;
+      border-radius: 999px;
+      background: #ecebe2;
+      color: #4f584b;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
     }
     h1 { font-size: 22px; font-weight: 600; margin-bottom: 8px; }
     p { font-size: 13px; line-height: 1.6; color: #646c5f; margin-bottom: 22px; }
@@ -243,17 +293,18 @@ export function buildOfflineLauncherHtml(origin: string): string {
     window.addEventListener("DOMContentLoaded", function () {
       setTimeout(function () {
         window.location.replace(${JSON.stringify(studioUrl)});
-      }, 350);
+      }, 300);
     });
   </script>
 </head>
 <body>
   <main class="card">
     <div class="seal" aria-hidden="true">☾</div>
+    <span class="badge">Offline Studio v${OFFLINE_APP_VERSION}</span>
     <h1>InvitingYou Offline Studio</h1>
-    <p>Opening your offline invitation workspace. Create, edit, and preview cards without internet — connect only when ready to publish.</p>
+    <p>Opening your offline invitation workspace. Create, upload photos, and scroll full phone &amp; desktop previews without internet — connect only when ready to publish.</p>
     <a class="btn" href="${studioUrl}">Launch Offline Studio</a>
-    <p class="note">Keep this file on your Desktop for instant access.</p>
+    <p class="note">Keep this launcher on your shop Desktop or Phone for instant offline access.</p>
   </main>
 </body>
 </html>`;
@@ -261,6 +312,7 @@ export function buildOfflineLauncherHtml(origin: string): string {
 
 export function downloadOfflineStudioLauncher(): void {
   if (typeof window === "undefined" || typeof document === "undefined") return;
+  void precacheOfflineStudio(true);
   const html = buildOfflineLauncherHtml(window.location.origin);
   const blob = new Blob([html], { type: "text/html;charset=utf-8" });
   const url = URL.createObjectURL(blob);

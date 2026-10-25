@@ -408,7 +408,7 @@ export function PersonalInvitation({
       data-framework={details.framework}
       data-layout={layout}
       data-interactive={interactive ? "true" : undefined}
-      className="personal-invite min-h-screen overflow-x-hidden bg-background text-foreground"
+      className="personal-invite min-h-screen overflow-x-clip bg-background text-foreground"
     >
       {!storybook && <ThemeBackdrop theme={details.theme} art={art} />}
       {storybook && (
@@ -501,95 +501,99 @@ export function PersonalInvitation({
         </header>
       )}
 
-      <CinematicHero theme={details.theme} waitingForGate={showGate && details.elements.gate && (storybook || !preview)}>
-      {storybook ? (
-        <StorybookHero details={details} actions={actions} />
-      ) : layout === "chhatri-dawn" ? (
-        <ChhatriDawnStage
-          details={details}
-          backgroundImage={art}
-          actions={actions}
-          scrollTo={scrollTo}
-          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
-        />
-      ) : layout === "baag" ? (
-        <BaagStage
-          details={details}
-          backgroundImage={art}
-          actions={actions}
-          scrollTo={scrollTo}
-          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
-        />
-      ) : layout === "single-stroke" ? (
-        <SingleStrokeStage
-          details={details}
-          backgroundImage={art}
-          actions={actions}
-          scrollTo={scrollTo}
-          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
-        />
-      ) : layout === "chand-bagh" ? (
-        <ChandBaghStage
-          details={details}
-          backgroundImage={art}
-          actions={actions}
-          scrollTo={scrollTo}
-          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
-        />
-      ) : layout === "mela-maidan" ? (
-        <MelaMaidanStage
-          details={details}
-          backgroundImage={art}
-          actions={actions}
-          scrollTo={scrollTo}
-          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
-        />
-      ) : layout === "moonlit" ? (
-        <div id="invitation-top" className="invite-hero-wrap">
-          <Hero
-            theme={details.theme}
-            groomName={details.groomName}
-            brideName={details.brideName}
-            dateLine={dateLine || "Together with our families, we invite you to celebrate with us"}
-            entranceDelay={showGate && details.elements.gate && !preview ? 3 : 0}
-            compactNames
-            scrollTo={scrollTo}
-            actions={actions}
+      <CinematicHero
+        theme={details.theme}
+        waitingForGate={showGate && details.elements.gate && (storybook || !preview)}
+      >
+        {storybook ? (
+          <StorybookHero details={details} actions={actions} />
+        ) : layout === "chhatri-dawn" ? (
+          <ChhatriDawnStage
+            details={details}
             backgroundImage={art}
-            portraits={<CouplePortraits details={details} />}
+            actions={actions}
+            scrollTo={scrollTo}
+            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
           />
-          <div className="invite-hero-frame" aria-hidden="true">
-            <span className="invite-hero-arch" />
-            <span className="invite-hero-star invite-hero-star-left">✦</span>
-            <span className="invite-hero-star invite-hero-star-right">✦</span>
+        ) : layout === "baag" ? (
+          <BaagStage
+            details={details}
+            backgroundImage={art}
+            actions={actions}
+            scrollTo={scrollTo}
+            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+          />
+        ) : layout === "single-stroke" ? (
+          <SingleStrokeStage
+            details={details}
+            backgroundImage={art}
+            actions={actions}
+            scrollTo={scrollTo}
+            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+          />
+        ) : layout === "chand-bagh" ? (
+          <ChandBaghStage
+            details={details}
+            backgroundImage={art}
+            actions={actions}
+            scrollTo={scrollTo}
+            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+          />
+        ) : layout === "mela-maidan" ? (
+          <MelaMaidanStage
+            details={details}
+            backgroundImage={art}
+            actions={actions}
+            scrollTo={scrollTo}
+            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+          />
+        ) : layout === "moonlit" ? (
+          <div id="invitation-top" className="invite-hero-wrap">
+            <Hero
+              theme={details.theme}
+              groomName={details.groomName}
+              brideName={details.brideName}
+              dateLine={
+                dateLine || "Together with our families, we invite you to celebrate with us"
+              }
+              entranceDelay={showGate && details.elements.gate && !preview ? 3 : 0}
+              compactNames
+              scrollTo={scrollTo}
+              actions={actions}
+              backgroundImage={art}
+              portraits={<CouplePortraits details={details} />}
+            />
+            <div className="invite-hero-frame" aria-hidden="true">
+              <span className="invite-hero-arch" />
+              <span className="invite-hero-star invite-hero-star-left">✦</span>
+              <span className="invite-hero-star invite-hero-star-right">✦</span>
+            </div>
           </div>
-        </div>
-      ) : layout === "curtain-call" ? (
-        <CurtainStage
-          details={details}
-          backgroundImage={art}
-          actions={actions}
-          scrollTo={scrollTo}
-          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
-        />
-      ) : layout === "mandap" ? (
-        <MandapStage
-          details={details}
-          backgroundImage={art}
-          actions={actions}
-          scrollTo={scrollTo}
-          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
-        />
-      ) : (
-        <InvitationStage
-          details={details}
-          backgroundImage={art}
-          actions={actions}
-          scrollTo={scrollTo}
-          entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
-        />
-      )}
-
+        ) : layout === "curtain-call" ? (
+          <CurtainStage
+            details={details}
+            backgroundImage={art}
+            actions={actions}
+            scrollTo={scrollTo}
+            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+          />
+        ) : layout === "mandap" ? (
+          <MandapStage
+            details={details}
+            backgroundImage={art}
+            actions={actions}
+            scrollTo={scrollTo}
+            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+          />
+        ) : (
+          <InvitationStage
+            details={details}
+            backgroundImage={art}
+            actions={actions}
+            scrollTo={scrollTo}
+            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+          />
+        )}
       </CinematicHero>
       {interactive && (
         <div className="invite-guest-ribbon">

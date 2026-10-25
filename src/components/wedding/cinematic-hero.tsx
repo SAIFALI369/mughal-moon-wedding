@@ -3,7 +3,11 @@ import { ThemeCinema } from "./theme-cinema";
 import type { InvitationTheme } from "./invitation-options";
 
 /** Owns only decorative motion; never remounts the form or guest/chat state. */
-export function CinematicHero({ theme, waitingForGate = false, children }: {
+export function CinematicHero({
+  theme,
+  waitingForGate = false,
+  children,
+}: {
   theme: InvitationTheme;
   waitingForGate?: boolean;
   children: ReactNode;
@@ -37,11 +41,14 @@ export function CinematicHero({ theme, waitingForGate = false, children }: {
     const scroll = () => {
       if (!frame && !media.matches && visible) frame = requestAnimationFrame(update);
     };
-    const observer = new IntersectionObserver(([entry]) => {
-      visible = entry?.isIntersecting ?? false;
-      element.dataset.paused = String(!visible || document.hidden);
-      scroll();
-    });
+    const observer =
+      typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver(([entry]) => {
+            visible = entry?.isIntersecting ?? false;
+            element.dataset.paused = String(!visible || document.hidden);
+            scroll();
+          })
+        : null;
     const visibility = () => {
       element.dataset.paused = String(!visible || document.hidden);
       scroll();
@@ -50,13 +57,13 @@ export function CinematicHero({ theme, waitingForGate = false, children }: {
       element.style.setProperty("--cinema-depth", "0px");
       scroll();
     };
-    observer.observe(element);
+    observer?.observe(element);
     window.addEventListener("scroll", scroll, { passive: true });
     document.addEventListener("visibilitychange", visibility);
     media.addEventListener("change", preference);
     update();
     return () => {
-      observer.disconnect();
+      observer?.disconnect();
       cancelAnimationFrame(frame);
       window.removeEventListener("scroll", scroll);
       document.removeEventListener("visibilitychange", visibility);

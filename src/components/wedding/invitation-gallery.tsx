@@ -1,6 +1,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { Camera, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { supabase } from "@/lib/db";
+import {
+  getOfflineDraftPhotos,
+  isOfflineDraftId,
+  subscribeOfflineDrafts,
+} from "@/lib/offline-studio";
 import type { InvitationDetails } from "./invitation-details";
 import { SuiteHeading } from "./invitation-ornaments";
 
@@ -54,6 +59,11 @@ export function InvitationGallery({
 
   const load = useCallback(async () => {
     if (!cardId) return;
+    if (isOfflineDraftId(cardId)) {
+      setStatus("");
+      setPhotos(getOfflineDraftPhotos(cardId));
+      return;
+    }
     const { data, error } = await supabase
       .from("invitation_photos")
       .select("slot,image_data,caption,source")
@@ -68,6 +78,12 @@ export function InvitationGallery({
 
   useEffect(() => {
     if (!cardId) return;
+    if (isOfflineDraftId(cardId)) {
+      setPhotos(getOfflineDraftPhotos(cardId));
+      return subscribeOfflineDrafts(() => {
+        setPhotos(getOfflineDraftPhotos(cardId));
+      });
+    }
     setLoading(true);
     void load().finally(() => setLoading(false));
     // A preview is a static snapshot; only the live card follows Realtime.

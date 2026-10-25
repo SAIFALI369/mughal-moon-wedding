@@ -6,13 +6,18 @@ import {
   Download,
   HardDriveDownload,
   Laptop,
+  RefreshCw,
   Smartphone,
   UploadCloud,
   WifiOff,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PlatformShell } from "@/components/platform/platform-shell";
-import { downloadOfflineStudioLauncher, useOfflineAppInstaller } from "@/lib/pwa-install";
+import {
+  downloadOfflineStudioLauncher,
+  useOfflineAppInstaller,
+  useOnlineStatus,
+} from "@/lib/pwa-install";
 
 export const Route = createFileRoute("/download")({
   head: () => ({
@@ -21,7 +26,7 @@ export const Route = createFileRoute("/download")({
       {
         name: "description",
         content:
-          "Download the InvitingYou Offline Studio App for Windows, Mac, Android, or iOS. Create and preview wedding invitations offline; internet is needed only for publishing.",
+          "Download the latest InvitingYou Offline Studio App for Windows, Mac, Android, or iOS. Create, upload photos, and scroll full phone & desktop previews offline; internet is needed only for publishing.",
       },
     ],
   }),
@@ -29,13 +34,17 @@ export const Route = createFileRoute("/download")({
 });
 
 export function DownloadAppPage() {
+  const online = useOnlineStatus();
   const {
+    version,
     canNativeInstall,
     isInstalled,
     cacheReady,
     installing,
+    updatingCache,
     installNativeApp,
     warmOfflineCache,
+    refreshOfflineCache,
   } = useOfflineAppInstaller();
   const [downloadedLauncher, setDownloadedLauncher] = useState(false);
 
@@ -44,17 +53,30 @@ export function DownloadAppPage() {
   }, [warmOfflineCache]);
 
   async function handleDownloadApp() {
-    void warmOfflineCache();
+    void refreshOfflineCache();
     if (canNativeInstall) {
       const outcome = await installNativeApp();
       if (outcome === "accepted") {
-        toast.success("InvitingYou Offline App installed");
+        toast.success(`InvitingYou Offline App v${version} installed`);
         return;
       }
     }
     downloadOfflineStudioLauncher();
     setDownloadedLauncher(true);
-    toast.success("Offline Studio launcher downloaded");
+    toast.success(`Offline Studio v${version} launcher downloaded`);
+  }
+
+  async function handleRefreshUpdate() {
+    if (!online) {
+      toast.error("Connect to the internet briefly to download the latest app update.");
+      return;
+    }
+    const ok = await refreshOfflineCache();
+    if (ok) {
+      toast.success(`Offline App updated to v${version}`);
+    } else {
+      toast.info("Latest version is already active in this browser.");
+    }
   }
 
   return (
@@ -63,7 +85,7 @@ export function DownloadAppPage() {
         <section className="download-app-hero">
           <div className="download-app-card">
             <span className="studio-eyebrow">
-              <span /> OFFLINE DESKTOP &amp; MOBILE APP
+              <span /> OFFLINE DESKTOP &amp; MOBILE APP · v{version}
             </span>
             <h1>
               Design offline.
@@ -71,8 +93,9 @@ export function DownloadAppPage() {
               <em>Publish when online.</em>
             </h1>
             <p className="download-app-lead">
-              Built for print-shop counters. Create, customise, and preview every wedding theme with
-              zero internet—connect only when you’re ready to publish the live link.
+              Built for print-shop counters. Create invitations, add couple &amp; gallery photos,
+              and scroll full phone &amp; desktop previews with zero internet—connect only when
+              you’re ready to publish the live link.
             </p>
 
             <div className="download-app-actions">
@@ -91,25 +114,36 @@ export function DownloadAppPage() {
                   {installing
                     ? "Installing…"
                     : canNativeInstall
-                      ? "Install Offline App"
-                      : "Download Offline App"}
+                      ? `Install Offline App (v${version})`
+                      : `Download Offline App (v${version})`}
                 </button>
               )}
               <Link to="/offline-studio" className="studio-outline-button">
                 Launch Offline Studio <ArrowRight size={15} />
               </Link>
+              {online && (
+                <button
+                  type="button"
+                  onClick={() => void handleRefreshUpdate()}
+                  disabled={updatingCache}
+                  className="studio-outline-button"
+                >
+                  <RefreshCw size={14} className={updatingCache ? "animate-spin" : ""} />
+                  {updatingCache ? "Updating…" : "Update offline cache"}
+                </button>
+              )}
             </div>
 
             <div className="download-app-status" role="status">
               <Check size={14} />
               <span>
                 {isInstalled
-                  ? "Installed on this device · Ready for offline use"
+                  ? `Installed on this device (v${version}) · Ready for offline use`
                   : cacheReady
-                    ? "All 23 themes & studio tools cached on this device for offline use"
+                    ? `All 23 themes, previews & studio tools (v${version}) cached for offline use`
                     : downloadedLauncher
-                      ? "Launcher saved · Offline studio assets caching in background"
-                      : "Works on Windows, macOS, Android & iOS · No App Store required"}
+                      ? `Latest v${version} launcher saved · Offline studio assets caching in background`
+                      : `Latest v${version} · Works on Windows, macOS, Android & iOS`}
               </span>
             </div>
 
@@ -126,10 +160,10 @@ export function DownloadAppPage() {
             <article className="download-feature">
               <WifiOff size={18} />
               <div>
-                <h2>100% offline editing &amp; preview</h2>
+                <h2>100% offline editing, photos &amp; scrollable previews</h2>
                 <p>
-                  Choose from all 23 themes, add couple photos, edit events, and test phone &amp;
-                  desktop previews without Wi-Fi.
+                  Choose from all 23 themes, upload couple &amp; gallery photos, and smoothly scroll
+                  full phone &amp; desktop previews without Wi-Fi.
                 </p>
               </div>
             </article>
@@ -138,8 +172,8 @@ export function DownloadAppPage() {
               <div>
                 <h2>Saved locally on your counter device</h2>
                 <p>
-                  Drafts stay safe on your PC or phone even if shop internet or power drops
-                  mid-consultation.
+                  Drafts and printable A5 / QR proof sheets stay safe on your PC or phone even if
+                  shop internet or power drops mid-consultation.
                 </p>
               </div>
             </article>
@@ -148,8 +182,8 @@ export function DownloadAppPage() {
               <div>
                 <h2>Internet needed only to publish</h2>
                 <p>
-                  Reconnect briefly when your customer approves the card to publish their live link
-                  and printable QR sheet.
+                  Reconnect briefly when your customer approves the card to publish their live link,
+                  sync gallery photos, and share on WhatsApp.
                 </p>
               </div>
             </article>

@@ -119,6 +119,11 @@ export function PlatformShell({
           >
             <HeartHandshake size={17} /> Guest responses
           </Link>
+          {workspace && (
+            <Link to="/download">
+              <Download size={17} /> Offline app
+            </Link>
+          )}
           {!workspace && (
             <Link to={user ? "/profile" : "/sign-in"}>
               <UserRound size={18} /> My account

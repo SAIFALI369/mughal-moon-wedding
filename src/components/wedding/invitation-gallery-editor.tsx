@@ -2,6 +2,12 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { ImagePlus, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/db";
+import {
+  addOfflineDraftPhoto,
+  getOfflineDraftPhotos,
+  isOfflineDraftId,
+  removeOfflineDraftPhoto,
+} from "@/lib/offline-studio";
 import { compressPhoto } from "./photo-utils";
 import { toast } from "sonner";
 
@@ -17,6 +23,10 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
 
   const load = useCallback(async () => {
     if (!cardId) return;
+    if (isOfflineDraftId(cardId)) {
+      setRows(getOfflineDraftPhotos(cardId));
+      return;
+    }
     const { data, error } = await supabase
       .from("invitation_photos")
       .select("slot,image_data,caption,source")
@@ -46,12 +56,16 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
     try {
       for (const file of Array.from(files).slice(0, room)) {
         const image = await compressPhoto(file);
-        const { error } = await supabase.rpc("add_invitation_photo", {
-          p_card_id: cardId,
-          photo_data: image,
-          photo_caption: "",
-        });
-        if (error) throw new Error(error.message);
+        if (isOfflineDraftId(cardId)) {
+          addOfflineDraftPhoto(cardId, image, "", HOST_PHOTO_CAP);
+        } else {
+          const { error } = await supabase.rpc("add_invitation_photo", {
+            p_card_id: cardId,
+            photo_data: image,
+            photo_caption: "",
+          });
+          if (error) throw new Error(error.message);
+        }
         saved += 1;
       }
       await load();
@@ -70,11 +84,15 @@ export function InvitationGalleryEditor({ cardId }: { cardId?: string }) {
     if (!cardId || busy) return;
     setBusy(true);
     try {
-      const { error } = await supabase.rpc("delete_invitation_photo", {
-        p_card_id: cardId,
-        target_slot: slot,
-      });
-      if (error) throw error;
+      if (isOfflineDraftId(cardId)) {
+        removeOfflineDraftPhoto(cardId, slot);
+      } else {
+        const { error } = await supabase.rpc("delete_invitation_photo", {
+          p_card_id: cardId,
+          target_slot: slot,
+        });
+        if (error) throw error;
+      }
       await load();
     } catch {
       toast.error("Could not remove photo.");

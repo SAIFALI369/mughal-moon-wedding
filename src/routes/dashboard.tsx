@@ -33,6 +33,7 @@ import {
   QrCode,
   Plus,
   RefreshCw,
+  UploadCloud,
   WifiOff,
 } from "lucide-react";
 import {
@@ -61,6 +62,7 @@ import { cleanupExpiredMemories, deleteSimranMemory } from "@/lib/simran-memory"
 import {
   cacheCloudCards,
   cachePartnerAllowance,
+  copyTextSafe,
   createOfflineDraft,
   deleteOfflineDraft,
   getCachedCloudCards,
@@ -488,8 +490,11 @@ export function Dashboard() {
 
   async function copyShare(card: InvitationCard) {
     const url = shareUrl(card);
-    await navigator.clipboard.writeText(url);
-    toast.success("Link copied");
+    if (await copyTextSafe(url)) {
+      toast.success("Link copied");
+    } else {
+      toast("Copy this link: " + url);
+    }
   }
 
   if (loading || !user) {
@@ -635,6 +640,19 @@ export function Dashboard() {
                         <Button size="sm" variant="outline" onClick={() => startEdit(card)}>
                           <Edit3 size={14} /> Edit
                         </Button>
+                        {card.status === "draft" && (
+                          <Button
+                            size="sm"
+                            onClick={() => void togglePublish(card)}
+                            title={
+                              online
+                                ? "Publish live invitation"
+                                : "Connect to the internet to publish"
+                            }
+                          >
+                            <UploadCloud size={14} /> Publish
+                          </Button>
+                        )}
                         <Button
                           size="sm"
                           variant="outline"

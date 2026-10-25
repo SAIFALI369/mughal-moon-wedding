@@ -11,6 +11,7 @@ import {
   Plus,
   QrCode,
   Search,
+  Share2,
   Trash2,
   UploadCloud,
   WifiOff,
@@ -52,6 +53,7 @@ import { PlatformShell } from "@/components/platform/platform-shell";
 import { CardPrintDialog } from "@/components/platform/card-print-dialog";
 import { InvitationPreview } from "@/components/platform/invitation-preview";
 import {
+  copyTextSafe,
   createOfflineDraft,
   deleteOfflineDraft,
   getOfflineDraftsSync,
@@ -285,8 +287,12 @@ export function OfflineStudioPage() {
   }
 
   async function copyShare(slug: string) {
-    await navigator.clipboard.writeText(shareUrl(slug));
-    toast.success("Live link copied");
+    const url = shareUrl(slug);
+    if (await copyTextSafe(url)) {
+      toast.success("Live link copied");
+    } else {
+      toast("Copy this link: " + url);
+    }
   }
 
   return (
@@ -387,7 +393,7 @@ export function OfflineStudioPage() {
                         <strong>{pub.title}</strong>
                         <span className="text-xs text-muted-foreground">is now live</span>
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Button
                           size="sm"
                           variant="outline"
@@ -397,6 +403,15 @@ export function OfflineStudioPage() {
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => setQrCard(pub)}>
                           <QrCode size={13} /> QR
+                        </Button>
+                        <Button asChild size="sm" variant="outline">
+                          <a
+                            href={`https://wa.me/?text=${encodeURIComponent(`You're invited! ${pub.title} — ${shareUrl(pub.slug)}`)}`}
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <Share2 size={13} /> WhatsApp
+                          </a>
                         </Button>
                         <Button asChild size="sm" variant="outline">
                           <a href={shareUrl(pub.slug)} target="_blank" rel="noreferrer">

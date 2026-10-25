@@ -182,6 +182,7 @@ export function PhoneViewportFrame({
             src={`/preview-frame?key=${encodeURIComponent(frameId)}`}
             title={`Mobile preview of ${title || "invitation"}`}
             className="preview-phone-iframe"
+            scrolling="yes"
           />
         </div>
       )}
