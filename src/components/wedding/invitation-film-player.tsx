@@ -33,17 +33,24 @@ export function MughalMoonFilm({
   details,
   onEnter,
   preview = false,
+  autoStart = false,
 }: {
   details: InvitationDetails;
   /** Called once the guest walks into the invitation (by button or by skip). */
   onEnter: () => void;
   preview?: boolean;
+  /**
+   * Opened from the hero's own button: skip the poster and play straight away.
+   * That tap is already a gesture, so the score is allowed to start with it.
+   */
+  autoStart?: boolean;
 }) {
   const reduced = useReducedMotion();
   const story = useMemo(() => filmStory(details), [details]);
   const soundtrack = useMemo(() => filmSoundtrack(details), [details]);
-  const [phase, setPhase] = useState<"poster" | "playing">("poster");
-  const [elapsed, setElapsed] = useState(0);
+  const lastChapter = filmTimeline[filmTimeline.length - 1]!;
+  const [phase, setPhase] = useState<"poster" | "playing">(autoStart ? "playing" : "poster");
+  const [elapsed, setElapsed] = useState(() => (autoStart && reduced ? lastChapter.from + 0.4 : 0));
   const [paused, setPaused] = useState(false);
   const [sound, setSound] = useState(true);
   const [closing, setClosing] = useState(false);

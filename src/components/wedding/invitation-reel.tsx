@@ -1,127 +1,196 @@
-import { useRef, type ReactNode } from "react";
-import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { ChevronDown, Film, RotateCcw } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useReducedMotion } from "framer-motion";
+import { ChevronDown, Clapperboard, Film, Volume2, VolumeX } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
 import { invitationFilmArt } from "./invitation-art";
 import { CouplePortraits } from "./invitation-stage";
-import { filmActs, filmStory } from "./invitation-film";
+import {
+  FILM_LOOP_DURATION,
+  FILM_FADE,
+  filmActs,
+  filmFade,
+  filmLoopTimeline,
+  filmPush,
+  filmSoundtrack,
+  filmStory,
+  loopChapterAt,
+} from "./invitation-film";
 
 /**
- * The invitation as a film, continued.
+ * The live hero.
  *
- * The opening plays by itself; this stage is the same picture scrubbed by the
- * guest's thumb. Scrolling becomes the camera: the palace dissolves into the
- * arch, the arch into the courtyard, the letterbox closes in, and the names
- * arrive in the middle of the move. Reduced-motion guests get one still frame
- * with the same words.
+ * This is the film, but not in a player: the three moonlit shots dissolve into
+ * each other behind the couple's names from the first second the page opens, on
+ * a loop, with the score running muted until the guest asks for sound. Browsers
+ * only allow sound after a tap, so the picture is never blocked by a poster and
+ * the invitation feels like one living thing from the first frame.
+ *
+ * The clock stops when the hero scrolls away or the tab hides, and guests who
+ * ask for reduced motion get the first shot as a still.
  */
-export function ReelStage({
+export function LiveReelHero({
   details,
   actions,
   scrollTo,
-  onReplay,
-  replayLabel = "Replay the film",
+  autoPlay = true,
+  onWatchFilm,
 }: {
   details: InvitationDetails;
-  backgroundImage?: string;
   actions: ReactNode;
   scrollTo: string;
-  entranceDelay?: number;
-  /** Opens the film again; the poster is the gate, this is the encore. */
-  onReplay?: () => void;
-  replayLabel?: string;
+  /** "Opening gates" off means a still frame: the host chose no motion. */
+  autoPlay?: boolean;
+  /** Opens the full film — sound, captions, title card — over the card. */
+  onWatchFilm: () => void;
 }) {
-  const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const story = filmStory(details);
   const acts = filmActs(details);
+  const soundtrack = filmSoundtrack(details);
+  const [elapsed, setElapsed] = useState(0);
+  const [onScreen, setOnScreen] = useState(true);
+  const [sound, setSound] = useState(false);
+  const [soundBlocked, setSoundBlocked] = useState(false);
+  const ref = useRef<HTMLElement>(null);
+  const audioRef = useRef<HTMLAudioElement>(null);
 
-  // Each shot holds the frame, then dissolves into the next one.
-  const palaceOpacity = useTransform(scrollYProgress, [0, 0.24, 0.38], [1, 1, 0]);
-  const archOpacity = useTransform(scrollYProgress, [0.3, 0.44, 0.6, 0.7], [0, 1, 1, 0]);
-  const courtyardOpacity = useTransform(scrollYProgress, [0.62, 0.76, 1], [0, 1, 1]);
+  const running = autoPlay && !reduced && onScreen;
+  const loopTime = elapsed % FILM_LOOP_DURATION;
+  const chapter = loopChapterAt(elapsed);
+  const shot = story.shots.find((entry) => entry.id === chapter.id) ?? story.shots[0];
+  const act = acts[chapter.id === "palace" ? 0 : chapter.id === "arch" ? 1 : 2];
 
-  const palaceScale = useTransform(scrollYProgress, [0, 0.4], [1.02, 1.16]);
-  const archScale = useTransform(scrollYProgress, [0.26, 0.74], [1.04, 1.16]);
-  const courtyardScale = useTransform(scrollYProgress, [0.58, 1], [1.04, 1.15]);
+  // The clock: 30 fps is enough for a slow push-in and keeps a phone cool.
+  useEffect(() => {
+    if (!running) return;
+    let frame = 0;
+    let last = performance.now();
+    let carry = 0;
+    const tick = (now: number) => {
+      const delta = Math.min(0.25, (now - last) / 1000);
+      last = now;
+      carry += delta;
+      if (carry >= 1 / 30) {
+        const step = carry;
+        carry = 0;
+        setElapsed((value) => (value + step) % FILM_LOOP_DURATION);
+      }
+      frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [running]);
 
-  // Copy arrives on the second shot and lifts away as the guest leaves the stage.
-  const copyOpacity = useTransform(scrollYProgress, [0.08, 0.2, 0.84, 0.97], [0, 1, 1, 0.12]);
-  const copyY = useTransform(scrollYProgress, [0, 1], [0, -48]);
-  const barHeight = useTransform(
-    scrollYProgress,
-    [0, 0.18, 0.86, 1],
-    ["7svh", "0svh", "0svh", "4svh"],
-  );
-  const actOneOpacity = useTransform(scrollYProgress, [0, 0.3, 0.4], [1, 1, 0.28]);
-  const actTwoOpacity = useTransform(scrollYProgress, [0.3, 0.42, 0.62, 0.72], [0.28, 1, 1, 0.28]);
-  const actThreeOpacity = useTransform(scrollYProgress, [0.62, 0.74, 1], [0.28, 1, 1]);
+  // Only move while the hero is actually on screen and the tab is visible.
+  useEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    let visible = true;
+    const sync = () => setOnScreen(visible && !document.hidden);
+    const observer =
+      typeof IntersectionObserver !== "undefined"
+        ? new IntersectionObserver(
+            ([entry]) => {
+              visible = entry?.isIntersecting ?? false;
+              sync();
+            },
+            { threshold: 0.05 },
+          )
+        : null;
+    observer?.observe(element);
+    document.addEventListener("visibilitychange", sync);
+    return () => {
+      observer?.disconnect();
+      document.removeEventListener("visibilitychange", sync);
+    };
+  }, []);
 
-  const still = (index: 0 | 1 | 2) => invitationFilmArt[story.shots[index].id];
+  // The score follows the guest, not the page: muted until they ask for sound,
+  // and always in step with the picture.
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.muted = !sound;
+    audio.volume = 0.5;
+    if (!running) {
+      audio.pause();
+      return;
+    }
+    if (audio.paused) {
+      void audio.play().catch(() => {
+        // Some browsers still refuse; the picture keeps playing and the button
+        // stays honest about it.
+        if (sound) setSoundBlocked(true);
+      });
+    }
+  }, [sound, running, soundtrack]);
+
+  function toggleSound() {
+    setSoundBlocked(false);
+    const next = !sound;
+    setSound(next);
+    const audio = audioRef.current;
+    if (next && audio) {
+      audio.muted = false;
+      void audio.play().catch(() => setSoundBlocked(true));
+    }
+  }
+
+  const shots = story.shots.map((entry) => {
+    const loop = filmLoopTimeline.find((item) => item.id === entry.id)!;
+    const opacity =
+      reduced || !autoPlay ? (entry.id === "palace" ? 1 : 0) : filmFade(loopTime, loop, FILM_FADE);
+    const push = reduced || !autoPlay ? 1.02 : filmPush(loopTime, loop, 0.09);
+    return { ...entry, art: invitationFilmArt[entry.id], opacity, push };
+  });
 
   return (
     <section
       ref={ref}
       id="invitation-top"
       aria-label="Wedding invitation"
-      className="reel-stage"
+      className="reel-live"
       data-theme={details.theme}
       data-reduced={reduced ? "true" : undefined}
+      data-auto={autoPlay ? "true" : "false"}
+      data-chapter={chapter.id}
     >
-      <div className="reel-sticky">
-        <motion.div
-          className="reel-frames"
-          style={reduced ? undefined : { opacity: palaceOpacity }}
-        >
-          <motion.img
-            src={still(0)}
-            alt=""
-            aria-hidden="true"
-            className="reel-frame"
-            style={reduced ? undefined : { scale: palaceScale }}
-            fetchPriority="high"
-          />
-        </motion.div>
-        <motion.div className="reel-frames" style={reduced ? undefined : { opacity: archOpacity }}>
-          <motion.img
-            src={still(1)}
-            alt=""
-            aria-hidden="true"
-            className="reel-frame"
-            style={reduced ? undefined : { scale: archScale }}
-          />
-        </motion.div>
-        <motion.div
-          className="reel-frames"
-          style={reduced ? undefined : { opacity: courtyardOpacity }}
-        >
-          <motion.img
-            src={still(2)}
-            alt=""
-            aria-hidden="true"
-            className="reel-frame"
-            style={reduced ? undefined : { scale: courtyardScale }}
-          />
-        </motion.div>
+      <div className="reel-live-stage">
+        {shots.map((entry) => (
+          <div
+            key={entry.id}
+            className={`reel-live-shot reel-live-shot-${entry.id}`}
+            data-on={entry.opacity > 0.02 ? "true" : undefined}
+            style={{ opacity: entry.opacity, transform: `scale(${entry.push.toFixed(4)})` }}
+          >
+            <img
+              className="reel-live-fill"
+              src={entry.art}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              decoding="async"
+            />
+            <img
+              className="reel-live-frame"
+              src={entry.art}
+              alt=""
+              aria-hidden="true"
+              draggable={false}
+              decoding="async"
+              fetchPriority={entry.id === "palace" ? "high" : undefined}
+              style={{ objectPosition: entry.focus }}
+            />
+          </div>
+        ))}
 
         <div className="reel-grade" aria-hidden="true" />
+        <div className="film-leak" aria-hidden="true" />
         <div className="reel-grain" aria-hidden="true" />
-        <motion.span
-          className="reel-bar reel-bar-top"
-          aria-hidden="true"
-          style={reduced ? undefined : { height: barHeight }}
-        />
-        <motion.span
-          className="reel-bar reel-bar-bottom"
-          aria-hidden="true"
-          style={reduced ? undefined : { height: barHeight }}
-        />
+        <span className="reel-bar reel-bar-top" aria-hidden="true" />
+        <span className="reel-bar reel-bar-bottom" aria-hidden="true" />
 
-        <motion.div
-          className="reel-copy"
-          style={reduced ? undefined : { opacity: copyOpacity, y: copyY }}
-        >
+        <div className="reel-live-copy">
           <p className="reel-kicker">{details.hosts || "Together with their families"}</p>
           <p className="reel-act-line">
             <Film className="h-3.5 w-3.5" aria-hidden="true" /> Now showing
@@ -136,32 +205,46 @@ export function ReelStage({
             {[details.venue, details.address].filter(Boolean).join(" · ")}
           </p>
           <CouplePortraits details={details} />
-          <div className="reel-actions">
-            {actions}
-            {onReplay && (
-              <button type="button" className="reel-replay" onClick={onReplay}>
-                <RotateCcw className="h-4 w-4" aria-hidden="true" /> {replayLabel}
-              </button>
-            )}
+          <div className="reel-actions">{actions}</div>
+          <div className="reel-live-buttons">
+            <button type="button" className="reel-watch" onClick={onWatchFilm}>
+              <Clapperboard className="h-4 w-4" aria-hidden="true" /> Watch the film
+            </button>
+            <button
+              type="button"
+              className="reel-replay"
+              onClick={toggleSound}
+              aria-pressed={sound}
+              aria-label={sound ? "Mute the film" : "Play the film with sound"}
+            >
+              {sound ? (
+                <Volume2 className="h-4 w-4" aria-hidden="true" />
+              ) : (
+                <VolumeX className="h-4 w-4" aria-hidden="true" />
+              )}
+              {sound ? "Sound on" : "Sound off"}
+            </button>
           </div>
-        </motion.div>
-
-        <div className="reel-acts" aria-hidden="true">
-          {reduced ? (
-            <span>{acts.map((act) => act.label).join(" · ")}</span>
-          ) : (
-            <>
-              <motion.span style={{ opacity: actOneOpacity }}>{acts[0].label}</motion.span>
-              <motion.span style={{ opacity: actTwoOpacity }}>{acts[1].label}</motion.span>
-              <motion.span style={{ opacity: actThreeOpacity }}>{acts[2].label}</motion.span>
-            </>
+          {soundBlocked && (
+            <p className="reel-sound-note" role="status">
+              Your browser blocked the sound — tap the speaker again.
+            </p>
           )}
         </div>
+
+        <p className="reel-live-caption" aria-live="off">
+          <span className="reel-live-act">{act.label}</span>
+          <span className="reel-live-line">{shot.lines[0]}</span>
+        </p>
 
         <a href={scrollTo} className="reel-scroll">
           Scroll to begin
           <ChevronDown className="mx-auto mt-1 h-5 w-5" aria-hidden="true" />
         </a>
+
+        {autoPlay && (
+          <audio ref={audioRef} src={soundtrack} loop preload="none" aria-hidden="true" />
+        )}
       </div>
     </section>
   );

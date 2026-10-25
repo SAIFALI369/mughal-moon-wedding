@@ -60,7 +60,7 @@ describe("creator invitation design and input", () => {
         if (["royal-rajmahal", "lotus-goddess", "calligraphy"].includes(theme))
           expect(page).toContain("sb-hero");
         else if (theme === "mughal-moon-film" && framework !== "curtain-call")
-          expect(page).toContain("reel-stage");
+          expect(page).toContain("reel-live");
         else if (framework === "curtain-call") expect(page).toContain("curtain-stage");
         else if (theme === "jharokha-dawn") expect(page).toContain("dawn-stage");
         else if (theme === "haldi-baag") expect(page).toContain("baag-stage");

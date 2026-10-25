@@ -38,7 +38,7 @@ import { invitationArt } from "./invitation-art";
 import { CouplePortraits, InvitationStage } from "./invitation-stage";
 import { CurtainStage } from "./invitation-curtain";
 import { MughalMoonFilm } from "./invitation-film-player";
-import { ReelInterlude, ReelStage } from "./invitation-reel";
+import { LiveReelHero, ReelInterlude } from "./invitation-reel";
 import { LivingScene, MandapStage, riteBlessing } from "./invitation-rite";
 import { InvitationRsvp } from "./invitation-rsvp";
 import {
@@ -367,22 +367,15 @@ export function PersonalInvitation({
   }, [preview, hasSongs, gateActive]);
 
   const guestName = useInvitedGuestName();
+  // The film theme has no gate and no poster: the hero itself is the film,
+  // already running. "Watch the film" opens the full cut with sound on top.
   const isFilmTheme = details.theme === "mughal-moon-film";
-  // The film *is* the gate for this theme: it opens on the poster, plays once,
-  // and hands over to the card. A studio preview never covers itself — the host
-  // can still start the film from the stage's own play button.
-  const [filmOpen, setFilmOpen] = useState(isFilmTheme && gateActive);
-  const [filmSeen, setFilmSeen] = useState(false);
+  const [filmOpen, setFilmOpen] = useState(false);
   const openFilm = () => {
     setFilmOpen(true);
     window.dispatchEvent(new CustomEvent("invite:close-music"));
   };
-  const enterFromFilm = () => {
-    setFilmOpen(false);
-    setFilmSeen(true);
-    window.dispatchEvent(new Event("wedding:revealed"));
-    if (hasSongs && !preview) sendInvitationMusicCommand({ action: "play", index: 0 });
-  };
+  const closeFilm = () => setFilmOpen(false);
   const mascots = mascotsForTheme(details.theme);
   const play = (section: Parameters<typeof playfulCopy>[1]) => playfulCopy(layout, section);
   const monogram = getInvitationMonogram(details);
@@ -449,7 +442,7 @@ export function PersonalInvitation({
         />
       )}
       {isFilmTheme && filmOpen && (
-        <MughalMoonFilm details={details} preview={preview} onEnter={enterFromFilm} />
+        <MughalMoonFilm details={details} preview={preview} autoStart onEnter={closeFilm} />
       )}
       {!storybook && !isFilmTheme && showGate && !preview && details.elements.gate && (
         <Preloader
@@ -524,18 +517,19 @@ export function PersonalInvitation({
 
       <CinematicHero
         theme={details.theme}
-        waitingForGate={showGate && details.elements.gate && (storybook || !preview)}
+        waitingForGate={
+          !isFilmTheme && showGate && details.elements.gate && (storybook || !preview)
+        }
       >
         {storybook ? (
           <StorybookHero details={details} actions={actions} />
         ) : layout === "reel" ? (
-          <ReelStage
+          <LiveReelHero
             details={details}
             actions={actions}
             scrollTo={scrollTo}
-            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
-            onReplay={openFilm}
-            replayLabel={filmSeen ? "Replay the film" : "Play the film"}
+            autoPlay={details.elements.gate}
+            onWatchFilm={openFilm}
           />
         ) : layout === "chhatri-dawn" ? (
           <ChhatriDawnStage
