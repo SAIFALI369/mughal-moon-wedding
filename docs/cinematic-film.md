@@ -11,7 +11,25 @@ keeps scrubbing.
 - Player: `src/components/wedding/invitation-film-player.tsx`
 - Scroll stage and act strip: `src/components/wedding/invitation-reel.tsx`
 
-## The opening, shot by shot
+## The hero is the film
+
+The card does **not** open on a poster any more. The moment the page renders, the
+hero is already the film: the three shots dissolve into each other behind the
+couple's names, on a 19.2-second loop (`filmLoopTimeline` / `FILM_LOOP_DURATION`),
+with the score running **muted** — browsers only allow sound after a tap, so the
+picture is never held back waiting for one.
+
+- **Sound off / Sound on** on the hero unmutes in place; if a browser still
+  refuses, the hero says so instead of lying about it.
+- **Watch the film** opens the full cut (`MughalMoonFilm`, `autoStart`) over the
+  card: studio credit, captions, title card, and it is already playing because
+  the tap that opened it counts as the gesture.
+- The clock stops when the hero scrolls out of view or the tab is hidden.
+- Setting **Opening gates** off turns the motion off: the hero holds the first
+  shot, mounts no score and still shows every word.
+- `prefers-reduced-motion` gets the same still frame automatically.
+
+## The full film, shot by shot
 
 | Time | Movement | What the guest sees |
 | --- | --- | --- |
@@ -62,9 +80,8 @@ film pauses the score with it.
 
 ## After the film
 
-`reel-stage` is 300–320 svh tall with a sticky frame: scrolling dissolves palace
-→ arch → courtyard, closes and reopens the letterbox, and lifts the names. The
-acts are labelled along the bottom, and **Replay the film** reopens the player.
+The hero itself is 100 svh and hands the guest straight on to the countdown and
+the rest of the card; the acts are labelled under the names as they change.
 
 Below the hero, `ReelInterlude` is a strip of film — sprocket holes and three
 framed stills with the film's own captions — that replaces the usual interlude
@@ -72,9 +89,9 @@ for this layout only. It pauses on hover and stays still under reduced motion.
 
 ## Editing and previewing
 
-The film is a gate, so it plays only on a published card or the `/film` demo:
+The hero plays everywhere the card is shown — published card, `/film`, and the
+studio preview — and never covers the card with an overlay:
 
-- the studio preview and the cover thumbnail never cover themselves with it;
-- hosts still get the stage's own **Play the film** button to check the edit;
-- turning off *Opening gates* on a card turns the film off with it, leaving the
-  stage as the opening.
+- the full-screen cut only opens from **Watch the film**;
+- the cover thumbnail stays a still frame;
+- turning off *Opening gates* on a card freezes the hero and removes the score.

@@ -4,8 +4,11 @@ import { describe, expect, it } from "vitest";
 import { MughalMoonFilm } from "@/components/wedding/invitation-film-player";
 import {
   FILM_DURATION,
+  FILM_LOOP_DURATION,
   chapterAt,
   filmActs,
+  filmLoopTimeline,
+  loopChapterAt,
   filmFade,
   filmProgress,
   filmRuntime,
@@ -22,6 +25,7 @@ import {
   invitationLayoutFor,
 } from "@/components/wedding/invitation-options";
 import { InvitationCover, PersonalInvitation } from "@/components/wedding/invitation-template";
+import { defaultInvitationElements } from "@/components/wedding/invitation-options";
 import { paletteForTheme } from "@/lib/print-sheets";
 
 const card = {
@@ -164,24 +168,59 @@ describe("Mughal Moon — The Film", () => {
     }
   });
 
-  it("lays the invitation itself over a scroll-scrubbed stage and a strip of the film", () => {
+  it("loops the three shots as a living hero, with no credit or title card in the cut", () => {
+    expect(FILM_LOOP_DURATION).toBeGreaterThan(10);
+    expect(filmLoopTimeline.map((chapter) => chapter.id)).toEqual(["palace", "arch", "courtyard"]);
+    for (let index = 1; index < filmLoopTimeline.length; index += 1) {
+      // The same overlap as the film: that is the dissolve.
+      expect(filmLoopTimeline[index]!.from).toBeLessThan(filmLoopTimeline[index - 1]!.to);
+    }
+    expect(loopChapterAt(0).id).toBe("palace");
+    expect(loopChapterAt(9).id).toBe("arch");
+    expect(loopChapterAt(15).id).toBe("courtyard");
+    // The hero cut wraps on its own instead of ending.
+    expect(loopChapterAt(FILM_LOOP_DURATION + 1).id).toBe("palace");
+    expect(loopChapterAt(FILM_LOOP_DURATION * 3 + 9).id).toBe("arch");
+  });
+
+  it("puts the film in the live hero — a still poster never blocks the card", () => {
     const page = renderToStaticMarkup(
       <PersonalInvitation title="Our Day" content={card} preview showGate={false} />,
     );
     expect(page).toContain('data-theme="mughal-moon-film"');
     expect(page).toContain('data-layout="reel"');
-    expect(page).toContain("reel-stage");
+    expect(page).toContain("reel-live");
+    expect(page).toContain('data-auto="true"');
+    expect(page).toContain("reel-live-frame");
     expect(page).toContain("reel-names");
-    expect(page).toContain("reel-acts");
     expect(page).toContain("reel-interlude");
     expect(page).toContain("reel-cell");
     expect(page).toContain("Act I · The Palace");
     expect(page).toContain("Scroll to begin");
+    // The hero opens the full film on demand rather than gating the card.
+    expect(page).toContain("Watch the film");
+    expect(page).toContain("Sound off");
+    expect(page).not.toContain('data-film-phase="poster"');
     expect(page).toContain('id="celebration"');
     expect(page).toContain('id="rsvp"');
+    // The only iframe on the page is the venue map; the film needs none.
     expect(page).not.toContain("<video");
-    // A preview never covers the host's own screen with the film.
-    expect(page).not.toContain('data-film-phase="poster"');
+    expect(page.match(/<iframe/g)?.length).toBe(1);
+  });
+
+  it("honours the host turning motion off: the hero becomes one still frame", () => {
+    const still = renderToStaticMarkup(
+      <PersonalInvitation
+        title="Our Day"
+        content={{ ...card, elements: { ...defaultInvitationElements, gate: false } }}
+        preview
+        showGate={false}
+      />,
+    );
+    expect(still).toContain('data-auto="false"');
+    expect(still).toContain("reel-live");
+    // No score element is mounted when the hero cannot move.
+    expect(still).not.toContain("<audio");
   });
 
   it("gives the card a cover of its own, not the shared tombstone", () => {

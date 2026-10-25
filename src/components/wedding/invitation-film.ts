@@ -41,6 +41,27 @@ export const filmTimeline: readonly FilmChapter[] = [
 ];
 
 export const FILM_DURATION = 20.4;
+
+/**
+ * The hero cut: the film's three shots with the credit and title cards taken
+ * out, so the opening screen can play and loop as a living hero instead of a
+ * poster. Same overlaps, same dissolve.
+ */
+export const filmLoopTimeline: readonly FilmChapter[] = [
+  { id: "palace", from: 0, to: 7.2 },
+  { id: "arch", from: 6.6, to: 13.2 },
+  { id: "courtyard", from: 12.6, to: 19.2 },
+];
+
+export const FILM_LOOP_DURATION = 19.2;
+
+/** Where the looping hero cut is at `elapsed` seconds; it wraps on its own. */
+export function loopChapterAt(elapsed: number): FilmChapter {
+  const t = ((elapsed % FILM_LOOP_DURATION) + FILM_LOOP_DURATION) % FILM_LOOP_DURATION;
+  let current = filmLoopTimeline[0]!;
+  for (const chapter of filmLoopTimeline) if (t >= chapter.from) current = chapter;
+  return current;
+}
 /** Seconds of cross-fade at each end of a shot. */
 export const FILM_FADE = 0.9;
 
