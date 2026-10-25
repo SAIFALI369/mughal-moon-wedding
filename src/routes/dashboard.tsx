@@ -80,7 +80,15 @@ type InvitationCard = {
 
 export const Route = createFileRoute("/dashboard")({
   head: () => ({
-    meta: [{ title: "Studio — InvitingYou" }, { name: "robots", content: "noindex" }],
+    meta: [
+      { title: "Studio — InvitingYou" },
+      { name: "description", content: "Manage your digital invitations and published cards." },
+      { property: "og:title", content: "Studio — InvitingYou" },
+      { property: "og:description", content: "Manage your digital invitations and published cards." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "robots", content: "noindex" },
+    ],
   }),
   component: Dashboard,
 });

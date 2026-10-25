@@ -25,6 +25,8 @@ export const Route = createFileRoute("/")({
         content:
           "Exclusive digital invitation tools for printing shops. ₹1,000 in cash buys 10 digital card credits. Accounts are personally issued by InvitingYou.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { property: "og:title", content: "InvitingYou — A beautiful beginning" },
       {
         property: "og:description",

@@ -116,6 +116,10 @@ const copy = {
 export const Route = createFileRoute("/ai-concierge")({
   head: () => ({
     meta: [
+      { property: "og:title", content: "Simran — AI Wedding Concierge" },
+      { property: "og:description", content: "Ask Simran about the wedding schedule, venues, music and RSVP." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
       { title: "Simran — AI Wedding Concierge | Mohsin & Simran" },
       {
         name: "description",

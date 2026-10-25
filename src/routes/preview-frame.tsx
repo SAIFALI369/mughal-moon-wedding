@@ -29,7 +29,15 @@ function readInitialPayload(): { frameId: string; payload: PreviewFramePayload |
 
 export const Route = createFileRoute("/preview-frame")({
   head: () => ({
-    meta: [{ title: "Invitation mobile preview" }, { name: "robots", content: "noindex" }],
+    meta: [
+      { title: "Mobile invitation preview — InvitingYou" },
+      { name: "description", content: "Preview your invitation in a phone-sized view." },
+      { property: "og:title", content: "Mobile invitation preview — InvitingYou" },
+      { property: "og:description", content: "Preview your invitation in a phone-sized view." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "robots", content: "noindex" },
+    ],
   }),
   component: PreviewFramePage,
 });

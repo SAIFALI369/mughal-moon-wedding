@@ -10,7 +10,15 @@ export const Route = createFileRoute("/storybook")({
       : ("royal-rajmahal" as const),
   }),
   head: () => ({
-    meta: [{ title: "Royal Editions — invitation themes" }, { name: "robots", content: "noindex" }],
+    meta: [
+      { title: "Royal Editions — InvitingYou" },
+      { name: "description", content: "Preview Royal Rajmahal, Lotus Goddess and Calligraphy invitations." },
+      { property: "og:title", content: "Royal Editions — InvitingYou" },
+      { property: "og:description", content: "Preview Royal Rajmahal, Lotus Goddess and Calligraphy invitations." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "robots", content: "noindex" },
+    ],
   }),
   component: StorybookPreview,
 });

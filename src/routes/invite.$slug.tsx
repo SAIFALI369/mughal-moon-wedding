@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getInvitationCardBySlug } from "@/components/wedding/invitation-cards.functions";
 import { getInvitationDetails } from "@/components/wedding/invitation-details";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
-import { invitationArt } from "@/components/wedding/invitation-art";
 
 export const Route = createFileRoute("/invite/$slug")({
   loader: async ({ params }) => {
@@ -24,7 +23,6 @@ export const Route = createFileRoute("/invite/$slug")({
     const description = details
       ? `Celebrate with ${details.groomName} and ${details.brideName}${details.date ? ` on ${details.date}` : ""}${details.venue ? ` at ${details.venue}` : ""}.`
       : "This invitation is not available. Ask the host for a published link.";
-    const base = (import.meta.env["VITE_SITE_URL"] || "").replace(/\/$/, "");
     return {
       meta: [
         { title: heading },
@@ -32,13 +30,8 @@ export const Route = createFileRoute("/invite/$slug")({
         { name: "robots", content: card ? "index, follow" : "noindex" },
         { property: "og:title", content: heading },
         { property: "og:description", content: description },
-        ...(card
-          ? [
-              { property: "og:image", content: `${base}${invitationArt[details!.theme]}` },
-              { property: "og:image:alt", content: heading },
-              { name: "twitter:card", content: "summary_large_image" },
-            ]
-          : []),
+        { property: "og:type", content: "website" },
+        { name: "twitter:card", content: "summary_large_image" },
       ],
     };
   },

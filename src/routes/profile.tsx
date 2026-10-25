@@ -20,7 +20,20 @@ type Reply = {
   created_at: string;
 };
 
-export const Route = createFileRoute("/profile")({ component: Profile });
+export const Route = createFileRoute("/profile")({
+  head: () => ({
+    meta: [
+      { title: "Guest replies — InvitingYou" },
+      { name: "description", content: "Privately review and export replies to your invitations." },
+      { property: "og:title", content: "Guest replies — InvitingYou" },
+      { property: "og:description", content: "Privately review and export replies to your invitations." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
+  component: Profile,
+});
 
 export function Profile() {
   const { user, loading } = useAuth();
