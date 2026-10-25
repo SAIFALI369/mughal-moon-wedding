@@ -590,6 +590,7 @@ export function PersonalInvitation({
         />
       )}
 
+      </CinematicHero>
       {interactive && (
         <div className="invite-guest-ribbon">
           <span>
