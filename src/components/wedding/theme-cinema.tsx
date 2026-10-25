@@ -11,10 +11,10 @@ const effectByTheme: Record<string, Effect> = {
   mughal: "lanterns",
   classic: "petals",
   aladin: "stars",
-  "bihari-vibe": "confetti",
+  "bihari-vibe": "petals",
   mecca_madinah: "rays",
   luxury: "embers",
-  futuristic: "grid",
+  futuristic: "stars",
   fairytale: "snow",
   ballroom: "embers",
   "diya-utsav": "diyas",
@@ -24,13 +24,16 @@ const effectByTheme: Record<string, Effect> = {
   "mehndi-night": "fireflies",
   "jharokha-dawn": "rays",
   "haldi-baag": "petals",
-  "vows-in-ink": "ink",
+  "vows-in-ink": "rays",
   "chand-bagh": "fireflies",
-  "mela-maidan": "confetti",
+  "mela-maidan": "petals",
+  "royal-rajmahal": "petals",
+  "lotus-goddess": "petals",
+  calligraphy: "embers",
 };
 
 const counts: Record<Effect, number> = {
-  lanterns: 9, fireflies: 22, diyas: 10, petals: 18, embers: 24, snow: 30, stars: 26, confetti: 26, grid: 1, ink: 6, rays: 6,
+  lanterns: 5, fireflies: 12, diyas: 7, petals: 10, embers: 12, snow: 12, stars: 16, confetti: 10, grid: 1, ink: 3, rays: 3,
 };
 
 export function ThemeCinema({ theme }: { theme: string }) {
@@ -44,8 +47,8 @@ export function ThemeCinema({ theme }: { theme: string }) {
             {
               "--x": `${(i * 53) % 100}%`,
               "--y": `${(i * 29) % 100}%`,
-              "--d": `${((i * 7) % 13) * 0.45}s`,
-              "--t": `${6 + ((i * 3) % 7)}s`,
+              "--d": `${-((i * 7) % 19)}s`,
+              "--t": `${18 + ((i * 3) % 13)}s`,
               "--s": `${0.6 + ((i * 11) % 9) / 10}`,
               "--r": `${i * 60}deg`,
             } as CSSProperties

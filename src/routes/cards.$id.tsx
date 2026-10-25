@@ -26,6 +26,17 @@ import type { Database } from "@/integrations/supabase/types";
 type InvitationCard = Database["public"]["Tables"]["invitation_cards"]["Row"];
 
 export const Route = createFileRoute("/cards/$id")({
+  head: () => ({
+    meta: [
+      { title: "Edit invitation — InvitingYou" },
+      { name: "description", content: "Edit your invitation details, theme and soundtrack." },
+      { property: "og:title", content: "Edit invitation — InvitingYou" },
+      { property: "og:description", content: "Edit your invitation details, theme and soundtrack." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "robots", content: "noindex" },
+    ],
+  }),
   component: CardEditor,
 });
 

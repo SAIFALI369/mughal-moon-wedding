@@ -9292,18 +9292,18 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner { 
 @keyframes tc-twinkle { 0%,100%{opacity:.15} 50%{opacity:1} }
 @keyframes tc-shoot { 0%,80%{opacity:0;transform:translate(0,0) rotate(-35deg)} 85%{opacity:1} 100%{opacity:0;transform:translate(-40vw,60vh) rotate(-35deg)} }
 
-.tcine-lanterns i { top:105%; width:22px; height:30px; border-radius:40% 40% 30% 30%; background:radial-gradient(circle at 50% 60%,oklch(0.92 0.15 85),oklch(0.65 0.18 50) 70%); box-shadow:0 0 24px oklch(0.8 0.17 70 / .8); animation-name:tc-float-up; animation-duration:calc(var(--t) * 2); }
+.tcine-lanterns i { top:105%; width:14px; height:20px; border-radius:40% 40% 30% 30%; background:var(--cinema-lantern); box-shadow:var(--cinema-glow); animation-name:tc-float-up; animation-duration:calc(var(--t) * 2); }
 @keyframes tc-float-up { 0%{transform:translate(0,0) scale(var(--s));opacity:0} 10%{opacity:.95} 100%{transform:translate(40px,-120svh) scale(var(--s));opacity:0} }
 
-.tcine-fireflies i { width:5px; height:5px; border-radius:50%; background:oklch(0.9 0.18 110); box-shadow:0 0 12px 3px oklch(0.85 0.2 110 / .7); animation-name:tc-wander; }
+.tcine-fireflies i { width:3px; height:3px; border-radius:50%; background:var(--gold-light); box-shadow:var(--cinema-glow); animation-name:tc-wander; }
 @keyframes tc-wander { 0%,100%{transform:translate(0,0);opacity:.2} 30%{transform:translate(30px,-20px);opacity:1} 60%{transform:translate(-20px,15px);opacity:.4} }
 
-.tcine-diyas i { top:auto; bottom:4%; width:10px; height:16px; border-radius:50% 50% 50% 50%/70% 70% 30% 30%; background:linear-gradient(oklch(0.95 0.12 90),oklch(0.7 0.2 45)); box-shadow:0 0 20px 6px oklch(0.75 0.19 55 / .6); animation-name:tc-flicker; animation-duration:calc(var(--t) / 5); }
-.tcine-diyas i::after { content:""; position:absolute; left:-8px; right:-8px; bottom:-8px; height:8px; border-radius:0 0 50% 50%; background:oklch(0.5 0.12 45); }
+.tcine-diyas i { top:auto; bottom:4%; width:8px; height:13px; border-radius:50% 50% 50% 50%/70% 70% 30% 30%; background:var(--cinema-lantern); box-shadow:var(--cinema-glow); animation-name:tc-flicker; animation-duration:calc(var(--t) / 5); }
+.tcine-diyas i::after { content:""; position:absolute; left:-8px; right:-8px; bottom:-8px; height:8px; border-radius:0 0 50% 50%; background:var(--gold); }
 @keyframes tc-flicker { 0%,100%{transform:scale(var(--s)) skewX(0)} 33%{transform:scale(calc(var(--s) * 1.1),calc(var(--s) * .9)) skewX(4deg)} 66%{transform:scale(var(--s)) skewX(-4deg)} }
 
-.tcine-petals i { top:-5%; width:12px; height:9px; border-radius:70% 0; background:oklch(0.72 0.15 10); opacity:.85; animation-name:tc-fall; animation-timing-function:linear; }
-.tcine-petals i:nth-child(3n) { background:oklch(0.8 0.15 75); }
+.tcine-petals i { top:-5%; width:9px; height:6px; border-radius:70% 0; background:var(--cinema-petal); opacity:.45; animation-name:tc-fall; animation-timing-function:linear; }
+.tcine-petals i:nth-child(3n) { background:var(--gold-light); }
 @keyframes tc-fall { 0%{transform:translate(0,-5vh) rotate(0)} 100%{transform:translate(70px,110svh) rotate(600deg)} }
 
 .tcine-snow i { top:-5%; width:5px; height:5px; border-radius:50%; background:var(--background); box-shadow:0 0 6px var(--gold); opacity:.9; animation-name:tc-fall; animation-timing-function:linear; animation-duration:calc(var(--t) * 1.6); }
@@ -9325,3 +9325,69 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner { 
 @keyframes tc-ray { 0%,100%{opacity:.06} 50%{opacity:.22} }
 
 @media (prefers-reduced-motion: reduce) { .tcine { display:none; } }
+
+/* Cinematic presentation boundary: decorative layers never intercept input. */
+:root {
+  --cinema-petal: oklch(.76 .065 15);
+  --cinema-sheer: color-mix(in oklch, var(--ivory) 63%, transparent);
+  --cinema-fold: color-mix(in oklch, var(--gold) 17%, transparent);
+  --cinema-lantern: linear-gradient(var(--gold-light), var(--gold));
+  --cinema-glow: 0 0 12px color-mix(in oklch, var(--gold-light) 35%, transparent);
+}
+.cinema-hero { position:relative; isolation:isolate; --cinema-depth:0px; }
+.cinema-scene { position:relative; animation:cinema-crossfade .8s ease both; }
+@keyframes cinema-crossfade { from { opacity:.65; } to { opacity:1; } }
+.cinema-moon-copy { padding-bottom:5rem; }
+.cinema-hero .tcine { height:100%; max-height:110svh; z-index:12; opacity:.55; }
+.cinema-hero .tcine i:nth-child(7n) { width:3px; height:3px; animation-name:tc-twinkle; }
+.cinema-hero .tcine-rays { opacity:.28; }
+.cinema-sheers { position:absolute; inset:0; z-index:15; overflow:hidden; pointer-events:none; contain:paint; }
+.cinema-sheer {
+  position:absolute; top:-3%; bottom:-3%; width:52%;
+  background:repeating-linear-gradient(90deg, transparent 0 5%, var(--cinema-fold) 8%, var(--cinema-sheer) 12%, transparent 18%), linear-gradient(var(--cinema-sheer), transparent);
+  border-inline-end:1px solid var(--cinema-fold);
+  transform-origin:top center;
+}
+.cinema-sheer-left { left:0; --curtain-direction:-1; }
+.cinema-sheer-right { right:0; --curtain-direction:1; }
+.cinema-hero[data-revealed="true"] .cinema-sheer { animation:cinema-open 2.6s cubic-bezier(.2,.65,.2,1) both; }
+@keyframes cinema-open {
+  0% { transform:translateX(0) skewY(0); opacity:.65; }
+  65% { opacity:.3; }
+  100% { transform:translateX(calc(var(--curtain-direction) * 105%)) skewY(calc(var(--curtain-direction) * -5deg)); opacity:0; }
+}
+.cinema-hero :is(.full-art, .sb-hero-frame) { overflow:hidden; }
+.cinema-hero :is(.full-art-image, .full-art-fill, .sb-hero-art) {
+  animation:cinema-breathe 30s ease-in-out infinite alternate;
+  transform-origin:60% 40%;
+}
+@keyframes cinema-breathe { from { transform:scale(1.015); } to { transform:scale(1.065); } }
+.cinema-hero :is(.stage-frame, .invite-hero-frame) { translate:0 calc(var(--cinema-depth) * -.35); }
+.cinema-hero .sb-hero-visual { translate:0 var(--cinema-depth); }
+.cinema-hero :is(.stage-copy, .sb-hero-copy) > :is(p,h1,.stage-actions,.sb-hero-actions) {
+  animation:cinema-copy .9s ease both;
+  animation-delay:.25s;
+}
+.cinema-hero :is(.stage-copy, .sb-hero-copy) > h1 { animation-delay:.45s; }
+.cinema-hero :is(.stage-date, .sb-date) { animation-delay:.65s; }
+.cinema-hero :is(.stage-location, .sb-venue, .sb-address) { animation-delay:.8s; }
+.cinema-hero :is(.stage-actions, .sb-hero-actions) { animation-delay:.95s; }
+@keyframes cinema-copy { from { opacity:0; translate:0 12px; } to { opacity:1; translate:0 0; } }
+.cinema-hero[data-revealed="false"] :is(.cinema-sheer, .stage-copy > *, .sb-hero-copy > *) { animation-play-state:paused; }
+.cinema-hero[data-paused="true"] :is(.tcine i,.full-art-image,.full-art-fill,.sb-hero-art) { animation-play-state:paused; }
+/* Avoid stacking the old butterfly/firework/orbit effects with the new film layer. */
+.cinema-hero :is(.living-scene, .stage-orbit, .stage-light) { display:none; }
+::view-transition-old(root), ::view-transition-new(root) { animation-duration:.65s; }
+@media(max-width:640px) {
+  .cinema-hero .tcine i:nth-child(n+7) { display:none; }
+  .cinema-hero .tcine { opacity:.4; }
+  .cinema-hero :is(.full-art-image,.full-art-fill,.sb-hero-art) { animation-duration:36s; }
+  .cinema-hero :is(.stage-frame,.invite-hero-frame,.sb-hero-visual) { translate:none; }
+}
+@media(prefers-reduced-motion:reduce) {
+  .cinema-hero *, .cinema-hero *::before, .cinema-hero *::after { animation:none!important; transition:none!important; }
+  .cinema-sheers { display:none; }
+  .cinema-hero :is(.stage-frame,.invite-hero-frame,.sb-hero-visual) { translate:none; }
+  .cinema-hero :is(.cinema-moon-copy, .cinema-moon-copy *) { opacity:1!important; transform:none!important; }
+  ::view-transition-old(root), ::view-transition-new(root) { animation:none; }
+}

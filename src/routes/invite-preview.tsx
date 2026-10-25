@@ -31,7 +31,15 @@ export const Route = createFileRoute("/invite-preview")({
         : "moonlit",
   }),
   head: () => ({
-    meta: [{ title: "Personal invitation design preview" }, { name: "robots", content: "noindex" }],
+    meta: [
+      { title: "Invitation design preview — InvitingYou" },
+      { name: "description", content: "Preview invitation themes and cinematic layouts." },
+      { property: "og:title", content: "Invitation design preview — InvitingYou" },
+      { property: "og:description", content: "Preview invitation themes and cinematic layouts." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
+      { name: "robots", content: "noindex" },
+    ],
   }),
   component: DesignPreview,
 });
