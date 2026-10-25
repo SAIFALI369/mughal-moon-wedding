@@ -9335,7 +9335,9 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner { 
   --cinema-glow: 0 0 12px color-mix(in oklch, var(--gold-light) 35%, transparent);
 }
 .cinema-hero { position:relative; isolation:isolate; --cinema-depth:0px; }
-.cinema-scene { position:relative; }
+.cinema-scene { position:relative; animation:cinema-crossfade .8s ease both; }
+@keyframes cinema-crossfade { from { opacity:.65; } to { opacity:1; } }
+.cinema-moon-copy { padding-bottom:5rem; }
 .cinema-hero .tcine { height:100%; max-height:110svh; z-index:12; opacity:.55; }
 .cinema-hero .tcine i:nth-child(7n) { width:3px; height:3px; animation-name:tc-twinkle; }
 .cinema-hero .tcine-rays { opacity:.28; }

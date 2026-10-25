@@ -19,7 +19,7 @@ function isSimulatedDom(): boolean {
 }
 
 export function usePhoneScreen(): boolean {
-  const [isPhone, setIsPhone] = useState<boolean>(isPhoneScreen);
+  const [isPhone, setIsPhone] = useState(false);
 
   useEffect(() => {
     const update = () => setIsPhone(isPhoneScreen());
