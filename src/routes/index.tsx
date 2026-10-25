@@ -261,12 +261,13 @@ export function Home() {
         >
           <div className="studio-download-copy">
             <span className="studio-eyebrow">
-              <span /> OFFLINE STUDIO APP
+              <span /> OFFLINE STUDIO APP · LATEST RELEASE
             </span>
             <h2>Design offline. Publish when online.</h2>
             <p>
-              Download the InvitingYou Offline App for your shop counter. Create, edit, and preview
-              every theme without Wi-Fi—internet is only needed when you publish.
+              Download the latest InvitingYou Offline App for your shop counter or phone. Create
+              cards, add photos, and scroll full previews without Wi-Fi—internet is only needed when
+              you publish.
             </p>
           </div>
           <div className="studio-download-actions">

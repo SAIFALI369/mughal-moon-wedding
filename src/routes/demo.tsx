@@ -48,7 +48,7 @@ function Index() {
   const guestName = useInvitedGuestName();
 
   return (
-    <main className="overflow-x-hidden">
+    <main className="overflow-x-clip">
       <Preloader onDone={() => setReady(true)} />
       <Navbar onOpenSimran={() => setSimranOpen(true)} />
       <Hero guestName={guestName} />

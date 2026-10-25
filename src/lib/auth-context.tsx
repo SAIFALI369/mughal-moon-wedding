@@ -94,8 +94,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setUser(nextSession?.user ?? null);
       setLoading(false);
     });
+
+    const handleOnline = () => {
+      supabase.auth
+        .getSession()
+        .then(({ data }) => {
+          if (!mounted) return;
+          if (data.session?.user) {
+            cacheOfflineUser(data.session.user);
+            setSession(data.session);
+            setUser(data.session.user);
+          }
+        })
+        .catch(() => {});
+    };
+    window.addEventListener("online", handleOnline);
+
     return () => {
       mounted = false;
+      window.removeEventListener("online", handleOnline);
       sub.subscription.unsubscribe();
     };
   }, []);

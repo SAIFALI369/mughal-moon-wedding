@@ -27,7 +27,15 @@ export type CachedPartnerAllowance = {
   cards_created: number;
 };
 
+export type OfflineDraftPhoto = {
+  slot: number;
+  image_data: string;
+  caption: string;
+  source: "host";
+};
+
 const DRAFTS_STORAGE_KEY = "invitingyou:offline-drafts:v1";
+const DRAFT_PHOTOS_PREFIX = "invitingyou:offline-photos:v1:";
 const PARTNER_CACHE_PREFIX = "invitingyou:cached-partner:v1:";
 const CARDS_CACHE_PREFIX = "invitingyou:cached-cards:v1:";
 const IDB_NAME = "invitingyou-offline-db";
@@ -250,8 +258,62 @@ export function updateOfflineDraft(
   return updated;
 }
 
+export function getOfflineDraftPhotos(draftId: string): OfflineDraftPhoto[] {
+  if (!isOfflineDraftId(draftId)) return [];
+  const raw = readLocalStorageJson<OfflineDraftPhoto[]>(`${DRAFT_PHOTOS_PREFIX}${draftId}`, []);
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .filter(
+      (item): item is OfflineDraftPhoto =>
+        Boolean(item) && typeof item.slot === "number" && typeof item.image_data === "string",
+    )
+    .sort((a, b) => a.slot - b.slot);
+}
+
+export function addOfflineDraftPhoto(
+  draftId: string,
+  imageData: string,
+  caption = "",
+  maxPhotos = 12,
+): OfflineDraftPhoto {
+  const existing = getOfflineDraftPhotos(draftId);
+  if (existing.length >= maxPhotos) {
+    throw new Error(`Maximum ${maxPhotos} photos reached.`);
+  }
+  const usedSlots = new Set(existing.map((item) => item.slot));
+  let slot = 1;
+  while (usedSlots.has(slot)) slot += 1;
+  const created: OfflineDraftPhoto = {
+    slot,
+    image_data: imageData,
+    caption,
+    source: "host",
+  };
+  const next = [...existing, created].sort((a, b) => a.slot - b.slot);
+  writeLocalStorageJson(`${DRAFT_PHOTOS_PREFIX}${draftId}`, next);
+  notifyListeners();
+  return created;
+}
+
+export function removeOfflineDraftPhoto(draftId: string, slot: number): void {
+  if (!isOfflineDraftId(draftId)) return;
+  const next = getOfflineDraftPhotos(draftId).filter((item) => item.slot !== slot);
+  writeLocalStorageJson(`${DRAFT_PHOTOS_PREFIX}${draftId}`, next);
+  notifyListeners();
+}
+
+export function clearOfflineDraftPhotos(draftId: string): void {
+  if (typeof window === "undefined" || !draftId) return;
+  try {
+    window.localStorage.removeItem(`${DRAFT_PHOTOS_PREFIX}${draftId}`);
+  } catch {
+    // Ignore storage cleanup errors
+  }
+}
+
 export function deleteOfflineDraft(id: string): void {
   deletedDraftIds.add(id);
+  clearOfflineDraftPhotos(id);
   const current = getOfflineDraftsSync();
   persistDrafts(current.filter((item) => item.id !== id));
 }
@@ -259,6 +321,34 @@ export function deleteOfflineDraft(id: string): void {
 export function clearOfflineDraftsMemoryForTests(): void {
   memoryDrafts = null;
   deletedDraftIds.clear();
+}
+
+export async function copyTextSafe(text: string): Promise<boolean> {
+  if (!text) return false;
+  if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // Fall back to execCommand below for restricted mobile WebViews
+    }
+  }
+  if (typeof document === "undefined") return false;
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.setAttribute("readonly", "");
+    textarea.style.position = "fixed";
+    textarea.style.opacity = "0";
+    textarea.style.pointerEvents = "none";
+    document.body.appendChild(textarea);
+    textarea.select();
+    const ok = document.execCommand("copy");
+    textarea.remove();
+    return ok;
+  } catch {
+    return false;
+  }
 }
 
 /**
@@ -286,6 +376,7 @@ export async function publishOfflineDraftToCloud<
   }
   const expires_at = invitationExpiry(parsed.data.date);
   const slug = draft.slug || generateSlug(draft.title);
+  const localPhotos = getOfflineDraftPhotos(draft.id);
 
   const { data: inserted, error: insertError } = await supabaseClient
     .from("invitation_cards")
@@ -302,6 +393,16 @@ export async function publishOfflineDraftToCloud<
 
   if (insertError || !inserted) {
     throw new Error(insertError?.message || "Unable to upload draft for publishing.");
+  }
+
+  if (localPhotos.length > 0 && typeof supabaseClient.rpc === "function") {
+    for (const photo of localPhotos) {
+      await supabaseClient.rpc("add_invitation_photo", {
+        p_card_id: inserted.id,
+        photo_data: photo.image_data,
+        photo_caption: photo.caption || "",
+      });
+    }
   }
 
   const { data: published, error: publishError } = await supabaseClient

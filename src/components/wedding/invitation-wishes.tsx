@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Heart, Loader2, Send } from "lucide-react";
 import { supabase } from "@/lib/db";
+import { isOfflineDraftId } from "@/lib/offline-studio";
 import type { InvitationDetails } from "./invitation-details";
 import { toast } from "sonner";
 import { SuiteHeading } from "./invitation-ornaments";
@@ -33,7 +34,7 @@ export function InvitationWishes({
   const [status, setStatus] = useState("");
 
   const load = useCallback(async () => {
-    if (!cardId) return;
+    if (!cardId || isOfflineDraftId(cardId)) return;
     const { data, error } = await supabase
       .from("invitation_wishes")
       .select("id,name,message,created_at")
@@ -44,7 +45,7 @@ export function InvitationWishes({
   }, [cardId]);
 
   useEffect(() => {
-    if (!cardId) return;
+    if (!cardId || isOfflineDraftId(cardId)) return;
     void load();
     if (preview) return;
     const channel = supabase

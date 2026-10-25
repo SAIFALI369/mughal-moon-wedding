@@ -1,4 +1,4 @@
-const CACHE_NAME = "invitingyou-offline-v1";
+const CACHE_NAME = "invitingyou-offline-v2";
 
 const SHELL_PATHS = [
   "/",
@@ -7,6 +7,8 @@ const SHELL_PATHS = [
   "/dashboard",
   "/preview-frame",
   "/sign-in",
+  "/demo",
+  "/storybook?theme=royal-rajmahal",
   "/manifest.webmanifest",
   "/favicon.ico",
   "/icon-192.png",
@@ -21,8 +23,8 @@ self.addEventListener("install", (event) => {
       .then((cache) =>
         Promise.allSettled(
           SHELL_PATHS.map((path) =>
-            fetch(path, { credentials: "same-origin" }).then((response) => {
-              if (response.ok) return cache.put(path, response);
+            fetch(path, { credentials: "same-origin", cache: "reload" }).then((response) => {
+              if (response.ok && !response.redirected) return cache.put(path, response);
             }),
           ),
         ),
@@ -48,34 +50,54 @@ self.addEventListener("activate", (event) => {
 
 self.addEventListener("message", (event) => {
   const data = event.data;
-  if (!data || data.type !== "PRECACHE_STUDIO" || !Array.isArray(data.urls)) return;
+  if (!data || typeof data.type !== "string") return;
 
-  event.waitUntil(
-    caches.open(CACHE_NAME).then(async (cache) => {
-      const uniqueUrls = Array.from(new Set([...SHELL_PATHS, ...data.urls])).filter(
-        (u) => typeof u === "string" && u.length > 0,
-      );
-      let cachedCount = 0;
-      await Promise.allSettled(
-        uniqueUrls.map(async (rawUrl) => {
-          const existing = await cache.match(rawUrl);
-          if (existing) {
-            cachedCount += 1;
-            return;
-          }
-          const response = await fetch(rawUrl, { credentials: "same-origin" });
-          if (response.ok) {
-            await cache.put(rawUrl, response);
-            cachedCount += 1;
-          }
-        }),
-      );
-      const clients = await self.clients.matchAll({ type: "window" });
-      for (const client of clients) {
-        client.postMessage({ type: "OFFLINE_CACHE_READY", count: cachedCount });
-      }
-    }),
-  );
+  if (data.type === "SKIP_WAITING") {
+    void self.skipWaiting();
+    return;
+  }
+
+  if (
+    (data.type === "PRECACHE_STUDIO" || data.type === "FORCE_UPDATE_CACHE") &&
+    Array.isArray(data.urls)
+  ) {
+    const forceReload = data.type === "FORCE_UPDATE_CACHE";
+    event.waitUntil(
+      caches.open(CACHE_NAME).then(async (cache) => {
+        const uniqueUrls = Array.from(new Set([...SHELL_PATHS, ...data.urls])).filter(
+          (u) => typeof u === "string" && u.length > 0,
+        );
+        let cachedCount = 0;
+        await Promise.allSettled(
+          uniqueUrls.map(async (rawUrl) => {
+            if (!forceReload) {
+              const existing = await cache.match(rawUrl);
+              if (existing) {
+                cachedCount += 1;
+                return;
+              }
+            }
+            const response = await fetch(rawUrl, {
+              credentials: "same-origin",
+              cache: forceReload ? "reload" : "default",
+            });
+            if (response.ok && !response.redirected) {
+              await cache.put(rawUrl, response);
+              cachedCount += 1;
+            }
+          }),
+        );
+        const clients = await self.clients.matchAll({ type: "window" });
+        for (const client of clients) {
+          client.postMessage({
+            type: "OFFLINE_CACHE_READY",
+            count: cachedCount,
+            updated: forceReload,
+          });
+        }
+      }),
+    );
+  }
 });
 
 function shouldBypassCache(url) {
@@ -112,14 +134,14 @@ self.addEventListener("fetch", (event) => {
         const cache = await caches.open(CACHE_NAME);
         try {
           const networkResponse = await fetchWithTimeout(request, 3500);
-          if (networkResponse.ok) {
+          if (networkResponse.ok && !networkResponse.redirected) {
             void cache.put(url.pathname, networkResponse.clone());
           }
           return networkResponse;
         } catch {
           return (
             (await cache.match(url.pathname)) ||
-            (await cache.match(request)) ||
+            (await cache.match(request, { ignoreSearch: true })) ||
             (await cache.match("/offline-studio")) ||
             (await cache.match("/")) ||
             new Response("Offline — open InvitingYou Offline Studio once online to finish setup.", {
@@ -146,12 +168,21 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       caches.open(CACHE_NAME).then(async (cache) => {
         const cached = await cache.match(request);
-        if (cached) return cached;
-        const response = await fetch(request);
-        if (response.ok) {
-          void cache.put(request, response.clone());
+        const networkFetch = fetch(request)
+          .then((response) => {
+            if (response.ok) {
+              void cache.put(request, response.clone());
+            }
+            return response;
+          })
+          .catch(() => null);
+        if (cached) {
+          void networkFetch;
+          return cached;
         }
-        return response;
+        const fresh = await networkFetch;
+        if (fresh) return fresh;
+        throw new Error("Offline static asset unavailable");
       }),
     );
     return;
@@ -168,7 +199,8 @@ self.addEventListener("fetch", (event) => {
           }
           return response;
         } catch {
-          const cached = await cache.match(request);
+          const cached =
+            (await cache.match(request)) || (await cache.match(request, { ignoreSearch: true }));
           if (cached) return cached;
           throw new Error("Offline asset unavailable");
         }

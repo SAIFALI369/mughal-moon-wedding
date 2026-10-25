@@ -6,18 +6,21 @@ import { Home } from "@/routes/index";
 import { DownloadAppPage } from "@/routes/download";
 import { OfflineStudioPage } from "@/routes/offline-studio";
 import {
+  addOfflineDraftPhoto,
   clearOfflineDraftsMemoryForTests,
   createOfflineDraft,
+  getOfflineDraftPhotos,
   getOfflineDraftsSync,
 } from "@/lib/offline-studio";
 import { invitationContentSchema } from "@/components/wedding/invitation-schema";
-import { buildOfflineLauncherHtml } from "@/lib/pwa-install";
+import { buildOfflineLauncherHtml, OFFLINE_APP_VERSION } from "@/lib/pwa-install";
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
   user: null as { id: string } | null,
   insertSingle: vi.fn(),
   updateSingle: vi.fn(),
+  rpc: vi.fn(),
   insertedPayload: null as Record<string, unknown> | null,
 }));
 
@@ -43,6 +46,7 @@ vi.mock("@/lib/auth-context", () => ({
 
 vi.mock("@/lib/db", () => ({
   supabase: {
+    rpc: (...args: unknown[]) => mocks.rpc(...args),
     from: () => ({
       insert: (payload: Record<string, unknown>) => {
         mocks.insertedPayload = payload;
@@ -76,9 +80,21 @@ function setOnline(next: boolean) {
 }
 
 beforeEach(() => {
+  if (typeof globalThis.IntersectionObserver === "undefined") {
+    globalThis.IntersectionObserver = class {
+      observe() {}
+      unobserve() {}
+      disconnect() {}
+      takeRecords() {
+        return [];
+      }
+    } as unknown as typeof IntersectionObserver;
+  }
   window.localStorage.clear();
   clearOfflineDraftsMemoryForTests();
   mocks.navigate.mockReset();
+  mocks.rpc.mockReset();
+  mocks.rpc.mockResolvedValue({ data: null, error: null });
   mocks.user = null;
   mocks.insertedPayload = null;
   mocks.insertSingle.mockResolvedValue({
@@ -131,8 +147,10 @@ describe("Downloadable offline app & online-only publishing", () => {
     }
 
     const sw = readFileSync("public/sw.js", "utf8");
+    expect(sw).toContain("invitingyou-offline-v2");
     expect(sw).toContain('"/offline-studio"');
     expect(sw).toContain('"/preview-frame"');
+    expect(sw).toContain("FORCE_UPDATE_CACHE");
     expect(sw).toContain("supabase");
   });
 
@@ -151,23 +169,86 @@ describe("Downloadable offline app & online-only publishing", () => {
     );
   });
 
-  it("generates a downloadable desktop/mobile launcher on the /download page", () => {
+  it("generates an updated downloadable desktop/mobile launcher and cache refresh on /download", async () => {
     const html = buildOfflineLauncherHtml("https://invitation.cashiea.app");
-    expect(html).toContain("https://invitation.cashiea.app/offline-studio?source=launcher");
+    expect(html).toContain(
+      `https://invitation.cashiea.app/offline-studio?source=launcher&v=${OFFLINE_APP_VERSION}`,
+    );
 
     const createObjectUrl = vi.spyOn(URL, "createObjectURL").mockReturnValue("blob:launcher");
     const revokeObjectUrl = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
     const anchorClick = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(() => {});
 
     render(<DownloadAppPage />);
+    expect(screen.getByRole("button", { name: /Update offline cache/i })).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Download Offline App/i }));
 
-    expect(createObjectUrl).toHaveBeenCalledTimes(1);
-    expect(anchorClick).toHaveBeenCalledTimes(1);
+    await waitFor(() => {
+      expect(createObjectUrl).toHaveBeenCalledTimes(1);
+      expect(anchorClick).toHaveBeenCalledTimes(1);
+    });
 
     createObjectUrl.mockRestore();
     revokeObjectUrl.mockRestore();
     anchorClick.mockRestore();
+  });
+
+  it("allows native scrolling in phone and desktop previews without touchmove scroll-lock traps", async () => {
+    const prevWidth = window.innerWidth;
+    act(() => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        writable: true,
+        value: 375,
+      });
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    try {
+      createOfflineDraft({
+        title: "Scrollable Phone Preview",
+        content: invitationContentSchema.parse({
+          groomName: "Ayaan",
+          brideName: "Zara",
+          date: "20/12/2026",
+          time: "7:00 PM",
+          venue: "Patna Club",
+          address: "Patna, Bihar",
+          theme: "royal-rajmahal",
+          framework: "royal-folio",
+        }),
+      });
+
+      render(<OfflineStudioPage />);
+      fireEvent.click(screen.getByRole("button", { name: /^Preview$/i }));
+
+      const dialog = await screen.findByRole("dialog", {
+        name: /Scrollable Phone Preview/i,
+      });
+      expect(document.body.getAttribute("data-scroll-locked")).toBeNull();
+      expect(document.body.style.overflow).toBe("hidden");
+
+      const canvas = dialog.querySelector(".admin-preview-canvas.is-native-phone");
+      expect(canvas).not.toBeNull();
+      const inviteRoot = dialog.querySelector(".personal-invite");
+      expect(inviteRoot?.className).toContain("overflow-x-clip");
+      expect(inviteRoot?.className).not.toContain("overflow-x-hidden");
+
+      fireEvent.click(screen.getAllByRole("button", { name: /Close/i })[0]);
+      await waitFor(() => {
+        expect(screen.queryByRole("dialog", { name: /Scrollable Phone Preview/i })).toBeNull();
+      });
+      expect(document.body.style.overflow).toBe("");
+    } finally {
+      act(() => {
+        Object.defineProperty(window, "innerWidth", {
+          configurable: true,
+          writable: true,
+          value: prevWidth,
+        });
+        window.dispatchEvent(new Event("resize"));
+      });
+    }
   });
 
   it("creates and saves drafts 100% offline, blocks publishing offline, and publishes once online", async () => {
@@ -229,7 +310,7 @@ describe("Downloadable offline app & online-only publishing", () => {
     mocks.user = { id: "owner-1" };
     setOnline(true);
 
-    createOfflineDraft({
+    const draft = createOfflineDraft({
       title: "Ayaan & Zara",
       content: invitationContentSchema.parse({
         groomName: "Ayaan",
@@ -242,6 +323,8 @@ describe("Downloadable offline app & online-only publishing", () => {
         framework: "royal-folio",
       }),
     });
+    addOfflineDraftPhoto(draft.id, "data:image/jpeg;base64,/9j/4AAQSkZJRg==", "Nikah stage");
+    expect(getOfflineDraftPhotos(draft.id)).toHaveLength(1);
 
     render(<OfflineStudioPage />);
     expect(screen.getByText("Ayaan & Zara")).toBeInTheDocument();
@@ -250,9 +333,15 @@ describe("Downloadable offline app & online-only publishing", () => {
 
     await waitFor(() => {
       expect(mocks.insertSingle).toHaveBeenCalledTimes(1);
+      expect(mocks.rpc).toHaveBeenCalledWith("add_invitation_photo", {
+        p_card_id: "c0000000-0000-4000-8000-000000000099",
+        photo_data: "data:image/jpeg;base64,/9j/4AAQSkZJRg==",
+        photo_caption: "Nikah stage",
+      });
       expect(mocks.updateSingle).toHaveBeenCalledTimes(1);
     });
     expect(getOfflineDraftsSync()).toHaveLength(0);
+    expect(getOfflineDraftPhotos(draft.id)).toHaveLength(0);
     expect(await screen.findByText(/is now live/i)).toBeInTheDocument();
   });
 });

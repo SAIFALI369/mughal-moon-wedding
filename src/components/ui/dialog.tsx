@@ -14,19 +14,56 @@ const DialogPortal = DialogPrimitive.Portal;
 
 const DialogClose = DialogPrimitive.Close;
 
-const DialogOverlay = React.forwardRef<
-  React.ElementRef<typeof DialogPrimitive.Overlay>,
-  React.ComponentPropsWithoutRef<typeof DialogPrimitive.Overlay>
->(({ className, ...props }, ref) => (
-  <DialogPrimitive.Overlay
-    ref={ref}
-    className={cn(
-      "fixed inset-0 z-50 bg-black/80  data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
-      className,
-    )}
-    {...props}
-  />
-));
+let activeDialogScrollLocks = 0;
+let previousBodyOverflow = "";
+let previousHtmlOverscroll = "";
+
+function acquireDialogScrollLock(): () => void {
+  if (typeof document === "undefined") return () => {};
+  if (activeDialogScrollLocks === 0) {
+    previousBodyOverflow = document.body.style.overflow;
+    previousHtmlOverscroll = document.documentElement.style.overscrollBehavior;
+    document.body.style.overflow = "hidden";
+    document.documentElement.style.overscrollBehavior = "none";
+  }
+  activeDialogScrollLocks += 1;
+
+  let released = false;
+  return () => {
+    if (released || typeof document === "undefined") return;
+    released = true;
+    activeDialogScrollLocks = Math.max(0, activeDialogScrollLocks - 1);
+    if (activeDialogScrollLocks === 0) {
+      document.body.style.overflow = previousBodyOverflow;
+      document.documentElement.style.overscrollBehavior = previousHtmlOverscroll;
+    }
+  };
+}
+
+/**
+ * Renders the modal backdrop and locks background document scroll via CSS
+ * without mounting `react-remove-scroll`'s non-passive `touchmove`/`wheel`
+ * listeners, ensuring native 60fps touch & trackpad scrolling inside previews
+ * and editors on mobile browsers, desktop browsers, and installed PWAs.
+ */
+const DialogOverlay = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => {
+    React.useEffect(() => acquireDialogScrollLock(), []);
+
+    return (
+      <div
+        ref={ref}
+        aria-hidden="true"
+        data-state="open"
+        className={cn(
+          "fixed inset-0 z-50 bg-black/80 pointer-events-auto data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0",
+          className,
+        )}
+        {...props}
+      />
+    );
+  },
+);
 DialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const DialogContent = React.forwardRef<
