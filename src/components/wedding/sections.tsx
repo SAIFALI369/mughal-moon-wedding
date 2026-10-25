@@ -289,7 +289,10 @@ export function Preloader({
   }
 
   return (
-    <AnimatePresence onExitComplete={onDone}>
+    <AnimatePresence onExitComplete={() => {
+      window.dispatchEvent(new Event("wedding:revealed"));
+      onDone();
+    }}>
       {show && (
         <motion.div
           role="dialog"
@@ -543,7 +546,7 @@ export function Hero({
       </motion.a>
     </section>
   );
-  return theme ? hero : <CinematicHero theme={demoTheme}>{hero}</CinematicHero>;
+  return theme ? hero : <CinematicHero theme={demoTheme} waitingForGate>{hero}</CinematicHero>;
 }
 
 /* ───────── Countdown ───────── */
