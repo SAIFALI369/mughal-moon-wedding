@@ -6,6 +6,7 @@ import {
   HeartHandshake,
   UserRound,
   ArrowUpRight,
+  Download,
   Menu,
   X,
   Moon,
@@ -168,7 +169,12 @@ export function PlatformShell({
             <span>
               invitingyou. <span className="studio-footer-muted">A beautiful beginning.</span>
             </span>
-            <span>Made with care, shared with love. ♡</span>
+            <div className="studio-footer-right">
+              <Link to="/download" className="studio-footer-download">
+                <Download size={12} aria-hidden="true" /> Download offline app
+              </Link>
+              <span>Made with care, shared with love. ♡</span>
+            </div>
           </footer>
         )}
       </div>

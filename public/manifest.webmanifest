@@ -1,0 +1,49 @@
+{
+  "id": "/offline-studio",
+  "name": "InvitingYou Offline Studio",
+  "short_name": "InvitingYou",
+  "description": "Design and preview wedding invitations offline. Connect to the internet only when ready to publish.",
+  "start_url": "/offline-studio?source=app",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#f5f4ed",
+  "theme_color": "#260e17",
+  "categories": ["lifestyle", "productivity", "design"],
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Offline Studio",
+      "short_name": "Studio",
+      "description": "Create and edit invitations offline",
+      "url": "/offline-studio",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Partner Dashboard",
+      "short_name": "Dashboard",
+      "description": "Manage credits and published cards",
+      "url": "/dashboard",
+      "icons": [{ "src": "/icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

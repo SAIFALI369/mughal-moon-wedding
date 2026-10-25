@@ -33,6 +33,7 @@ import {
   QrCode,
   Plus,
   RefreshCw,
+  WifiOff,
 } from "lucide-react";
 import {
   InvitationDetailsFields,
@@ -57,6 +58,23 @@ import { PlatformShell } from "@/components/platform/platform-shell";
 import { CardPrintDialog } from "@/components/platform/card-print-dialog";
 import { InvitationPreview } from "@/components/platform/invitation-preview";
 import { cleanupExpiredMemories, deleteSimranMemory } from "@/lib/simran-memory";
+import {
+  cacheCloudCards,
+  cachePartnerAllowance,
+  createOfflineDraft,
+  deleteOfflineDraft,
+  getCachedCloudCards,
+  getCachedPartnerAllowance,
+  getOfflineDraftsSync,
+  isBrowserOnline,
+  isOfflineDraftId,
+  loadOfflineDrafts,
+  publishOfflineDraftToCloud,
+  subscribeOfflineDrafts,
+  updateOfflineDraft,
+  type OfflineInvitationDraft,
+} from "@/lib/offline-studio";
+import { useOnlineStatus } from "@/lib/pwa-install";
 
 type PartnerAllowance = {
   shop_name: string;
@@ -84,7 +102,10 @@ export const Route = createFileRoute("/dashboard")({
       { title: "Studio — InvitingYou" },
       { name: "description", content: "Manage your digital invitations and published cards." },
       { property: "og:title", content: "Studio — InvitingYou" },
-      { property: "og:description", content: "Manage your digital invitations and published cards." },
+      {
+        property: "og:description",
+        content: "Manage your digital invitations and published cards.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
@@ -96,11 +117,16 @@ export const Route = createFileRoute("/dashboard")({
 export function Dashboard() {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const [cards, setCards] = useState<InvitationCard[]>([]);
+  const online = useOnlineStatus();
+  const [cloudCards, setCloudCards] = useState<InvitationCard[]>([]);
+  const [offlineDrafts, setOfflineDrafts] = useState<OfflineInvitationDraft[]>(() =>
+    getOfflineDraftsSync(),
+  );
+  const cards: InvitationCard[] = [...offlineDrafts, ...cloudCards];
   const [partner, setPartner] = useState<PartnerAllowance | null>(null);
   const remaining = Math.max(0, (partner?.cards_purchased ?? 0) - (partner?.cards_created ?? 0));
   const [fetching, setFetching] = useState(true);
-  const canCreate = !fetching && !!partner?.active && remaining > 0;
+  const canCreate = !online || (!fetching && !!partner?.active && remaining > 0);
   const [creating, setCreating] = useState(false);
   const [editorOpen, setEditorOpen] = useState(false);
   const [form, setForm] = useState<InvitationForm>(emptyInvitationForm);
@@ -181,16 +207,36 @@ export function Dashboard() {
     }
   }, [user, loading, navigate]);
 
+  useEffect(() => {
+    const unsubscribe = subscribeOfflineDrafts(() => {
+      setOfflineDrafts(getOfflineDraftsSync());
+    });
+    void loadOfflineDrafts();
+    return unsubscribe;
+  }, []);
+
   async function load() {
     if (!user) return;
+    if (!online) {
+      setPartner(getCachedPartnerAllowance(user.id));
+      setCloudCards(getCachedCloudCards<InvitationCard>(user.id));
+      setFetching(false);
+      return;
+    }
     setFetching(true);
     const { data: allowance, error: allowanceError } = await supabase
       .from("print_partners")
       .select("shop_name, active, cards_purchased, cards_created")
       .eq("owner_id", user.id)
       .maybeSingle();
-    setPartner(allowanceError ? null : (allowance as PartnerAllowance | null));
-    if (allowanceError) setError("Unable to load card credits.");
+    const resolvedPartner = allowanceError
+      ? getCachedPartnerAllowance(user.id)
+      : (allowance as PartnerAllowance | null);
+    setPartner(resolvedPartner);
+    if (!allowanceError && resolvedPartner) {
+      cachePartnerAllowance(user.id, resolvedPartner);
+    }
+    if (allowanceError && !resolvedPartner) setError("Unable to load card credits.");
     cleanupExpiredMemories();
     try {
       await supabase.rpc("delete_expired_invitations");
@@ -206,7 +252,12 @@ export function Dashboard() {
       .order("created_at", { ascending: false });
     if (error) {
       console.error(error);
-      setError(error.message);
+      const cached = getCachedCloudCards<InvitationCard>(user.id);
+      if (cached.length > 0) {
+        setCloudCards(cached);
+      } else {
+        setError(error.message);
+      }
     } else {
       const filtered = (data as InvitationCard[]).filter((c) => {
         if (c.expires_at && new Date(c.expires_at).getTime() < Date.now()) {
@@ -215,7 +266,8 @@ export function Dashboard() {
         }
         return true;
       });
-      setCards(filtered);
+      setCloudCards(filtered);
+      cacheCloudCards(user.id, filtered);
     }
     setFetching(false);
   }
@@ -223,7 +275,7 @@ export function Dashboard() {
   useEffect(() => {
     if (user) load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, online]);
 
   function validContent(): InvitationContent | null {
     const result = invitationContentSchema.safeParse(form);
@@ -257,6 +309,17 @@ export function Dashboard() {
     setCreating(true);
     setError("");
     try {
+      if (!online) {
+        createOfflineDraft({ title, content, ownerId: user?.id });
+        toast.success("Draft saved offline on this device");
+        setForm(emptyInvitationForm());
+        setEditorOpen(false);
+        setActiveTab("invitations");
+        setSearch("");
+        setStatusFilter("all");
+        setPage(1);
+        return;
+      }
       const slug = generateSlug(title);
       const expires_at = invitationExpiry(content.date);
       const { data: session } = await supabase.auth.getSession();
@@ -279,7 +342,7 @@ export function Dashboard() {
         return;
       }
       toast.success("Draft saved");
-      setCards((prev) => [data as InvitationCard, ...prev]);
+      setCloudCards((prev) => [data as InvitationCard, ...prev]);
       setForm(emptyInvitationForm());
       setEditorOpen(false);
       setActiveTab("invitations");
@@ -301,6 +364,20 @@ export function Dashboard() {
     const rawContent = validContent();
     if (!rawContent) return;
     const { title, content } = preserveLockedCoupleIdentity(rawTitle, rawContent, card);
+    if (isOfflineDraftId(card.id)) {
+      updateOfflineDraft(card.id, { title, content });
+      toast.success("Offline draft saved");
+      setEditingId(null);
+      setEditorOpen(false);
+      setActiveTab("invitations");
+      return;
+    }
+    if (!online) {
+      const msg = "Connect to the internet to update a cloud card, or save a new offline draft.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
     setCreating(true);
     try {
       const { error } = await supabase
@@ -326,6 +403,29 @@ export function Dashboard() {
   }
 
   async function togglePublish(card: InvitationCard) {
+    if (!online || !isBrowserOnline()) {
+      const message = "Internet connection is required to publish.";
+      setError(message);
+      toast.error(message);
+      return;
+    }
+    if (isOfflineDraftId(card.id)) {
+      if (!user) return;
+      try {
+        await publishOfflineDraftToCloud<InvitationCard>(
+          card as OfflineInvitationDraft,
+          supabase,
+          user.id,
+        );
+        toast.success("Published");
+        await load();
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Unable to publish offline draft.";
+        setError(message);
+        toast.error(message);
+      }
+      return;
+    }
     const newStatus = card.status === "draft" ? "published" : "draft";
     if (newStatus === "published" && !invitationContentSchema.safeParse(card.content).success) {
       const message = "Complete required wedding details before publishing.";
@@ -350,6 +450,15 @@ export function Dashboard() {
 
   async function handleDelete(card: InvitationCard) {
     if (!confirm(`Delete "${card.title}"? This cannot be undone.`)) return;
+    if (isOfflineDraftId(card.id)) {
+      deleteOfflineDraft(card.id);
+      toast.success("Deleted");
+      return;
+    }
+    if (!online) {
+      toast.error("Connect to the internet to delete a synced card.");
+      return;
+    }
     const { error } = await supabase
       .from("invitation_cards")
       .delete()
@@ -361,7 +470,7 @@ export function Dashboard() {
       return;
     }
     toast.success("Deleted");
-    setCards((prev) => prev.filter((c) => c.id !== card.id));
+    setCloudCards((prev) => prev.filter((c) => c.id !== card.id));
   }
 
   function startEdit(card: InvitationCard) {
@@ -406,7 +515,14 @@ export function Dashboard() {
       <main className="studio-content admin-main">
         <header className="admin-header">
           <div>
-            <h1>{partner?.shop_name || username || "Studio"}</h1>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h1>{partner?.shop_name || username || "Studio"}</h1>
+              {!online && (
+                <span className="offline-status-pill is-offline" role="status">
+                  <WifiOff size={12} aria-hidden="true" /> Offline · Connect to publish
+                </span>
+              )}
+            </div>
             <div className="admin-metrics" aria-label="Workspace summary">
               <span>
                 <strong>{fetching ? "—" : remaining}</strong> credits left
@@ -426,12 +542,15 @@ export function Dashboard() {
           </button>
         </header>
 
-        {!fetching && (!partner?.active || remaining === 0) && activeTab !== "credits" && (
-          <p className="dashboard-access-notice" role="status">
-            {!partner?.active ? "Account allowance inactive." : "0 credits remaining."}{" "}
-            <button onClick={() => changeTab("credits")}>View credits →</button>
-          </p>
-        )}
+        {online &&
+          !fetching &&
+          (!partner?.active || remaining === 0) &&
+          activeTab !== "credits" && (
+            <p className="dashboard-access-notice" role="status">
+              {!partner?.active ? "Account allowance inactive." : "0 credits remaining."}{" "}
+              <button onClick={() => changeTab("credits")}>View credits →</button>
+            </p>
+          )}
 
         <Tabs
           value={activeTab}
@@ -502,7 +621,7 @@ export function Dashboard() {
                         <div className="flex items-center gap-2.5">
                           <h3>{card.title}</h3>
                           <span className={`dashboard-card-status ${card.status}`}>
-                            {card.status}
+                            {isOfflineDraftId(card.id) ? "offline draft" : card.status}
                           </span>
                         </div>
                         <p>
