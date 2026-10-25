@@ -1,4 +1,5 @@
 import { getInstantSmallTalk } from "./concierge-smalltalk";
+import { CinematicHero } from "./cinematic-hero";
 import { GuestGallery } from "./guest-gallery";
 import { applyMusicReply, getInstantMusicReply } from "./music-control";
 import {
@@ -11,7 +12,7 @@ import { getInstantConciergeReply, requestConcierge } from "./concierge-client";
 import { getAiVisitorId } from "@/lib/ai-visitor";
 import { FullArtFrame, LivingScene, riteBlessing } from "./invitation-rite";
 import type { InvitationTheme } from "./invitation-options";
-import { AnimatePresence, motion, useScroll, useTransform } from "framer-motion";
+import { AnimatePresence, motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import confetti from "canvas-confetti";
 import { toast } from "sonner";
@@ -94,7 +95,13 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
   const toggleTheme = () => {
     const next = !dark;
     setDark(next);
-    document.documentElement.classList.toggle("dark", next);
+    const applyTheme = () => {
+      document.documentElement.classList.toggle("dark", next);
+      window.dispatchEvent(new Event("wedding:theme"));
+    };
+    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches && typeof document.startViewTransition === "function") {
+      document.startViewTransition(applyTheme);
+    } else applyTheme();
     localStorage.setItem("wedding-theme", next ? "dark" : "light");
     toast(next ? "Royal Mughal Night theme enabled 🌙" : "Luminous Eid Sky theme enabled ☀️");
   };
@@ -393,15 +400,24 @@ export function Hero({
   theme?: InvitationTheme;
 }) {
   const ref = useRef<HTMLElement>(null);
+  const reduced = useReducedMotion();
+  const [demoTheme, setDemoTheme] = useState<InvitationTheme>("eid");
+  useEffect(() => {
+    if (theme) return;
+    const sync = () => setDemoTheme(document.documentElement.classList.contains("dark") ? "mughal" : "eid");
+    sync();
+    window.addEventListener("wedding:theme", sync);
+    return () => window.removeEventListener("wedding:theme", sync);
+  }, [theme]);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
   const fade = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
-  return (
+  const hero = (
     <section
       ref={ref}
       className="eid-hero relative flex min-h-[88svh] items-center justify-center overflow-hidden text-foreground"
     >
-      <motion.div style={{ y }} className="absolute inset-0">
+      <motion.div style={reduced ? undefined : { y }} className="absolute inset-0">
         <FullArtFrame
           src={backgroundImage}
           className="eid-hero-art"
@@ -423,9 +439,7 @@ export function Hero({
           }
         />
       )}
-      <Sparkles count={85} />
-      <GlimmeringButterflies />
-      <motion.div style={{ opacity: fade }} className="relative z-10 px-6 pt-12 text-center">
+      <motion.div style={reduced ? undefined : { opacity: fade }} className="cinema-moon-copy relative z-10 px-6 pt-12 text-center">
         <motion.p
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -520,7 +534,7 @@ export function Hero({
       </motion.div>
       <motion.a
         href={scrollTo}
-        animate={{ y: [0, 10, 0] }}
+        animate={reduced ? { y: 0 } : { y: [0, 6, 0] }}
         transition={{ repeat: Infinity, duration: 2 }}
         className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 text-center text-[10px] uppercase tracking-[0.4em] text-gold"
       >
@@ -529,6 +543,7 @@ export function Hero({
       </motion.a>
     </section>
   );
+  return theme ? hero : <CinematicHero theme={demoTheme}>{hero}</CinematicHero>;
 }
 
 /* ───────── Countdown ───────── */
