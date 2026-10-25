@@ -1,5 +1,9 @@
 # Wedding invitation update
 
+## Cinematic theme refinement
+- [ ] Integrate restrained curtain reveals, image motion, layered parallax and theme transitions into existing invitation heroes.
+- [ ] Verify desktop/mobile, reduced motion, theme changes and unobstructed controls; run relevant tests.
+
 - [x] Save RSVP replies and show live public Wishes; enforce one reply per normalized name.
 - [x] Replace dark backgrounds with a light moon, clouds, and stars Eid look.
 - [x] Test duplicate names and verify the live submission flow.

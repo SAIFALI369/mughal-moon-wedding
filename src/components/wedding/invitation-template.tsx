@@ -1,4 +1,4 @@
-import { ThemeCinema } from "./theme-cinema";
+import { CinematicHero } from "./cinematic-hero";
 import { isStorybook, StorybookEntry, StorybookHero } from "./storybook";
 import { motion } from "framer-motion";
 import { useEffect, useState, type ReactNode } from "react";
@@ -411,7 +411,6 @@ export function PersonalInvitation({
       className="personal-invite min-h-screen overflow-x-hidden bg-background text-foreground"
     >
       {!storybook && <ThemeBackdrop theme={details.theme} art={art} />}
-      {!storybook && <ThemeCinema theme={details.theme} />}
       {storybook && (
         <StorybookEntry
           details={details}
@@ -433,7 +432,7 @@ export function PersonalInvitation({
       )}
       {!storybook && showGate && !preview && details.elements.gate && (
         <Preloader
-          onDone={() => {}}
+          onDone={() => window.dispatchEvent(new Event("wedding:revealed"))}
           onEnter={
             hasSongs ? () => sendInvitationMusicCommand({ action: "play", index: 0 }) : undefined
           }
@@ -502,6 +501,7 @@ export function PersonalInvitation({
         </header>
       )}
 
+      <CinematicHero theme={details.theme} waitingForGate={showGate && details.elements.gate && (storybook || !preview)}>
       {storybook ? (
         <StorybookHero details={details} actions={actions} />
       ) : layout === "chhatri-dawn" ? (
