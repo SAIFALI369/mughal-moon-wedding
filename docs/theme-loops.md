@@ -7,6 +7,7 @@ stays underneath as the poster frame.
 - Built by `node scripts/build-theme-loops.mjs`
 - Output: `public/film/<theme>.mp4` — 8 s, 1024×576, H.264 (main), ~120–580 KB
 - Rendered by `src/components/wedding/theme-loop.tsx`
+- Gallery of all 24, with live playback state: **`/films`**
 - Tests: `src/test/theme-loops.test.tsx`
 
 ## What each film is
@@ -19,11 +20,14 @@ still without the picture jumping.
 
 | Camera move | Where it is used | Feel |
 | --- | --- | --- |
-| `push` | luxury, fairytale | a slow dolly-in, no sway |
-| `drift` | rajmahal, aladin, ballroom, mehndi, mela, riad, bihari, haldi, calligraphy, diya | push plus a lazy sideways sway |
-| `breathe` | lotus, classic, mandap, jharokha, vows-in-ink, mecca | almost still; only the light changes |
-| `rise` | eid, mughal, futuristic, chand-bagh | the lens lifts toward the sky |
-| `water` | kashi-ghat | a slow downward travel, so the river reads as flowing |
+| `push` | luxury, fairytale | a 20 % dolly-in, no sway |
+| `drift` | rajmahal, aladin, ballroom, mehndi, mela, riad, bihari, haldi, calligraphy, diya | push plus a 60 px sideways sway |
+| `breathe` | lotus, classic, mandap, jharokha, vows-in-ink, mecca | gentle 8 % light-led zoom, minimal sway |
+| `rise` | eid, mughal, futuristic, chand-bagh | a 14 % push while the lens lifts ~96 px toward the sky |
+| `water` | kashi-ghat | a push plus downward travel, so the river reads as flowing |
+
+The moves are deliberately readable: a guest should notice within two seconds
+that this is a film, not a photograph.
 
 On top of the plate, one ambient layer drifts continuously:
 
@@ -51,16 +55,20 @@ re-encodes 24 videos.
 
 ## How it plays
 
-- `<video muted loop playsinline preload="none">`, `aria-hidden`, no controls —
-  a background film, never a second player competing with the soundtrack.
+- `<video autoplay muted loop playsinline preload="none">`, `aria-hidden`, no
+  controls — a background film, never a second player competing with the
+  soundtrack. `autoPlay` lets the browser start it before hydration; a script
+  effect backs it up and wakes browsers that refused at load.
+- The film layer has no fade-in gate: it is visible from the first frame, which
+  is the same picture as the still underneath, so nothing flashes or jumps.
 - The hero loads on mount (`priority`); anything further down the page waits
   until it is within 400 px of the viewport.
 - Playback follows visibility: it pauses when the stage scrolls away or the tab
   is hidden, and resumes on return. One tap anywhere wakes a browser that
   refused autoplay at load.
-- The still is visible first and the film fades over it once its first frame is
-  decoded (`[data-live="true"]`) — so a card is complete before the video lands,
-  and stays complete if the video ever fails.
+- The still stays underneath as the poster frame: a card is complete before the
+  video lands, and stays complete if the video fails (an `onError` drops the
+  element and leaves the photograph).
 - `prefers-reduced-motion`, or a host who turned **Opening gates** off, keeps the
   still and mounts no video at all.
 - The cinematic theme (`mughal-moon-film`) uses its vertical film twice: inside

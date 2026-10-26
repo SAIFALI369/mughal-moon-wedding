@@ -15,6 +15,7 @@ import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as DownloadRouteImport } from './routes/download'
 import { Route as FilmRouteImport } from './routes/film'
+import { Route as FilmsRouteImport } from './routes/films'
 import { Route as InvitePreviewRouteImport } from './routes/invite-preview'
 import { Route as OfflineStudioRouteImport } from './routes/offline-studio'
 import { Route as PreviewFrameRouteImport } from './routes/preview-frame'
@@ -53,6 +54,11 @@ const DownloadRoute = DownloadRouteImport.update({
 const FilmRoute = FilmRouteImport.update({
   id: '/film',
   path: '/film',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FilmsRoute = FilmsRouteImport.update({
+  id: '/films',
+  path: '/films',
   getParentRoute: () => rootRouteImport,
 } as any)
 const InvitePreviewRoute = InvitePreviewRouteImport.update({
@@ -108,6 +114,7 @@ export interface FileRoutesByFullPath {
   '/demo': typeof DemoRoute
   '/download': typeof DownloadRoute
   '/film': typeof FilmRoute
+  '/films': typeof FilmsRoute
   '/invite-preview': typeof InvitePreviewRoute
   '/offline-studio': typeof OfflineStudioRoute
   '/preview-frame': typeof PreviewFrameRoute
@@ -125,6 +132,7 @@ export interface FileRoutesByTo {
   '/demo': typeof DemoRoute
   '/download': typeof DownloadRoute
   '/film': typeof FilmRoute
+  '/films': typeof FilmsRoute
   '/invite-preview': typeof InvitePreviewRoute
   '/offline-studio': typeof OfflineStudioRoute
   '/preview-frame': typeof PreviewFrameRoute
@@ -143,6 +151,7 @@ export interface FileRoutesById {
   '/demo': typeof DemoRoute
   '/download': typeof DownloadRoute
   '/film': typeof FilmRoute
+  '/films': typeof FilmsRoute
   '/invite-preview': typeof InvitePreviewRoute
   '/offline-studio': typeof OfflineStudioRoute
   '/preview-frame': typeof PreviewFrameRoute
@@ -162,6 +171,7 @@ export interface FileRouteTypes {
     | '/demo'
     | '/download'
     | '/film'
+    | '/films'
     | '/invite-preview'
     | '/offline-studio'
     | '/preview-frame'
@@ -179,6 +189,7 @@ export interface FileRouteTypes {
     | '/demo'
     | '/download'
     | '/film'
+    | '/films'
     | '/invite-preview'
     | '/offline-studio'
     | '/preview-frame'
@@ -196,6 +207,7 @@ export interface FileRouteTypes {
     | '/demo'
     | '/download'
     | '/film'
+    | '/films'
     | '/invite-preview'
     | '/offline-studio'
     | '/preview-frame'
@@ -214,6 +226,7 @@ export interface RootRouteChildren {
   DemoRoute: typeof DemoRoute
   DownloadRoute: typeof DownloadRoute
   FilmRoute: typeof FilmRoute
+  FilmsRoute: typeof FilmsRoute
   InvitePreviewRoute: typeof InvitePreviewRoute
   OfflineStudioRoute: typeof OfflineStudioRoute
   PreviewFrameRoute: typeof PreviewFrameRoute
@@ -267,6 +280,13 @@ declare module '@tanstack/react-router' {
       path: '/film'
       fullPath: '/film'
       preLoaderRoute: typeof FilmRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/films': {
+      id: '/films'
+      path: '/films'
+      fullPath: '/films'
+      preLoaderRoute: typeof FilmsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/invite-preview': {
@@ -342,6 +362,7 @@ const rootRouteChildren: RootRouteChildren = {
   DemoRoute: DemoRoute,
   DownloadRoute: DownloadRoute,
   FilmRoute: FilmRoute,
+  FilmsRoute: FilmsRoute,
   InvitePreviewRoute: InvitePreviewRoute,
   OfflineStudioRoute: OfflineStudioRoute,
   PreviewFrameRoute: PreviewFrameRoute,
