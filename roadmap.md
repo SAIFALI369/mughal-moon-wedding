@@ -1,6 +1,8 @@
 # Wedding invitation update
 
 ## Cinematic theme refinement
+- [x] Harden motion pause/resume, gate timing and phone efficiency; preserve guest state in the theme showcase.
+- [x] Recheck all 24 cinematic themes, phone/reduced motion, retained guest input, celebration link and chat opening; 44 targeted tests and automatic builds passed.
 - [x] Integrate restrained curtain reveals, image motion, layered parallax and theme transitions into existing invitation heroes.
 - [x] Verify desktop/mobile, reduced motion, theme changes and unobstructed controls; run relevant tests (55 passing).
 

@@ -13484,11 +13484,14 @@ body:has(.preview-frame-document) {
     translate: 0 0;
   }
 }
-.cinema-hero[data-revealed="false"] :is(.cinema-sheer, .stage-copy > *, .sb-hero-copy > *) {
+.cinema-hero[data-revealed="false"] :is(.cinema-sheer, .tcine i, .full-art-image, .full-art-fill, .sb-hero-art, .stage-copy > *, .sb-hero-copy > *) {
   animation-play-state: paused;
 }
 .cinema-hero[data-paused="true"] :is(.tcine i, .full-art-image, .full-art-fill, .sb-hero-art) {
   animation-play-state: paused;
+}
+.cinema-hero .tcine {
+  translate: 0 calc(var(--cinema-depth) * 0.55);
 }
 /* Avoid stacking the old butterfly/firework/orbit effects with the new film layer. */
 .cinema-hero :is(.living-scene, .stage-orbit, .stage-light) {
@@ -13508,7 +13511,7 @@ body:has(.preview-frame-document) {
   .cinema-hero :is(.full-art-image, .full-art-fill, .sb-hero-art) {
     animation-duration: 36s;
   }
-  .cinema-hero :is(.stage-frame, .invite-hero-frame, .sb-hero-visual) {
+  .cinema-hero :is(.stage-frame, .invite-hero-frame, .sb-hero-visual, .tcine) {
     translate: none;
   }
 }
@@ -13522,7 +13525,7 @@ body:has(.preview-frame-document) {
   .cinema-sheers {
     display: none;
   }
-  .cinema-hero :is(.stage-frame, .invite-hero-frame, .sb-hero-visual) {
+  .cinema-hero :is(.stage-frame, .invite-hero-frame, .sb-hero-visual, .tcine) {
     translate: none;
   }
   .cinema-hero :is(.cinema-moon-copy, .cinema-moon-copy *) {
