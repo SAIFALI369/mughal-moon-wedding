@@ -89,30 +89,32 @@ const DURATION = 8;
 
 /** Camera expressions over the zoompan filter, in output pixels. */
 const moves = {
+  // The moves are deliberately readable: a guest should see, within two
+  // seconds, that this is a film and not a photograph.
   push: {
-    z: `1.03+0.075*on/${DURATION * FPS}`,
+    z: `1.02+0.20*on/${DURATION * FPS}`,
     x: `iw/2-(iw/zoom/2)`,
-    y: `ih/2-(ih/zoom/2)-18*on/${DURATION * FPS}`,
+    y: `ih/2-(ih/zoom/2)-46*on/${DURATION * FPS}`,
   },
   drift: {
-    z: `1.06+0.045*sin(2*PI*on/${DURATION * FPS})`,
-    x: `iw/2-(iw/zoom/2)+26*sin(2*PI*on/${DURATION * FPS})`,
-    y: `ih/2-(ih/zoom/2)+14*cos(2*PI*on/${DURATION * FPS})`,
+    z: `1.10+0.09*sin(2*PI*on/${DURATION * FPS})`,
+    x: `iw/2-(iw/zoom/2)+62*sin(2*PI*on/${DURATION * FPS})`,
+    y: `ih/2-(ih/zoom/2)+28*cos(2*PI*on/${DURATION * FPS})`,
   },
   breathe: {
-    z: `1.04+0.022*sin(2*PI*on/${DURATION * FPS})`,
+    z: `1.04+0.085*sin(2*PI*on/${DURATION * FPS})`,
     x: `iw/2-(iw/zoom/2)`,
-    y: `ih/2-(ih/zoom/2)`,
+    y: `ih/2-(ih/zoom/2)-14*sin(2*PI*on/${DURATION * FPS})`,
   },
   rise: {
-    z: `1.05+0.05*on/${DURATION * FPS}`,
-    x: `iw/2-(iw/zoom/2)`,
-    y: `ih/2-(ih/zoom/2)+40*on/${DURATION * FPS}`,
+    z: `1.04+0.14*on/${DURATION * FPS}`,
+    x: `iw/2-(iw/zoom/2)+18*sin(2*PI*on/${DURATION * FPS})`,
+    y: `ih/2-(ih/zoom/2)+96*on/${DURATION * FPS}`,
   },
   water: {
-    z: `1.05+0.04*on/${DURATION * FPS}`,
-    x: `iw/2-(iw/zoom/2)+12*sin(4*PI*on/${DURATION * FPS})`,
-    y: `ih/2-(ih/zoom/2)-28*on/${DURATION * FPS}`,
+    z: `1.04+0.12*on/${DURATION * FPS}`,
+    x: `iw/2-(iw/zoom/2)+24*sin(4*PI*on/${DURATION * FPS})`,
+    y: `ih/2-(ih/zoom/2)-70*on/${DURATION * FPS}`,
   },
 };
 
@@ -140,7 +142,7 @@ function drawParticles(kind, [width, height]) {
   };
 
   if (kind === "petals") {
-    for (let index = 0; index < 46; index += 1) {
+    for (let index = 0; index < 70; index += 1) {
       const x = Math.round(rnd() * width);
       const y = Math.round(rnd() * height);
       const rx = 4 + Math.round(rnd() * 7);
@@ -152,7 +154,7 @@ function drawParticles(kind, [width, height]) {
       );
     }
   } else if (kind === "embers") {
-    for (let index = 0; index < 130; index += 1) {
+    for (let index = 0; index < 190; index += 1) {
       const x = Math.round(rnd() * width);
       const y = Math.round(rnd() * height);
       const radius = Math.round(1 + rnd() * 2.4);
@@ -162,7 +164,7 @@ function drawParticles(kind, [width, height]) {
       );
     }
   } else if (kind === "stars") {
-    for (let index = 0; index < 150; index += 1) {
+    for (let index = 0; index < 220; index += 1) {
       const x = Math.round(rnd() * width);
       const y = Math.round(rnd() * height * 1.4);
       const radius = Math.round(0.6 + rnd() * 1.5);
@@ -173,7 +175,7 @@ function drawParticles(kind, [width, height]) {
     }
   } else {
     // bokeh: soft out-of-focus lanterns, large and dim
-    for (let index = 0; index < 22; index += 1) {
+    for (let index = 0; index < 30; index += 1) {
       const x = Math.round(rnd() * width);
       const y = Math.round(rnd() * height);
       const radius = 8 + Math.round(rnd() * 26);

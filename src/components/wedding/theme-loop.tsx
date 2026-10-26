@@ -42,7 +42,7 @@ export function ThemeLoop({
 }) {
   const reduced = useReducedMotion();
   const ref = useRef<HTMLVideoElement>(null);
-  const [live, setLive] = useState(false);
+  const [failed, setFailed] = useState(false);
   const [mounted, setMounted] = useState(priority);
   const active = enabled && !reduced;
 
@@ -82,8 +82,8 @@ export function ThemeLoop({
       if (started && typeof started.catch === "function") {
         started.catch(() => {
           // Autoplay refused (battery saver, data saver, older browser): the
-          // poster is already on screen, so the card simply stays a still.
-          setLive(false);
+          // photograph is already on screen underneath, so the card simply
+          // stays a still — nothing breaks, nothing jumps.
         });
       }
     };
@@ -112,13 +112,17 @@ export function ThemeLoop({
 
   if (!active) return null;
 
+  if (failed) return null;
+
   return (
     <video
       ref={ref}
       className={`theme-loop ${className}`.trim()}
-      data-live={live ? "true" : undefined}
-      poster={undefined}
       src={mounted ? themeLoop(theme) : undefined}
+      // `autoPlay` matters: the browser starts the muted film itself, without
+      // waiting for hydration or a script. The effect above is the backup (and
+      // the wake-up call for browsers that refused it at load).
+      autoPlay
       muted
       loop
       playsInline
@@ -127,8 +131,7 @@ export function ThemeLoop({
       controls={false}
       tabIndex={-1}
       aria-hidden="true"
-      onLoadedData={() => setLive(true)}
-      onError={() => setLive(false)}
+      onError={() => setFailed(true)}
     />
   );
 }

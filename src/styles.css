@@ -2777,10 +2777,8 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner {
   object-fit: contain;
   object-position: center;
   pointer-events: none;
-  opacity: 0;
-  transition: opacity 1.1s ease;
-}
-.theme-loop[data-live="true"] {
+  /* Visible immediately: the first frame is the same picture as the still
+     underneath, so there is nothing to flash. */
   opacity: 1;
 }
 /* The photograph stays underneath as the poster frame, so a card is complete
@@ -13659,15 +13657,10 @@ body:has(.preview-frame-document) {
 }
 .film-shot-video {
   object-fit: contain;
-  opacity: 0;
-  transition: opacity 0.8s ease;
+  opacity: 1;
   pointer-events: none;
 }
-.film-shot-video[data-ready="true"] {
-  opacity: 1;
-}
 /* A decoded frame makes the CSS camera move redundant: the real film is moving. */
-.film-shot-video[data-ready="true"] ~ .film-shot-frame,
 .film-shot:has(.film-shot-video[data-ready="true"]) .film-shot-frame,
 .film-shot:has(.film-shot-video[data-ready="true"]) .film-shot-fill {
   opacity: 0;
@@ -14667,4 +14660,127 @@ body:has(.preview-frame-document) {
   .film-bar {
     transition: none;
   }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   Film wall — /films
+   Every theme's hero film playing side by side, with honest playback state.
+   ═══════════════════════════════════════════════════════════════════════════ */
+.film-wall {
+  min-height: 100vh;
+  background: #0a0c12;
+  color: #f4ecdc;
+  padding: clamp(1.5rem, 4vw, 3.5rem) clamp(1rem, 4vw, 3rem) 4rem;
+}
+.film-wall header {
+  max-width: 62rem;
+  margin: 0 auto 2.2rem;
+  text-align: center;
+}
+.film-wall-kicker {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.6rem;
+  letter-spacing: 0.4em;
+  text-transform: uppercase;
+  color: #e2c48b;
+}
+.film-wall h1 {
+  margin: 0.6rem 0 0.9rem;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 400;
+  font-size: clamp(2rem, 5vw, 3.2rem);
+  line-height: 1.05;
+}
+.film-wall-lede {
+  margin: 0 auto;
+  max-width: 44rem;
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-size: 1.05rem;
+  line-height: 1.65;
+  color: rgba(244, 236, 220, 0.75);
+}
+.film-wall-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem 1.2rem;
+  justify-content: center;
+  margin-top: 1.2rem;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.film-wall-links a {
+  border-bottom: 1px solid rgba(226, 196, 139, 0.5);
+  padding-bottom: 2px;
+  color: #e2c48b;
+}
+.film-wall-grid {
+  display: grid;
+  gap: 1rem;
+  max-width: 78rem;
+  margin: 0 auto;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 17rem), 1fr));
+}
+.film-tile {
+  margin: 0;
+  border: 1px solid rgba(226, 196, 139, 0.2);
+  border-radius: 0.6rem;
+  overflow: hidden;
+  background: #05070d;
+}
+.film-tile video {
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+  background: #05070d;
+}
+.film-tile figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.25rem 0.6rem;
+  padding: 0.6rem 0.75rem 0.7rem;
+}
+.film-tile strong {
+  font-family: "Cormorant Garamond", Georgia, serif;
+  font-weight: 500;
+  font-size: 1.02rem;
+}
+.film-tile small {
+  flex-basis: 100%;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.56rem;
+  letter-spacing: 0.08em;
+  color: rgba(244, 236, 220, 0.45);
+}
+.film-tile span {
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.54rem;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+.film-tile span[data-state="playing"] {
+  color: #8fe0a8;
+}
+.film-tile span[data-state="blocked"],
+.film-tile span[data-state="paused"] {
+  color: #f0c76b;
+}
+.film-tile span[data-state="error"] {
+  color: #f08a7a;
+}
+.film-tile span[data-state="loading"] {
+  color: rgba(244, 236, 220, 0.5);
+}
+.film-wall footer {
+  max-width: 44rem;
+  margin: 2.4rem auto 0;
+  text-align: center;
+  font-family: var(--font-sans, system-ui, sans-serif);
+  font-size: 0.7rem;
+  line-height: 1.8;
+  color: rgba(244, 236, 220, 0.55);
 }
