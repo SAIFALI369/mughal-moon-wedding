@@ -41,7 +41,6 @@ function StorybookPreview() {
         <span>Sample invitation · no replies saved</span>
       </nav>
       <PersonalInvitation
-        key={theme}
         title={wedding.title}
         content={{ ...wedding, theme }}
         preview

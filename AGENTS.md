@@ -13,3 +13,4 @@
 - Keep private RSVP details separate from the public wishes table; a trigger publishes only names, messages, and timestamps for live subscribers.
 - Load public wishes through the route query loader and invalidate that query on Realtime inserts and successful submissions so every viewer receives saved replies.
 - Keep cinematic motion in the shared CinematicHero presentation boundary; theme-key only its hero scene, never forms or concierge, to preserve guest state during theme changes.
+- Pause cinematic background loops behind the entry gate, offscreen and in hidden tabs; disable scroll-frame work on phones and reduced-motion devices to avoid unnecessary rendering.
