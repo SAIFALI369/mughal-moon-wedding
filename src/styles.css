@@ -2767,6 +2767,24 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner {
   filter: blur(30px) brightness(0.72) saturate(1.2);
   transform: scale(1.15);
 }
+.theme-loop,
+.full-art-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+  object-position: center;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 1.1s ease;
+}
+.theme-loop[data-live="true"] {
+  opacity: 1;
+}
+/* The photograph stays underneath as the poster frame, so a card is complete
+   before the film lands — and still complete if it never can. */
 .full-art-image {
   position: relative;
   display: block;
@@ -12820,6 +12838,14 @@ body:has(.preview-frame-document) {
   object-fit: cover;
   border-radius: 999px 999px 0.65rem 0.65rem;
 }
+/* The frame's own film, cropped to the portrait mat like the photograph. */
+.sb-hero-video {
+  object-fit: cover;
+  border-radius: 999px 999px 0.65rem 0.65rem;
+}
+[data-theme="calligraphy"] .sb-hero-video {
+  border-radius: 0.45rem;
+}
 [data-theme="calligraphy"] .sb-hero {
   border-bottom: 1px solid var(--border);
 }
@@ -13623,12 +13649,29 @@ body:has(.preview-frame-document) {
   backface-visibility: hidden;
 }
 .film-shot-fill,
-.film-shot-frame {
+.film-shot-frame,
+.film-shot-video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   display: block;
+}
+.film-shot-video {
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+}
+.film-shot-video[data-ready="true"] {
+  opacity: 1;
+}
+/* A decoded frame makes the CSS camera move redundant: the real film is moving. */
+.film-shot-video[data-ready="true"] ~ .film-shot-frame,
+.film-shot:has(.film-shot-video[data-ready="true"]) .film-shot-frame,
+.film-shot:has(.film-shot-video[data-ready="true"]) .film-shot-fill {
+  opacity: 0;
+  transition: opacity 0.8s ease;
 }
 .film-shot-fill {
   object-fit: cover;
@@ -14228,12 +14271,22 @@ body:has(.preview-frame-document) {
   backface-visibility: hidden;
 }
 .reel-live-fill,
-.reel-live-frame {
+.reel-live-frame,
+.reel-live-video {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   display: block;
+}
+.reel-live-video {
+  object-fit: contain;
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  pointer-events: none;
+}
+.reel-live-video[data-live="true"] {
+  opacity: 1;
 }
 .reel-live-fill {
   object-fit: cover;

@@ -104,7 +104,8 @@ describe("living page", () => {
       expect(page).toContain(`data-theme="${theme}"`);
       expect(page).toContain("living-scene living-page");
       expect(page).toContain("living-drapes");
-      expect(page).not.toContain("<video");
+      // A real, silent hero film ships with each theme, alongside the CSS layer.
+      expect(page).toContain(`src="/film/${theme}.mp4"`);
     }
   });
 

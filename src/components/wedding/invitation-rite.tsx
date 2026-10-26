@@ -4,6 +4,7 @@ import { ChevronDown } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
 import { CouplePortraits } from "./invitation-stage";
 import type { InvitationTheme } from "./invitation-options";
+import { ThemeLoop } from "./theme-loop";
 
 /**
  * Which tradition a theme belongs to. Hindu themes carry a Sanskrit blessing
@@ -57,19 +58,27 @@ export const riteBlessings: Record<InvitationRite, { text: string; script: strin
  */
 export function FullArtFrame({
   src,
+  theme,
   className = "",
   priority = false,
   alt = "",
+  motion = true,
 }: {
   src: string;
+  /** The card's theme: its own film plays over the still once it is ready. */
+  theme?: InvitationTheme;
   className?: string;
   priority?: boolean;
   /** Describe the picture when it carries meaning; leave empty when decorative. */
   alt?: string;
+  /** False keeps this frame a still, even when a film exists for the theme. */
+  motion?: boolean;
 }) {
   return (
     <div className={`full-art ${className}`.trim()}>
       <img src={src} alt="" aria-hidden="true" className="full-art-fill" />
+      {/* The photograph is both the poster frame and the fallback: it is on
+          screen before the video, and it stays if the film cannot play. */}
       <img
         src={src}
         alt={alt}
@@ -78,6 +87,9 @@ export function FullArtFrame({
         fetchPriority={priority ? "high" : undefined}
         loading={priority ? undefined : "lazy"}
       />
+      {theme && (
+        <ThemeLoop theme={theme} className="full-art-video" priority={priority} enabled={motion} />
+      )}
     </div>
   );
 }
@@ -246,7 +258,12 @@ export function MandapStage({
           className="mandap-scene"
           style={reduced ? undefined : { scale: sceneScale, y: sceneY }}
         >
-          <FullArtFrame src={backgroundImage} className="mandap-scene-art" priority />
+          <FullArtFrame
+            src={backgroundImage}
+            theme={details.theme}
+            className="mandap-scene-art"
+            priority
+          />
           <div className="mandap-scene-shade" aria-hidden="true" />
         </motion.div>
 

@@ -84,7 +84,7 @@ export function InvitationStage({
         style={{ y: parallax }}
         className="stage-background absolute inset-0 -z-30 h-[115%] w-full"
       >
-        <FullArtFrame src={backgroundImage} priority />
+        <FullArtFrame src={backgroundImage} theme={details.theme} priority />
       </motion.div>
       <div className="stage-shade absolute inset-0 -z-20" aria-hidden="true" />
       <LivingScene theme={details.theme} variant="stage" />

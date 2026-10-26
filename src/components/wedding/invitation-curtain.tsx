@@ -67,7 +67,12 @@ export function CurtainStage({
           className="curtain-scene"
           style={reduced ? undefined : { scale: sceneScale, y: sceneY }}
         >
-          <FullArtFrame src={backgroundImage} className="curtain-scene-art" priority />
+          <FullArtFrame
+            src={backgroundImage}
+            theme={details.theme}
+            className="curtain-scene-art"
+            priority
+          />
           <div className="curtain-scene-glow" aria-hidden="true" />
           <div className="curtain-rays" aria-hidden="true" />
           <div className="curtain-motes" aria-hidden="true" />

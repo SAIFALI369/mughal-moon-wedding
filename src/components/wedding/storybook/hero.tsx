@@ -1,14 +1,18 @@
 import type { ReactNode } from "react";
 import type { InvitationDetails } from "../invitation-details";
 import { invitationArt } from "../invitation-art";
+import { ThemeLoop } from "../theme-loop";
 import { CouplePortraits } from "../invitation-stage";
 
 export function StorybookHero({
   details,
   actions,
+  motion = true,
 }: {
   details: InvitationDetails;
   actions?: ReactNode;
+  /** False keeps the framed photograph a still, as the host asked. */
+  motion?: boolean;
 }) {
   return (
     <section id="invitation-top" tabIndex={-1} className="sb-hero">
@@ -20,6 +24,7 @@ export function StorybookHero({
             fetchPriority="high"
             className="sb-hero-art"
           />
+          <ThemeLoop theme={details.theme} className="sb-hero-video" priority enabled={motion} />
         </div>
       </div>
       <div className="sb-hero-copy">

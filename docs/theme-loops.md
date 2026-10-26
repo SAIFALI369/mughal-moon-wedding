@@ -1,0 +1,77 @@
+# Theme films — real video in the existing themes
+
+Every theme now ships a real, silent, looping video beside its illustration.
+The hero plays it automatically the moment the card renders; the illustration
+stays underneath as the poster frame.
+
+- Built by `node scripts/build-theme-loops.mjs`
+- Output: `public/film/<theme>.mp4` — 8 s, 1024×576, H.264 (main), ~120–580 KB
+- Rendered by `src/components/wedding/theme-loop.tsx`
+- Tests: `src/test/theme-loops.test.tsx`
+
+## What each film is
+
+The illustration is the plate; the script adds the movement and the air:
+
+The frame is cut to each illustration's own aspect ratio (the three Eid-sky
+themes and the cinematic theme are not 16:9), so the film fades in over its
+still without the picture jumping.
+
+| Camera move | Where it is used | Feel |
+| --- | --- | --- |
+| `push` | luxury, fairytale | a slow dolly-in, no sway |
+| `drift` | rajmahal, aladin, ballroom, mehndi, mela, riad, bihari, haldi, calligraphy, diya | push plus a lazy sideways sway |
+| `breathe` | lotus, classic, mandap, jharokha, vows-in-ink, mecca | almost still; only the light changes |
+| `rise` | eid, mughal, futuristic, chand-bagh | the lens lifts toward the sky |
+| `water` | kashi-ghat | a slow downward travel, so the river reads as flowing |
+
+On top of the plate, one ambient layer drifts continuously:
+
+- **petals** — soft bokeh petals (wedding, spring, mehndi, haldi themes)
+- **embers** — rising sparks and diya light (luxury, calligraphy, kashi, diya)
+- **stars** — fine twinkle over the night skies (eid, mughal, chand-bagh)
+- **lantern** — large, dim lantern bokeh (rajmahal, aladin, ballroom, riad)
+
+Everything is derived from the theme's own art, so a theme recolor reskins both
+the still and the film. The cut list lives at the top of the script; change a
+`move` or an `air` and rerun.
+
+## Build
+
+```bash
+node scripts/build-theme-loops.mjs            # rebuild only what changed
+node scripts/build-theme-loops.mjs --force    # rebuild all 24
+node scripts/build-theme-loops.mjs --theme riad-noor
+```
+
+Requirements: `ffmpeg` (bundled via `@ffmpeg-installer/ffmpeg`, a devDependency)
+and ImageMagick's `convert` for the particle overlays. The script is idempotent:
+it skips any film newer than its illustration and itself, so a normal build never
+re-encodes 24 videos.
+
+## How it plays
+
+- `<video muted loop playsinline preload="none">`, `aria-hidden`, no controls —
+  a background film, never a second player competing with the soundtrack.
+- The hero loads on mount (`priority`); anything further down the page waits
+  until it is within 400 px of the viewport.
+- Playback follows visibility: it pauses when the stage scrolls away or the tab
+  is hidden, and resumes on return. One tap anywhere wakes a browser that
+  refused autoplay at load.
+- The still is visible first and the film fades over it once its first frame is
+  decoded (`[data-live="true"]`) — so a card is complete before the video lands,
+  and stays complete if the video ever fails.
+- `prefers-reduced-motion`, or a host who turned **Opening gates** off, keeps the
+  still and mounts no video at all.
+- The cinematic theme (`mughal-moon-film`) uses its vertical film twice: inside
+  the full-screen player, and as one continuous take behind the live hero — a
+  single `<video>` seeked to each act, so the shot changes are straight cuts in
+  a reel rather than three separate clips. Its CSS stills fade out beneath it as
+  soon as the first frame decodes.
+
+## Adding a theme
+
+1. Drop the illustration in `src/assets/themes/`, register it in
+   `invitation-art.ts` and `invitation-options.ts`.
+2. Add one line to `cuts` in `scripts/build-theme-loops.mjs`.
+3. Run the script. `src/test/theme-loops.test.tsx` fails until the film exists.

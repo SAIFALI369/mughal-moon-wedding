@@ -99,7 +99,10 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
       document.documentElement.classList.toggle("dark", next);
       window.dispatchEvent(new Event("wedding:theme"));
     };
-    if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches && typeof document.startViewTransition === "function") {
+    if (
+      !window.matchMedia("(prefers-reduced-motion: reduce)").matches &&
+      typeof document.startViewTransition === "function"
+    ) {
       document.startViewTransition(applyTheme);
     } else applyTheme();
     localStorage.setItem("wedding-theme", next ? "dark" : "light");
@@ -289,10 +292,12 @@ export function Preloader({
   }
 
   return (
-    <AnimatePresence onExitComplete={() => {
-      window.dispatchEvent(new Event("wedding:revealed"));
-      onDone();
-    }}>
+    <AnimatePresence
+      onExitComplete={() => {
+        window.dispatchEvent(new Event("wedding:revealed"));
+        onDone();
+      }}
+    >
       {show && (
         <motion.div
           role="dialog"
@@ -302,7 +307,13 @@ export function Preloader({
           transition={{ duration: 0.5 }}
           className={`heavenly-entrance fixed inset-0 z-[100] overflow-hidden ${opening ? "is-opening" : ""} ${curtain ? "is-curtain" : ""}`}
         >
-          <FullArtFrame src={backgroundImage} className="gate-sky" priority />
+          <FullArtFrame
+            src={backgroundImage}
+            theme={theme}
+            className="gate-sky"
+            priority
+            motion={!gateReduced}
+          />
           <div className="gate-radiance" aria-hidden="true" />
           {theme && <LivingScene theme={theme} variant="gate" reduce={gateReduced} />}
           <div className="heavenly-gate gate-left" aria-hidden="true">
@@ -407,7 +418,8 @@ export function Hero({
   const [demoTheme, setDemoTheme] = useState<InvitationTheme>("eid");
   useEffect(() => {
     if (theme) return;
-    const sync = () => setDemoTheme(document.documentElement.classList.contains("dark") ? "mughal" : "eid");
+    const sync = () =>
+      setDemoTheme(document.documentElement.classList.contains("dark") ? "mughal" : "eid");
     sync();
     window.addEventListener("wedding:theme", sync);
     return () => window.removeEventListener("wedding:theme", sync);
@@ -423,6 +435,7 @@ export function Hero({
       <motion.div style={reduced ? undefined : { y }} className="absolute inset-0">
         <FullArtFrame
           src={backgroundImage}
+          theme={theme ?? demoTheme}
           className="eid-hero-art"
           priority
           alt={
@@ -442,7 +455,10 @@ export function Hero({
           }
         />
       )}
-      <motion.div style={reduced ? undefined : { opacity: fade }} className="cinema-moon-copy relative z-10 px-6 pt-12 text-center">
+      <motion.div
+        style={reduced ? undefined : { opacity: fade }}
+        className="cinema-moon-copy relative z-10 px-6 pt-12 text-center"
+      >
         <motion.p
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -546,7 +562,13 @@ export function Hero({
       </motion.a>
     </section>
   );
-  return theme ? hero : <CinematicHero theme={demoTheme} waitingForGate>{hero}</CinematicHero>;
+  return theme ? (
+    hero
+  ) : (
+    <CinematicHero theme={demoTheme} waitingForGate>
+      {hero}
+    </CinematicHero>
+  );
 }
 
 /* ───────── Countdown ───────── */
