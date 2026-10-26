@@ -1,5 +1,10 @@
 # Wedding invitation update
 
+## Actual cinematic video coverage
+- [x] Audit the 24 registered themes and shared entry, hero, event and finale insertion points.
+- [ ] Source verified, theme-matched footage and integrate actual video through all 24 themes; first generated clip rejected for insufficient credits (approximately 3.05 credits). No video assets or app-code changes made; stock sources found but not downloaded or license-verified.
+- [ ] Validate video loading, phone/data-saving/reduced-motion fallbacks, theme switching and guest interactions after integration; blocked on usable footage.
+
 ## Cinematic theme refinement
 - [x] Harden motion pause/resume, gate timing and phone efficiency; preserve guest state in the theme showcase.
 - [x] Recheck all 24 cinematic themes, phone/reduced motion, retained guest input, celebration link and chat opening; 44 targeted tests and automatic builds passed.
