@@ -119,7 +119,7 @@ describe("two interactive worlds", () => {
       expect(page).toContain(
         theme === "mela-maidan" ? "Chintu has a ticket for you" : "Noor is waiting",
       );
-      expect(page).not.toContain("<video");
+      expect(page).toContain(`src="/film/${theme}.mp4"`);
       // Every required section still exists.
       for (const id of ["celebration", "schedule", "venue", "gallery", "rsvp", "wishes"]) {
         expect(page).toContain(`id="${id}"`);

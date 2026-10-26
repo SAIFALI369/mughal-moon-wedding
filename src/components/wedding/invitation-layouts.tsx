@@ -88,7 +88,7 @@ export function ChhatriDawnStage({
       data-reduced={reduced ? "true" : undefined}
     >
       <motion.div className="dawn-sky" style={reduced ? undefined : { y: artY }} aria-hidden="true">
-        <FullArtFrame src={backgroundImage} className="dawn-art" priority />
+        <FullArtFrame src={backgroundImage} theme={details.theme} className="dawn-art" priority />
         <span className="dawn-wash" />
       </motion.div>
       <LivingScene theme={details.theme} variant="hero" reduce={reduced ?? false} />
@@ -203,7 +203,12 @@ export function BaagStage({
               style={reduced ? undefined : { scale: artScale }}
               aria-hidden="true"
             >
-              <FullArtFrame src={backgroundImage} className="baag-art" priority />
+              <FullArtFrame
+                src={backgroundImage}
+                theme={details.theme}
+                className="baag-art"
+                priority
+              />
             </motion.div>
           </span>
           <span className="baag-tape baag-tape-left" aria-hidden="true" />
@@ -353,7 +358,12 @@ export function SingleStrokeStage({
           transition={{ duration: 1.2, delay: entranceDelay + 0.2 }}
         >
           <span className="ink-art-mat">
-            <FullArtFrame src={backgroundImage} className="ink-art-frame" priority />
+            <FullArtFrame
+              src={backgroundImage}
+              theme={details.theme}
+              className="ink-art-frame"
+              priority
+            />
           </span>
           <figcaption>
             <span>Handmade paper, one stroke</span>
@@ -532,7 +542,7 @@ export function ChandBaghStage({
       data-reduced={reduced ? "true" : undefined}
     >
       <motion.div className="chand-sky" style={reduced ? undefined : { y: sky }} aria-hidden="true">
-        <FullArtFrame src={backgroundImage} className="chand-art" priority />
+        <FullArtFrame src={backgroundImage} theme={details.theme} className="chand-art" priority />
         <span className="chand-veil" />
         <motion.span className="chand-moon-glow" style={reduced ? undefined : { scale: glow }} />
       </motion.div>
@@ -625,7 +635,7 @@ export function MelaMaidanStage({
       data-reduced={reduced ? "true" : undefined}
     >
       <motion.div className="mela-sky" style={reduced ? undefined : { y: sky }} aria-hidden="true">
-        <FullArtFrame src={backgroundImage} className="mela-art" priority />
+        <FullArtFrame src={backgroundImage} theme={details.theme} className="mela-art" priority />
         <span className="mela-veil" />
       </motion.div>
       <LivingScene theme={details.theme} variant="hero" reduce={reduced ?? false} />

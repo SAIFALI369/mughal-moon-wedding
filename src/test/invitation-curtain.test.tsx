@@ -86,9 +86,10 @@ describe("Grand Curtain layout", () => {
     expect(html).not.toContain("Simran");
   });
 
-  it("is drawn entirely in CSS and inline SVG, with no video or remote asset", () => {
+  it("plays the theme's own local film, never a remote asset", () => {
     const html = stage();
-    expect(html).not.toContain("<video");
+    expect(html).toContain("<video");
+    expect(html).toContain('src="/film/fairytale.mp4"');
     expect(html).not.toContain("<iframe");
     // The only assets are the card's own bundled artwork (full image plus its
     // blurred fill), never a remote host.

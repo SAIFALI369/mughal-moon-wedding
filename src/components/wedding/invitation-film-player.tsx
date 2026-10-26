@@ -3,6 +3,8 @@ import { useReducedMotion } from "framer-motion";
 import { Pause, Play, SkipForward, Volume2, VolumeX, X } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
 import { invitationFilmArt } from "./invitation-art";
+import { themeLoop } from "./invitation-art";
+import { playMedia } from "./theme-loop";
 import {
   FILM_DURATION,
   chapterAt,
@@ -55,8 +57,11 @@ export function MughalMoonFilm({
   const [sound, setSound] = useState(true);
   const [closing, setClosing] = useState(false);
   const audioRef = useRef<HTMLAudioElement>(null);
+  const videoRefs = useRef(new Map<string, HTMLVideoElement>());
+  const [readyShots, setReadyShots] = useState<Set<string>>(new Set());
   const closeTimer = useRef<number | null>(null);
 
+  const playing = phase === "playing" && !paused && !closing;
   const chapter = chapterAt(elapsed);
   const progress = filmProgress(elapsed);
   const finished = elapsed >= FILM_DURATION - 0.2;
@@ -128,12 +133,20 @@ export function MughalMoonFilm({
     if (audio.paused) void audio.play().catch(() => undefined);
   }, [elapsed, sound, phase, closing, chapter.id, titleChapter.from]);
 
-  // A visible pause should be heard as well as seen.
+  // A visible pause should be heard as well as seen — and seen as well as heard:
+  // every shot's film follows the player's own clock.
   useEffect(() => {
     const audio = audioRef.current;
     if (!audio) return;
     if (paused || phase !== "playing") audio.pause();
   }, [paused, phase]);
+
+  useEffect(() => {
+    for (const element of videoRefs.current.values()) {
+      if (playing) playMedia(element);
+      else element.pause();
+    }
+  }, [playing, phase]);
 
   function start() {
     setPhase("playing");
@@ -224,6 +237,27 @@ export function MughalMoonFilm({
                 decoding="async"
                 fetchPriority={shot.id === "palace" ? "high" : undefined}
                 style={{ objectPosition: shot.focus }}
+              />
+              {/* The real thing: the theme's own 16:9 film, already moving under
+                  the still. Once its first frame is decoded it takes over, and
+                  the CSS push-in steps out of its way. */}
+              <video
+                className="film-shot-video"
+                data-ready={readyShots.has(shot.id) ? "true" : undefined}
+                src={themeLoop(details.theme)}
+                muted
+                loop
+                playsInline
+                preload={shot.id === "palace" ? "auto" : "none"}
+                disablePictureInPicture
+                tabIndex={-1}
+                aria-hidden="true"
+                ref={(element) => {
+                  if (!element) return;
+                  videoRefs.current.set(shot.id, element);
+                  if (playing) playMedia(element);
+                }}
+                onLoadedData={() => setReadyShots((current) => new Set(current).add(shot.id))}
               />
             </div>
           );

@@ -56,6 +56,14 @@ export const invitationArt: Record<InvitationTheme, string> = {
  * artwork, so the opening film, the scroll-scrubbed stage and the act strip all
  * use the same pictures and ship with the card.
  */
+/**
+ * Every theme ships a real hero film beside its illustration: eight silent
+ * seconds of the same scene, built by `scripts/build-theme-loops.mjs`.
+ */
+export function themeLoop(theme: InvitationTheme): string {
+  return `/film/${theme}.mp4`;
+}
+
 export const invitationFilmArt = {
   palace: filmPalace,
   arch: filmArch,

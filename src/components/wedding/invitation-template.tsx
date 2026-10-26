@@ -522,7 +522,7 @@ export function PersonalInvitation({
         }
       >
         {storybook ? (
-          <StorybookHero details={details} actions={actions} />
+          <StorybookHero details={details} actions={actions} motion={details.elements.gate} />
         ) : layout === "reel" ? (
           <LiveReelHero
             details={details}

@@ -143,7 +143,9 @@ describe("Mughal Moon — The Film", () => {
     expect(html).toContain("Garden Pavilion");
     // The score only loads once the guest starts the picture.
     expect(html).not.toContain("<audio");
-    expect(html).not.toContain("<video");
+    // The picture itself is a real video, muted, looping and inline.
+    expect(html).toContain("<video");
+    expect(html).toContain('src="/film/mughal-moon-film.mp4"');
     expect(html).not.toContain("<iframe");
   });
 
@@ -159,11 +161,15 @@ describe("Mughal Moon — The Film", () => {
     expect(filmStory(details).invitation).toContain("The celebration is only beginning");
   });
 
-  it("draws the film only from the card's own bundled artwork", () => {
+  it("draws the film only from the card's own bundled artwork and its own video", () => {
     const sources = [...film().matchAll(/src="([^"]+)"/g)].map((match) => match[1]!);
     expect(sources.length).toBeGreaterThan(0);
     for (const source of sources) {
-      expect(Object.values(invitationFilmArt)).toContain(source);
+      // Stills come from the theme's bundled shots; the picture is its own film.
+      expect(
+        Object.values(invitationFilmArt).includes(source) ||
+          source === "/film/mughal-moon-film.mp4",
+      );
       expect(source).not.toMatch(/^https?:/);
     }
   });
@@ -203,8 +209,8 @@ describe("Mughal Moon — The Film", () => {
     expect(page).not.toContain('data-film-phase="poster"');
     expect(page).toContain('id="celebration"');
     expect(page).toContain('id="rsvp"');
-    // The only iframe on the page is the venue map; the film needs none.
-    expect(page).not.toContain("<video");
+    // The hero runs the theme's real film, and the only iframe is the venue map.
+    expect(page).toContain('src="/film/mughal-moon-film.mp4"');
     expect(page.match(/<iframe/g)?.length).toBe(1);
   });
 
@@ -219,8 +225,9 @@ describe("Mughal Moon — The Film", () => {
     );
     expect(still).toContain('data-auto="false"');
     expect(still).toContain("reel-live");
-    // No score element is mounted when the hero cannot move.
+    // No score and no video are mounted when the hero cannot move: it is a still.
     expect(still).not.toContain("<audio");
+    expect(still).not.toContain("<video");
   });
 
   it("gives the card a cover of its own, not the shared tombstone", () => {

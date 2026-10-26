@@ -65,6 +65,16 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+/**
+ * Hero films are videos and they autoplay (muted, silently). These tests are
+ * about the soundtrack, so count only the <audio> elements that were played.
+ */
+function audioPlays(spy: ReturnType<typeof vi.spyOn>): number {
+  return (spy.mock.instances as unknown[]).filter(
+    (instance) => typeof HTMLAudioElement !== "undefined" && instance instanceof HTMLAudioElement,
+  ).length;
+}
+
 describe("soundtrack door-open autoplay", () => {
   it("assigns default titles to untitled MP3, YouTube, and Spotify links", () => {
     const sanitized = sanitizeInvitationSongs([
@@ -105,9 +115,9 @@ describe("soundtrack door-open autoplay", () => {
       />,
     );
 
-    expect(playSpy).not.toHaveBeenCalled();
+    expect(audioPlays(playSpy)).toBe(0);
     fireEvent.click(screen.getByRole("button", { name: /Open the gates/i }));
-    expect(playSpy).toHaveBeenCalledTimes(1);
+    expect(audioPlays(playSpy)).toBe(1);
   });
 
   it("plays MP3 audio synchronously when opening Royal Editions double doors", () => {
@@ -124,9 +134,9 @@ describe("soundtrack door-open autoplay", () => {
       />,
     );
 
-    expect(playSpy).not.toHaveBeenCalled();
+    expect(audioPlays(playSpy)).toBe(0);
     fireEvent.click(screen.getByRole("button", { name: /Open invitation/i }));
-    expect(playSpy).toHaveBeenCalledTimes(1);
+    expect(audioPlays(playSpy)).toBe(1);
   });
 
   it("sends YouTube IFrame API playVideo commands synchronously on door open", () => {
@@ -206,7 +216,7 @@ describe("soundtrack door-open autoplay", () => {
     );
 
     fireEvent.pointerDown(document.body);
-    expect(playSpy).not.toHaveBeenCalled();
+    expect(audioPlays(playSpy)).toBe(0);
   });
 
   it("starts playback on first interaction when a published card has gate disabled", () => {
@@ -234,8 +244,8 @@ describe("soundtrack door-open autoplay", () => {
       />,
     );
 
-    expect(playSpy).not.toHaveBeenCalled();
+    expect(audioPlays(playSpy)).toBe(0);
     fireEvent.pointerDown(document.body);
-    expect(playSpy).toHaveBeenCalledTimes(1);
+    expect(audioPlays(playSpy)).toBe(1);
   });
 });

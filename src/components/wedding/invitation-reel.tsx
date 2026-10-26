@@ -3,10 +3,13 @@ import { useReducedMotion } from "framer-motion";
 import { ChevronDown, Clapperboard, Film, Volume2, VolumeX } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
 import { invitationFilmArt } from "./invitation-art";
+import { themeLoop } from "./invitation-art";
+import { playMedia } from "./theme-loop";
 import { CouplePortraits } from "./invitation-stage";
 import {
   FILM_LOOP_DURATION,
   FILM_FADE,
+  FILM_DURATION,
   filmActs,
   filmFade,
   filmLoopTimeline,
@@ -51,12 +54,17 @@ export function LiveReelHero({
   const [onScreen, setOnScreen] = useState(true);
   const [sound, setSound] = useState(false);
   const [soundBlocked, setSoundBlocked] = useState(false);
+  const [filmLive, setFilmLive] = useState(false);
   const ref = useRef<HTMLElement>(null);
+  const filmRef = useRef<HTMLVideoElement>(null);
   const audioRef = useRef<HTMLAudioElement>(null);
 
   const running = autoPlay && !reduced && onScreen;
   const loopTime = elapsed % FILM_LOOP_DURATION;
   const chapter = loopChapterAt(elapsed);
+  // The theme film runs continuously behind all three shots: each shot joins it
+  // where that shot begins in the full cut, so a dissolve never jumps.
+  const videoOffset = (chapter.from / FILM_DURATION) * 100;
   const shot = story.shots.find((entry) => entry.id === chapter.id) ?? story.shots[0];
   const act = acts[chapter.id === "palace" ? 0 : chapter.id === "arch" ? 1 : 2];
 
@@ -80,6 +88,25 @@ export function LiveReelHero({
     frame = requestAnimationFrame(tick);
     return () => cancelAnimationFrame(frame);
   }, [running]);
+
+  // The hero's own film follows the same rule as the clock: it runs only while
+  // the hero is on screen. It is one continuous film, seeked to each act.
+  useEffect(() => {
+    const element = filmRef.current;
+    if (!element) return;
+    if (running) {
+      playMedia(element);
+      // Join the film where this act begins, so the cut stays continuous.
+      if (element.duration) {
+        const wanted = (chapter.from / FILM_DURATION) * element.duration;
+        if (Math.abs(element.currentTime - wanted) > element.duration * 0.12) {
+          element.currentTime = wanted;
+        }
+      }
+    } else {
+      element.pause();
+    }
+  }, [running, chapter.id]);
 
   // Only move while the hero is actually on screen and the tab is visible.
   useEffect(() => {
@@ -151,6 +178,7 @@ export function LiveReelHero({
       aria-label="Wedding invitation"
       className="reel-live"
       data-theme={details.theme}
+      data-film={filmLive && autoPlay && !reduced ? "live" : undefined}
       data-reduced={reduced ? "true" : undefined}
       data-auto={autoPlay ? "true" : "false"}
       data-chapter={chapter.id}
@@ -183,6 +211,27 @@ export function LiveReelHero({
             />
           </div>
         ))}
+
+        {/* The theme's real film, one continuous take behind all three shots.
+            It fades in over the stills as soon as its first frame is decoded. */}
+        {autoPlay && !reduced && (
+          <video
+            ref={filmRef}
+            className="reel-live-film"
+            src={themeLoop(details.theme)}
+            style={{ objectPosition: "50% 45%", translate: `0 ${-videoOffset * 0.12}%` }}
+            muted
+            loop
+            playsInline
+            preload="auto"
+            disablePictureInPicture
+            tabIndex={-1}
+            aria-hidden="true"
+            data-live={filmLive ? "true" : undefined}
+            onLoadedData={() => setFilmLive(true)}
+            onError={() => setFilmLive(false)}
+          />
+        )}
 
         <div className="reel-grade" aria-hidden="true" />
         <div className="film-leak" aria-hidden="true" />

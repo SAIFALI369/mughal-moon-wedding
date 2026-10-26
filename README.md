@@ -9,6 +9,8 @@ Access is exclusive and issued personally. You create every account in Supabase,
 > AI concierge setup and deployment: [`docs/ai-concierge.md`](docs/ai-concierge.md)
 > Free, near-unlimited AI capacity for the concierge: [`docs/free-ai-router.md`](docs/free-ai-router.md) — the assistant pools ~14 permanent free tiers plus three keyless providers, so it answers with no key at all and scales as you add free keys.
 
+**Cinematic invitation:** the *Mughal Moon — The Film* theme opens as a short film and then a live hero — [`docs/cinematic-film.md`](docs/cinematic-film.md). Every theme also ships a real silent hero loop; build and behaviour: [`docs/theme-loops.md`](docs/theme-loops.md).
+
 ---
 
 ## ✅ Copy-Paste This Entire Prompt Into Lovable:

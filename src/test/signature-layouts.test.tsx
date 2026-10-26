@@ -119,7 +119,8 @@ describe("three signature structures", () => {
     expect(ink).not.toContain("baag-stage");
     for (const page of [dawn, baag, ink]) {
       expect(page).not.toContain("curtain-stage");
-      expect(page).not.toContain("<video");
+      // Each structure runs its own theme film, never another theme's.
+      expect(page).toMatch(/<video[^>]*src="\/film\/(jharokha-dawn|haldi-baag|vows-in-ink)\.mp4"/);
     }
   });
 

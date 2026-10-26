@@ -45,13 +45,16 @@ as the title card arrives, the score steps back, and the button hands over to th
 card. `FILM_DURATION`, `filmTimeline`, `filmFade()` and `filmPush()` in
 `invitation-film.ts` are the whole edit — change them and the player follows.
 
-## Why there is no `<video>` file
+## Real video, plus the CSS cut underneath
 
-The shots are the theme's own photographs moved with CSS transforms, graded with
-gradients, grain and halation. That means:
+This theme's film is a genuine video: `public/film/mughal-moon-film.mp4`, generated
+from its own shot by `scripts/build-theme-loops.mjs` (see
+[`theme-loops.md`](theme-loops.md)). It layers over the CSS cut — the three stills,
+their push-ins, grain and halation — and takes the stage the moment its first
+frame is decoded, so:
 
-- nothing extra to download before the names appear (a 20-second 4K film would);
-- it keeps working offline, inside a saved card and on a slow phone;
+- the card is complete before any video lands, and stays complete if it cannot
+  play (autoplay refused, data saver, offline);
 - the captions and the title card carry the host's own names, date and venue;
 - a partner never has to render or upload a video to ship a card.
 
