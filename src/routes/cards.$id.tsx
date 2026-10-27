@@ -31,7 +31,10 @@ export const Route = createFileRoute("/cards/$id")({
       { title: "Edit invitation — InvitingYou" },
       { name: "description", content: "Edit your invitation details, theme and soundtrack." },
       { property: "og:title", content: "Edit invitation — InvitingYou" },
-      { property: "og:description", content: "Edit your invitation details, theme and soundtrack." },
+      {
+        property: "og:description",
+        content: "Edit your invitation details, theme and soundtrack.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "robots", content: "noindex" },
@@ -181,7 +184,7 @@ function CardEditor() {
             </p>
           )}
 
-          <div className="overflow-hidden rounded-xl border border-border bg-white">
+          <div className="overflow-clip rounded-xl border border-border bg-white">
             <InvitationDetailsFields
               compact
               section={section}
@@ -192,7 +195,7 @@ function CardEditor() {
               simran={simran}
               coupleLocked={isCardCoupleLocked(card)}
             />
-            <div className="flex items-center justify-between border-t border-border bg-muted/20 px-5 py-3">
+            <div className="editor-step-footer flex items-center justify-between border-t border-border bg-muted/20 px-5 py-3">
               <Button
                 type="button"
                 variant="ghost"
@@ -201,7 +204,7 @@ function CardEditor() {
               >
                 Cancel
               </Button>
-              <div className="flex items-center gap-2">
+              <div className="editor-step-controls flex items-center gap-2">
                 {stepIndex > 0 && (
                   <Button
                     type="button"

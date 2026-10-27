@@ -7180,6 +7180,273 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner {
   gap: 8px;
 }
 
+/* ---- Phone editor: its own step-by-step layout, not a shrunk-down modal ---- */
+.editor-mobile-step {
+  display: none;
+}
+.editor-tab-icon {
+  display: none;
+}
+
+@media (max-width: 767px) {
+  .studio-content {
+    padding: 0 16px 96px;
+  }
+  .admin-main {
+    max-width: 100%;
+  }
+  .admin-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    gap: 10px;
+  }
+  .admin-header h1 {
+    font-size: 19px;
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+  .dashboard-tabs {
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+  .dashboard-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .dashboard-tabs > button {
+    flex: 0 0 auto;
+    white-space: nowrap;
+  }
+  .dashboard-filters {
+    flex-wrap: wrap;
+  }
+  .dashboard-filters > * {
+    min-width: 0;
+  }
+
+  /* The editor takes the whole screen and scrolls only its own body. */
+  .studio-editor-dialog {
+    position: fixed;
+    inset: 0 !important;
+    height: 100vh;
+    max-height: 100vh;
+    top: 0 !important;
+    left: 0 !important;
+    translate: none !important;
+    transform: none !important;
+    width: 100vw !important;
+    max-width: 100vw !important;
+    height: 100dvh;
+    max-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+  .dashboard-editor-header {
+    padding: max(10px, env(safe-area-inset-top)) 54px 10px 16px;
+    background: #ffffff;
+  }
+  .dashboard-editor-header h2 {
+    font-size: 15px;
+    letter-spacing: -0.01em;
+  }
+  .editor-mobile-step {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px 0;
+    background: #ffffff;
+  }
+  .editor-mobile-step-copy {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .editor-mobile-preview-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    flex: 0 0 auto;
+    min-height: 36px;
+    padding: 0 13px;
+    border: 1px solid #e7e5e4;
+    border-radius: 999px;
+    background: #ffffff;
+    font-size: 12.5px;
+    font-weight: 500;
+    color: #1c1917;
+  }
+  .editor-mobile-preview-btn:active {
+    background: #f5f5f4;
+  }
+  .editor-mobile-step-label {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+    font-size: 10px;
+    font-weight: 500;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: #a8a29e;
+  }
+  .editor-mobile-step-label strong {
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0;
+    text-transform: none;
+    color: #1c1917;
+  }
+  .editor-mobile-step-track {
+    display: block;
+    height: 3px;
+    margin-top: 9px;
+    border-radius: 999px;
+    background: #ececea;
+    overflow: hidden;
+  }
+  .editor-mobile-step-track > span {
+    display: block;
+    height: 100%;
+    border-radius: 999px;
+    background: #1c1917;
+    transition: width 0.28s ease;
+  }
+
+  /* Section chips: one swipeable rail, the active chip centred. */
+  .editor-section-tabs {
+    padding: 10px 16px 12px;
+    gap: 8px;
+    background: #ffffff;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+    scroll-snap-type: x proximity;
+    scroll-padding-inline: 16px;
+  }
+  .editor-section-tabs::-webkit-scrollbar {
+    display: none;
+  }
+  .editor-section-tabs > button {
+    flex: 0 0 auto;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 38px;
+    padding: 0 14px;
+    border: 1px solid #e7e5e4;
+    border-radius: 999px;
+    background: #ffffff;
+    font-size: 13px;
+    color: #57534e;
+    scroll-snap-align: center;
+    scroll-margin-inline: 16px;
+  }
+  .editor-section-tabs > button[data-state="active"] {
+    background: #1c1917;
+    border-color: #1c1917;
+    color: #ffffff;
+    box-shadow: none;
+  }
+  .editor-tab-icon {
+    display: block;
+  }
+  .editor-section-panel {
+    padding: 18px 16px 26px;
+  }
+
+  /* 16px text stops iOS from zooming the form; 44px targets stay tappable. */
+  .compact-invitation-editor input:not([type="checkbox"]):not([type="radio"]),
+  .compact-invitation-editor textarea,
+  .compact-invitation-editor select {
+    font-size: 16px;
+    min-height: 44px;
+  }
+  .compact-invitation-editor textarea {
+    min-height: 104px;
+  }
+  .compact-invitation-editor .admin-chip {
+    min-height: 36px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .compact-invitation-editor .invitation-choice {
+    min-height: 44px;
+  }
+  .compact-invitation-editor .justify-between:not(.invitation-choice) {
+    flex-wrap: wrap;
+    row-gap: 8px;
+  }
+  .compact-invitation-editor h1,
+  .compact-invitation-editor h2,
+  .compact-invitation-editor h3,
+  .compact-invitation-editor p {
+    overflow-wrap: anywhere;
+  }
+  .compact-invitation-editor .editor-section-panel .invitation-choice span.truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  /* Sticky action bar: Cancel stays reachable, Back/Next/Save share the row. */
+  .dashboard-editor-footer,
+  .editor-step-footer {
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom));
+    background: rgba(255, 255, 255, 0.97);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid #e7e5e4;
+    position: sticky;
+    bottom: 0;
+    z-index: 20;
+  }
+  .dashboard-editor-controls,
+  .editor-step-footer > div {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: nowrap;
+    width: 100%;
+  }
+  .dashboard-editor-controls > button,
+  .editor-step-footer > div > button {
+    flex: 0 0 auto;
+    padding-inline: 12px;
+    color: #78716c;
+  }
+  .dashboard-editor-controls > div,
+  .editor-step-footer .editor-step-controls {
+    flex: 1 1 auto;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    min-width: 0;
+  }
+  .dashboard-editor-controls > div > button,
+  .editor-step-controls > button {
+    flex: 1 1 0;
+    min-width: 0;
+    min-height: 44px;
+    padding-inline: 10px;
+    color: inherit;
+  }
+  .dashboard-editor-controls > div > button:last-child,
+  .editor-step-controls > button:last-child {
+    flex-grow: 1.35;
+  }
+
+  /* The preview tab becomes a full-height live phone, edge to edge. */
+  .admin-preview-shell.is-inline[data-native="true"] {
+    height: calc(100dvh - 286px);
+    min-height: 380px;
+    border-radius: 10px;
+  }
+  .admin-preview-shell.is-inline[data-native="true"] .admin-preview-toolbar {
+    padding: 8px 12px;
+  }
+  .admin-preview-shell.is-inline .device-frame-host[data-native="true"] .device-frame {
+    border-radius: 0;
+  }
+}
+
+
 /* Preview Modal & Responsive Device Switcher */
 .admin-preview-dialog {
   display: flex !important;
@@ -7218,7 +7485,7 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner {
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 10px 48px 10px 18px;
+  padding: 10px 16px;
   background: #ffffff;
   border-bottom: 1px solid #e7e5e4;
   flex-shrink: 0;
@@ -7261,6 +7528,7 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner {
 }
 
 .admin-preview-canvas {
+  display: flex;
   flex: 1 1 0%;
   min-height: 0;
   overflow-y: auto;
@@ -7272,88 +7540,140 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner {
 .admin-preview-canvas.is-phone-frame {
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   padding: 14px 16px;
 }
-.admin-preview-shell.is-inline .admin-preview-canvas.is-native-phone {
-  flex: none;
-  height: auto;
-  overflow: visible;
-  overscroll-behavior: auto;
+
+/* Device-accurate preview frames ------------------------------------------ */
+.device-frame-host {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  padding: 18px;
 }
-.admin-preview-shell.is-inline .admin-preview-canvas.is-desktop-frame {
-  max-height: min(680px, calc(92vh - 230px));
-  max-height: min(680px, calc(92dvh - 230px));
+.admin-preview-shell.is-inline .device-frame-host {
+  padding: 12px;
+  min-height: min(600px, calc(92dvh - 240px));
 }
-.preview-phone-bezel {
-  width: 391px;
+.device-frame-stage {
+  position: relative;
+  flex: 0 0 auto;
+  opacity: 0;
+  transition: opacity 0.18s ease;
+  width: calc(var(--frame-width) * var(--frame-scale));
+  height: calc(var(--frame-height) * var(--frame-scale));
   max-width: 100%;
-  height: min(740px, calc(94vh - 88px));
-  height: min(740px, calc(94dvh - 88px));
-  min-height: 420px;
-  flex-shrink: 0;
-  border-radius: 36px;
-  border: 8px solid #1c1917;
-  background: #1c1917;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.16);
-  overflow: hidden;
+}
+.device-frame-stage[data-ready="true"] {
+  opacity: 1;
+}
+.device-frame {
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
+  width: var(--frame-width);
+  height: var(--frame-height);
+  transform: scale(var(--frame-scale));
+  transform-origin: top left;
+  overflow: hidden;
+  background: var(--background);
+  border-radius: 34px;
+  box-shadow: 0 24px 60px rgba(24, 24, 20, 0.22);
 }
-.admin-preview-shell.is-inline .preview-phone-bezel {
-  height: min(650px, calc(92vh - 240px));
-  height: min(650px, calc(92dvh - 240px));
-}
-.preview-phone-notch {
-  display: flex;
-  justify-content: center;
-  padding: 8px 0 6px;
+.device-frame-host[data-device="phone"] .device-frame {
+  padding: 24px 0 26px;
   background: #1c1917;
-  flex-shrink: 0;
 }
-.preview-phone-notch > span {
-  width: 72px;
-  height: 5px;
-  border-radius: 999px;
-  background: #44403c;
+.device-frame-host[data-device="desktop"] .device-frame {
+  border-radius: 10px;
+  box-shadow: 0 18px 46px rgba(24, 24, 20, 0.16);
 }
-.preview-phone-homebar {
-  display: flex;
-  justify-content: center;
-  padding: 7px 0 9px;
+.device-frame-notch {
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: 104px;
+  height: 22px;
+  transform: translateX(-50%);
+  border-radius: 0 0 14px 14px;
   background: #1c1917;
-  flex-shrink: 0;
+  z-index: 2;
 }
-.preview-phone-homebar > span {
-  width: 108px;
+.device-frame-homebar {
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 118px;
+  height: 26px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 2;
+}
+.device-frame-homebar::after {
+  content: "";
+  width: 118px;
   height: 4px;
   border-radius: 999px;
   background: #57534e;
 }
-.preview-phone-viewport {
-  flex: 1 1 0%;
+.device-frame-iframe,
+.device-frame-screen {
+  display: block;
+  width: 100%;
+  height: 100%;
+  flex: 1 1 auto;
   min-height: 0;
+  border: 0;
   background: var(--background);
+}
+.device-frame-screen {
   overflow-y: auto;
   overflow-x: hidden;
-  -webkit-overflow-scrolling: touch;
-  touch-action: pan-y pinch-zoom;
-  overscroll-behavior-y: contain;
 }
-.preview-phone-viewport.is-iframe {
+
+/* A phone shows its own layout at 1:1 — no bezel, no scaling, no mock device. */
+.device-frame-host[data-native="true"] {
   position: relative;
-  overflow: hidden;
   display: block;
+  padding: 0;
 }
-.preview-phone-iframe {
+.device-frame-host[data-native="true"] .device-frame-stage {
+  position: absolute;
+  inset: 0;
+  width: auto;
+  height: auto;
+  max-width: none;
+}
+.device-frame-host[data-native="true"] .device-frame {
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
-  border: 0;
-  display: block;
+  padding: 0;
+  transform: none;
+  border-radius: 12px;
+  box-shadow: none;
   background: var(--background);
 }
+.admin-preview-canvas[data-native="true"] {
+  display: flex;
+  overflow: hidden;
+}
+.admin-preview-shell.is-inline .admin-preview-canvas[data-native="true"] {
+  min-height: 0;
+}
+.admin-preview-shell.is-inline[data-native="true"] {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
 html:has(.preview-frame-document),
 body:has(.preview-frame-document) {
   height: auto;
@@ -7370,15 +7690,6 @@ body:has(.preview-frame-document) {
   overflow-x: clip;
   background: var(--background);
 }
-.preview-phone-viewport.is-native {
-  flex: none;
-  min-height: auto;
-  height: auto;
-  max-height: none;
-  overflow: visible;
-  overflow-x: clip;
-  overscroll-behavior: auto;
-}
 .preview-desktop-viewport {
   position: relative;
   overflow: visible;
@@ -7389,30 +7700,30 @@ body:has(.preview-frame-document) {
   overflow: visible;
 }
 
-/* Enforce genuine single-column mobile layout inside the 390px phone preview frame on desktop */
-.preview-phone-viewport .invite-celebration,
-.preview-phone-viewport .invite-fact,
-.preview-phone-viewport .invite-wishes-layout,
-.preview-phone-viewport .invite-extras > div {
+/* Genuine single-column layout inside the 390px frame on desktop */
+.device-frame-screen .invite-celebration,
+.device-frame-screen .invite-fact,
+.device-frame-screen .invite-wishes-layout,
+.device-frame-screen .invite-extras > div {
   grid-template-columns: 1fr !important;
 }
-.preview-phone-viewport .invite-date-plate {
+.device-frame-screen .invite-date-plate {
   padding-block: 2.2rem;
   border-radius: 10rem 10rem 1rem 1rem / 4rem 4rem 1rem 1rem;
 }
-.preview-phone-viewport .invite-timeline {
+.device-frame-screen .invite-timeline {
   padding-left: 2.75rem;
 }
-.preview-phone-viewport .invite-timeline::before {
+.device-frame-screen .invite-timeline::before {
   left: 0.9rem;
 }
-.preview-phone-viewport .invite-timeline-marker {
+.device-frame-screen .invite-timeline-marker {
   left: -2.75rem;
   width: 2.1rem;
   height: 2.1rem;
   font-size: 0.68rem;
 }
-.preview-phone-viewport .invite-hero-frame {
+.device-frame-screen .invite-hero-frame {
   inset: 7px;
 }
 
@@ -7452,7 +7763,14 @@ body:has(.preview-frame-document) {
     border: 0;
   }
   .admin-preview-toolbar {
-    padding: max(12px, env(safe-area-inset-top)) 44px 12px 16px;
+    /* right padding clears the dialog's close button */
+    padding: max(12px, env(safe-area-inset-top)) 52px 12px 16px;
+  }
+  .admin-preview-shell.is-inline .admin-preview-toolbar {
+    padding: 8px 12px;
+  }
+  .admin-preview-shell.is-inline .device-frame-host {
+    padding: 10px;
   }
 }
 
@@ -7490,33 +7808,6 @@ body:has(.preview-frame-document) {
     border: 0;
     padding: 0;
     align-items: flex-start;
-  }
-  .studio-editor-dialog {
-    inset: 0 !important;
-    left: 0 !important;
-    top: 0 !important;
-    translate: none !important;
-    transform: none !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
-    height: 100vh;
-    height: 100dvh;
-    max-height: 100vh;
-    max-height: 100dvh;
-    border-radius: 0;
-    border: 0;
-  }
-  .editor-section-tabs {
-    padding: 8px 12px;
-  }
-  .editor-section-panel {
-    padding: 16px;
-  }
-  .dashboard-editor-header {
-    padding: 14px 40px 12px 16px;
-  }
-  .dashboard-editor-footer {
-    padding: 10px 16px;
   }
 }
 

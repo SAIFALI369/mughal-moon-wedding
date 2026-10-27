@@ -1,11 +1,26 @@
 import {
+  useEffect,
+  useRef,
   useState,
   type ChangeEvent,
   type Dispatch,
   type SetStateAction,
   type ReactNode,
 } from "react";
-import { Check, ImagePlus, Lock, Music2, Plus, Trash2 } from "lucide-react";
+import {
+  CalendarHeart,
+  Check,
+  Clapperboard,
+  Eye,
+  ImagePlus,
+  ListChecks,
+  Lock,
+  Music2,
+  Palette,
+  Plus,
+  ScrollText,
+  Trash2,
+} from "lucide-react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,14 +52,14 @@ import { SimranFormReader, applyReading } from "./form-assistant";
 import type { InvitationReading, ReadingFieldKey } from "./invitation-import";
 
 export const invitationEditorSections = [
-  { id: "essentials", label: "Details" },
-  { id: "design", label: "Design" },
-  { id: "details", label: "Story" },
-  { id: "events", label: "Events" },
-  { id: "photos", label: "Photos" },
-  { id: "songs", label: "Music" },
-  { id: "elements", label: "Sections" },
-  { id: "preview", label: "Preview" },
+  { id: "essentials", label: "Details", icon: CalendarHeart },
+  { id: "design", label: "Design", icon: Palette },
+  { id: "details", label: "Story", icon: ScrollText },
+  { id: "events", label: "Events", icon: Clapperboard },
+  { id: "photos", label: "Photos", icon: ImagePlus },
+  { id: "songs", label: "Music", icon: Music2 },
+  { id: "elements", label: "Sections", icon: ListChecks },
+  { id: "preview", label: "Preview", icon: Eye },
 ] as const;
 
 export type InvitationEditorSection = (typeof invitationEditorSections)[number]["id"];
@@ -204,6 +219,23 @@ export function InvitationDetailsFields({
   const mainDateError = dateFieldError(value.date, "card-date");
   const rsvpDateError = dateFieldError(value.rsvpDeadline, "card-rsvpDeadline");
   const invalidPhone = !!value.contactPhone.trim() && !/^[+0-9().\s-]*$/.test(value.contactPhone);
+  const currentSection = (section ?? localSection) as InvitationEditorSection;
+  const tabsRef = useRef<HTMLDivElement | null>(null);
+  const editorStepIndex = Math.max(
+    0,
+    invitationEditorSections.findIndex((item) => item.id === currentSection),
+  );
+
+  // On a phone the section rail is wider than the screen: keep the live chip centred.
+  useEffect(() => {
+    const rail = tabsRef.current;
+    if (!rail) return;
+    const active = rail.querySelector<HTMLElement>('[role="tab"][data-state="active"]');
+    if (!active || typeof active.scrollIntoView !== "function") return;
+    if (typeof window !== "undefined" && window.innerWidth >= 768) return;
+    active.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
+  }, [currentSection]);
+
   const visibleThemes =
     themeCategory === "all"
       ? invitationThemes
@@ -211,7 +243,7 @@ export function InvitationDetailsFields({
 
   return (
     <Tabs
-      value={section ?? localSection}
+      value={currentSection}
       onValueChange={(next) => {
         setLocalSection(next as InvitationEditorSection);
         onSectionChange?.(next as InvitationEditorSection);
@@ -221,13 +253,48 @@ export function InvitationDetailsFields({
       }
     >
       {compact && (
-        <TabsList className="editor-section-tabs" aria-label="Invitation editor sections">
-          {invitationEditorSections.map((item) => (
-            <TabsTrigger key={item.id} value={item.id} type="button">
-              {item.label}
-            </TabsTrigger>
-          ))}
-        </TabsList>
+        <>
+          <div className="editor-mobile-step">
+            <div className="editor-mobile-step-copy">
+              <span className="editor-mobile-step-label">
+                Step {editorStepIndex + 1} of {invitationEditorSections.length}
+                <strong>{invitationEditorSections[editorStepIndex]?.label}</strong>
+              </span>
+              <span className="editor-mobile-step-track">
+                <span
+                  style={{
+                    width: `${((editorStepIndex + 1) / invitationEditorSections.length) * 100}%`,
+                  }}
+                />
+              </span>
+            </div>
+            {currentSection !== "preview" && (
+              <button
+                type="button"
+                className="editor-mobile-preview-btn"
+                onClick={() => {
+                  setLocalSection("preview");
+                  onSectionChange?.("preview");
+                }}
+              >
+                <Eye size={15} aria-hidden="true" />
+                Preview
+              </button>
+            )}
+          </div>
+          <TabsList
+            ref={tabsRef}
+            className="editor-section-tabs"
+            aria-label="Invitation editor sections"
+          >
+            {invitationEditorSections.map((item) => (
+              <TabsTrigger key={item.id} value={item.id} type="button">
+                <item.icon className="editor-tab-icon" size={15} aria-hidden="true" />
+                <span>{item.label}</span>
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </>
       )}
 
       {/* 1. DETAILS */}

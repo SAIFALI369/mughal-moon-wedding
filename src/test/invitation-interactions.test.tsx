@@ -10,7 +10,7 @@ import {
 } from "@/components/wedding/invitation-form-data";
 import { getInvitationDetails } from "@/components/wedding/invitation-details";
 import { InvitationMusicPlayer } from "@/components/wedding/invitation-music-player";
-import { PhoneViewportFrame } from "@/components/platform/invitation-preview";
+import { DeviceFrame } from "@/components/platform/invitation-preview";
 import { InvitationRsvp } from "@/components/wedding/invitation-rsvp";
 
 const { insert, from } = vi.hoisted(() => ({
@@ -113,6 +113,51 @@ describe("invitation editor and guest reply", () => {
       writable: true,
       value: 1024,
     });
+  });
+
+  it("turns the phone editor into a step form with a swipeable rail and a native preview", async () => {
+    act(() => {
+      Object.defineProperty(window, "innerWidth", {
+        configurable: true,
+        writable: true,
+        value: 390,
+      });
+      window.dispatchEvent(new Event("resize"));
+    });
+
+    render(<Editor compact />);
+
+    const step = () => document.querySelector(".editor-mobile-step");
+    expect(step()).not.toBeNull();
+    expect(step()?.textContent).toContain("Step 1 of 8");
+    expect(step()?.textContent).toContain("Details");
+    expect(screen.getAllByRole("tab")).toHaveLength(8);
+    expect(document.querySelector(".editor-section-tabs")).not.toBeNull();
+
+    // One tap reaches the live preview from anywhere in the form.
+    fireEvent.click(screen.getByRole("button", { name: /^Preview$/ }));
+    await waitFor(() => {
+      expect(step()?.textContent).toContain("Step 8 of 8");
+    });
+    expect(screen.queryByRole("button", { name: /^Preview$/ })).toBeNull();
+
+    // On a phone the preview is the real thing at 1:1 — no bezel, no scaling.
+    const canvas = document.querySelector(".admin-preview-canvas");
+    expect(canvas?.getAttribute("data-native")).toBe("true");
+    expect(canvas?.classList.contains("is-native-phone")).toBe(true);
+    expect(document.querySelector('.device-frame-host[data-native="true"]')).not.toBeNull();
+    expect(document.querySelector(".device-frame-notch")).toBeNull();
+    expect(document.querySelector(".device-frame-screen .personal-invite")).not.toBeNull();
+
+    cleanup();
+    Object.defineProperty(window, "innerWidth", {
+      configurable: true,
+      writable: true,
+      value: 1024,
+    });
+    window.dispatchEvent(new Event("resize"));
+    render(<Editor />);
+    expect(document.querySelector(".editor-mobile-step")).toBeNull();
   });
 
   it("changes theme, framework and section visibility separately in the live cover", () => {
@@ -312,12 +357,13 @@ describe("invitation editor and guest reply", () => {
       .spyOn(window.navigator, "userAgent", "get")
       .mockReturnValue("Mozilla/5.0 (Macintosh; Intel Mac OS X 14_0) AppleWebKit/537.36");
     render(
-      <PhoneViewportFrame
+      <DeviceFrame
+        device="phone"
         title="Ayaan & Zara"
         content={{ groomName: "Ayaan", brideName: "Zara", date: "26th November 2029" }}
       />,
     );
-    const iframe = document.querySelector("iframe.preview-phone-iframe");
+    const iframe = document.querySelector("iframe.device-frame-iframe");
     expect(iframe).not.toBeNull();
     expect(iframe?.getAttribute("src")).toMatch(/^\/preview-frame\?key=invitingyou-preview-/);
     uaSpy.mockRestore();
