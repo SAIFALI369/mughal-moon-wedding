@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { InvitationPreview } from "@/components/platform/invitation-preview";
 import type { InvitationForm } from "./invitation-form-data";
+import { ThemeLoop } from "./theme-loop";
 import { invitationArt } from "./invitation-art";
 import {
   invitationCeremonyPresets,
@@ -569,6 +570,7 @@ export function InvitationDetailsFields({
                         loading="lazy"
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                       />
+                      <ThemeLoop theme={theme.id} className="object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
                       {selected && (
                         <span className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-white text-black shadow-sm">

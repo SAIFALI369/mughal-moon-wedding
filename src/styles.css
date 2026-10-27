@@ -14784,3 +14784,5 @@ body:has(.preview-frame-document) {
   line-height: 1.8;
   color: rgba(244, 236, 220, 0.55);
 }
+
+.admin-template-thumb { position: relative; }

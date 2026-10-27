@@ -44,6 +44,7 @@ import {
   invitationContentSchema,
   type InvitationContent,
 } from "@/components/wedding/invitation-schema";
+import { ThemeLoop } from "@/components/wedding/theme-loop";
 import { invitationArt } from "@/components/wedding/invitation-art";
 import {
   invitationThemeCategories,
@@ -550,6 +551,7 @@ export function OfflineStudioPage() {
                         loading="lazy"
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                       />
+                      <ThemeLoop theme={theme.id} className="object-cover" />
                     </div>
                     <div className="admin-template-meta">
                       <strong>{theme.label}</strong>
