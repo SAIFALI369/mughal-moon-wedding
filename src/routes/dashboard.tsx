@@ -50,6 +50,7 @@ import {
   type InvitationForm,
 } from "@/components/wedding/invitation-form-data";
 import { invitationExpiry } from "@/components/wedding/invitation-details";
+import { ThemeLoop } from "@/components/wedding/theme-loop";
 import { invitationArt } from "@/components/wedding/invitation-art";
 import {
   invitationThemeCategories,
@@ -817,6 +818,7 @@ export function Dashboard() {
                         loading="lazy"
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                       />
+                      <ThemeLoop theme={theme.id} className="object-cover" />
                     </div>
                     <div className="admin-template-meta">
                       <strong>{theme.label}</strong>

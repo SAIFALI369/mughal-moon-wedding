@@ -34,6 +34,7 @@ import {
   parseInvitationDate,
   type InvitationDetails,
 } from "./invitation-details";
+import { ThemeLoop } from "./theme-loop";
 import { invitationArt } from "./invitation-art";
 import { CouplePortraits, InvitationStage } from "./invitation-stage";
 import { CurtainStage } from "./invitation-curtain";
@@ -127,6 +128,7 @@ export function InvitationCover({ content }: { content: unknown }) {
         aria-hidden="true"
         className="cover-art absolute inset-0 -z-30 h-full w-full object-cover"
       />
+      <ThemeLoop theme={details.theme} className="cover-art -z-30 object-cover" />
       <div className="invite-cover-wash absolute inset-0 -z-20" aria-hidden="true" />
       <div className="cover-glow absolute inset-0 -z-10" aria-hidden="true" />
       <div
