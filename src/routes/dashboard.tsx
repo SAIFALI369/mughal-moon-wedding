@@ -35,6 +35,7 @@ import {
   RefreshCw,
   UploadCloud,
   WifiOff,
+  Pencil,
 } from "lucide-react";
 import {
   InvitationDetailsFields,
@@ -79,6 +80,7 @@ import {
 } from "@/lib/offline-studio";
 import { useOnlineStatus } from "@/lib/pwa-install";
 import { isPhoneViewport } from "@/lib/viewport";
+import { insertInvitationCard, setCardStatus, friendlyCardError } from "@/lib/invitation-cards";
 
 type PartnerAllowance = {
   shop_name: string;
@@ -330,27 +332,17 @@ export function Dashboard() {
         setPage(1);
         return;
       }
-      const slug = generateSlug(title);
       const expires_at = invitationExpiry(content.date);
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
-      const { data, error } = await supabase
-        .from("invitation_cards")
-        .insert({
-          owner_id: session.session.user.id,
-          title,
-          slug,
-          status: "draft",
-          content,
-          ...(expires_at ? { expires_at } : {}),
-        })
-        .select()
-        .single();
-      if (error) {
-        setError(error.message);
-        toast.error(error.message);
-        return;
-      }
+      const data = await insertInvitationCard<InvitationCard>({
+        owner_id: session.session.user.id,
+        title,
+        slug: generateSlug(title),
+        status: "draft",
+        content,
+        ...(expires_at ? { expires_at } : {}),
+      });
       toast.success("Draft saved");
       setCloudCards((prev) => [data as InvitationCard, ...prev]);
       setForm(emptyInvitationForm());
@@ -361,7 +353,9 @@ export function Dashboard() {
       setPage(1);
       await load();
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Create failed");
+      const message = err instanceof Error ? err.message : friendlyCardError(null);
+      setError(message);
+      toast.error(message);
     } finally {
       setCreating(false);
     }
@@ -444,18 +438,16 @@ export function Dashboard() {
       startEdit(card);
       return;
     }
-    const { error } = await supabase
-      .from("invitation_cards")
-      .update({ status: newStatus })
-      .eq("id", card.id)
-      .eq("owner_id", user?.id ?? "");
-    if (error) {
-      setError(error.message);
-      toast.error(error.message);
+    try {
+      await setCardStatus(card.id, newStatus);
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "The card could not be updated.";
+      setError(message);
+      toast.error(message);
       return;
     }
     toast.success(newStatus === "published" ? "Published" : "Moved to draft");
-    load();
+    void load();
   }
 
   async function handleDelete(card: InvitationCard) {
@@ -494,6 +486,16 @@ export function Dashboard() {
     editorInitial.current = JSON.stringify(next);
     setForm(next);
     setEditorSection("essentials");
+  }
+
+  function openPreview(card: InvitationCard) {
+    // A phone gets the full invitation as its own page — a dialog there always
+    // ended up wider than the screen.
+    if (isPhoneViewport()) {
+      navigate({ to: "/preview/$cardId", params: { cardId: card.id } });
+      return;
+    }
+    setPreviewCard(card);
   }
 
   function shareUrl(card: InvitationCard) {
@@ -646,7 +648,7 @@ export function Dashboard() {
                         </p>
                       </div>
                       <div className="dashboard-row-actions">
-                        <Button size="sm" variant="outline" onClick={() => setPreviewCard(card)}>
+                        <Button size="sm" variant="outline" onClick={() => openPreview(card)}>
                           <Eye size={14} /> Preview
                         </Button>
                         <Button size="sm" variant="outline" onClick={() => startEdit(card)}>
@@ -984,6 +986,19 @@ export function Dashboard() {
                       <span className={`dashboard-card-status ${previewCard.status}`}>
                         {previewCard.status}
                       </span>
+                      <button
+                        type="button"
+                        className="admin-outline-btn ml-auto shrink-0"
+                        onClick={() => {
+                          setPreviewCard(null);
+                          navigate({
+                            to: "/preview/$cardId",
+                            params: { cardId: previewCard.id },
+                          });
+                        }}
+                      >
+                        <Pencil size={13} aria-hidden="true" /> Edit live
+                      </button>
                     </div>
                   }
                 />

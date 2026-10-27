@@ -61,6 +61,11 @@ export function invitationFormForCard(title: string, content: unknown): Invitati
     time: field("time"),
     venue: field("venue"),
     address: field("address"),
+    songs: details.songs.map((song) => ({
+      ...song,
+      clipStart: song.clipStart ?? 0,
+      clipEnd: song.clipEnd ?? 0,
+    })),
   };
 }
 

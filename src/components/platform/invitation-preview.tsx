@@ -89,12 +89,17 @@ export function DeviceFrame({
   content,
   cardId,
   native = false,
+  onFrame,
+  className,
 }: {
   device: PreviewDevice;
   title: string;
   content: unknown;
   cardId?: string;
   native?: boolean;
+  /** Called with the live iframe element, for same-origin interaction hooks. */
+  onFrame?: (frame: HTMLIFrameElement | null) => void;
+  className?: string;
 }) {
   const rawId = useId();
   const frameId = `invitingyou-preview-${rawId.replace(/[^a-zA-Z0-9_-]/g, "")}`;
@@ -211,7 +216,11 @@ export function DeviceFrame({
     </div>
   ) : (
     <iframe
-      ref={iframeRef}
+      ref={(node) => {
+        iframeRef.current = node;
+        if (node) onFrame?.(node);
+      }}
+      onLoad={() => onFrame?.(iframeRef.current)}
       src={`/preview-frame?key=${encodeURIComponent(frameId)}`}
       title={`${device === "phone" ? "Phone" : "Desktop"} preview of ${title || "invitation"}`}
       className="device-frame-iframe"
@@ -221,7 +230,7 @@ export function DeviceFrame({
 
   return (
     <div
-      className="device-frame-host"
+      className={`device-frame-host${className ? ` ${className}` : ""}`}
       data-device={device}
       data-native={native ? "true" : undefined}
     >

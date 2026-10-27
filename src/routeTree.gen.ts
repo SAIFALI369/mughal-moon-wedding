@@ -26,6 +26,7 @@ import { Route as SignUpRouteImport } from './routes/sign-up'
 import { Route as StorybookRouteImport } from './routes/storybook'
 import { Route as CardsIdRouteImport } from './routes/cards.$id'
 import { Route as InviteSlugRouteImport } from './routes/invite.$slug'
+import { Route as PreviewCardIdRouteImport } from './routes/preview.$cardId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -112,6 +113,11 @@ const InviteSlugRoute = InviteSlugRouteImport.update({
   path: '/invite/$slug',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PreviewCardIdRoute = PreviewCardIdRouteImport.update({
+  id: '/preview/$cardId',
+  path: '/preview/$cardId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -131,6 +137,7 @@ export interface FileRoutesByFullPath {
   '/storybook': typeof StorybookRoute
   '/cards/$id': typeof CardsIdRoute
   '/invite/$slug': typeof InviteSlugRoute
+  '/preview/$cardId': typeof PreviewCardIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -150,6 +157,7 @@ export interface FileRoutesByTo {
   '/storybook': typeof StorybookRoute
   '/cards/$id': typeof CardsIdRoute
   '/invite/$slug': typeof InviteSlugRoute
+  '/preview/$cardId': typeof PreviewCardIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -170,6 +178,7 @@ export interface FileRoutesById {
   '/storybook': typeof StorybookRoute
   '/cards/$id': typeof CardsIdRoute
   '/invite/$slug': typeof InviteSlugRoute
+  '/preview/$cardId': typeof PreviewCardIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -191,6 +200,7 @@ export interface FileRouteTypes {
     | '/storybook'
     | '/cards/$id'
     | '/invite/$slug'
+    | '/preview/$cardId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -210,6 +220,7 @@ export interface FileRouteTypes {
     | '/storybook'
     | '/cards/$id'
     | '/invite/$slug'
+    | '/preview/$cardId'
   id:
     | '__root__'
     | '/'
@@ -229,6 +240,7 @@ export interface FileRouteTypes {
     | '/storybook'
     | '/cards/$id'
     | '/invite/$slug'
+    | '/preview/$cardId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -249,6 +261,7 @@ export interface RootRouteChildren {
   StorybookRoute: typeof StorybookRoute
   CardsIdRoute: typeof CardsIdRoute
   InviteSlugRoute: typeof InviteSlugRoute
+  PreviewCardIdRoute: typeof PreviewCardIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -372,6 +385,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof InviteSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/preview/$cardId': {
+      id: '/preview/$cardId'
+      path: '/preview/$cardId'
+      fullPath: '/preview/$cardId'
+      preLoaderRoute: typeof PreviewCardIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -393,6 +413,7 @@ const rootRouteChildren: RootRouteChildren = {
   StorybookRoute: StorybookRoute,
   CardsIdRoute: CardsIdRoute,
   InviteSlugRoute: InviteSlugRoute,
+  PreviewCardIdRoute: PreviewCardIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

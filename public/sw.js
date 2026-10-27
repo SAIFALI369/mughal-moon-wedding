@@ -1,4 +1,4 @@
-const CACHE_NAME = "invitingyou-offline-v3";
+const CACHE_NAME = "invitingyou-offline-v4";
 
 const SHELL_PATHS = [
   "/",

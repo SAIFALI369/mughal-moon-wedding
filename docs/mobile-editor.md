@@ -1,5 +1,8 @@
 # Phone editor and phone preview
 
+> Related: [`live-preview.md`](./live-preview.md) — the tappable, editable preview page every phone
+> **Preview** button opens.
+
 ## Phones get their own page, not a dialog
 
 `/create` (`src/routes/create.tsx`) is the card-creation and card-editing form as a standalone route.

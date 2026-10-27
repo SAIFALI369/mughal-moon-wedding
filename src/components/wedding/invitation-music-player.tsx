@@ -5,6 +5,8 @@ import {
   INVITATION_MUSIC_EVENT,
   getSongLabel,
   resolveSongSource,
+  songClip,
+  withYouTubeClip,
   type InvitationMusicCommand,
 } from "./invitation-music";
 
@@ -138,8 +140,28 @@ export function InvitationMusicPlayer({
       if (songsRef.current.length > 1) {
         handlerRef.current({ action: "next" });
       } else {
-        audio.currentTime = 0;
+        const only = songsRef.current[0];
+        audio.currentTime = only ? songClip(only).start : 0;
         void audio.play().catch(() => updatePlaying(false));
+      }
+    });
+    // Where a host picked an excerpt, the track stops at the chosen end instead of playing on.
+    audio.addEventListener("timeupdate", () => {
+      const song = songsRef.current[indexRef.current];
+      if (!song) return;
+      const clip = songClip(song);
+      if (clip.end && audio.currentTime >= clip.end) {
+        if (songsRef.current.length > 1) {
+          handlerRef.current({ action: "next" });
+        } else {
+          audio.pause();
+          try {
+            audio.currentTime = clip.start;
+          } catch {
+            // Ignore non-seekable media
+          }
+          updatePlaying(false);
+        }
       }
     });
     audio.addEventListener("error", () => {
@@ -231,6 +253,20 @@ export function InvitationMusicPlayer({
       if (audio.dataset["track"] !== `${bounded}:${targetSrc}`) {
         audio.src = targetSrc;
         audio.dataset["track"] = `${bounded}:${targetSrc}`;
+      }
+      if (source && source.kind === "audio") {
+        const clip = songClip(nextSong);
+        try {
+          if (
+            clip.start &&
+            (audio.dataset["clip"] !== `${bounded}:${clip.start}` || audio.currentTime < clip.start)
+          ) {
+            audio.currentTime = clip.start;
+          }
+        } catch {
+          // Ignore environments without a seekable media element.
+        }
+        audio.dataset["clip"] = `${bounded}:${clip.start}`;
       }
       if (autoplay) {
         void audio
@@ -369,7 +405,7 @@ export function InvitationMusicPlayer({
 
   const youtubeSrc =
     currentSource?.kind === "youtube"
-      ? `${currentSource.embedUrl}${ytAutoplay ? "&autoplay=1" : ""}`
+      ? `${withYouTubeClip(currentSource.embedUrl, current ?? {})}${ytAutoplay ? "&autoplay=1" : ""}`
       : "";
 
   const panel = (
