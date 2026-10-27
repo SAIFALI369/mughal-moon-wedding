@@ -44,7 +44,7 @@ const mandap = (details = hindu) =>
 
 describe("Hindu themes", () => {
   it("adds Diya Utsav and Sacred Mandap, with their own artwork", () => {
-    expect(invitationThemeIds).toHaveLength(24);
+    expect(invitationThemeIds).toHaveLength(22);
     const labels = invitationThemes.map((theme) => theme.label);
     expect(labels).toContain("Diya Utsav");
     expect(labels).toContain("Sacred Mandap");
@@ -56,9 +56,9 @@ describe("Hindu themes", () => {
   it("marks both as Hindu and keeps the other themes on their own tradition", () => {
     expect(themeRites["diya-utsav"]).toBe("hindu");
     expect(themeRites["sacred-mandap"]).toBe("hindu");
-    expect(themeRites.mughal).toBe("muslim");
+    expect(themeRites["mughal-moon-film"]).toBe("muslim");
     expect(themeRites.eid).toBe("muslim");
-    expect(themeRites.classic).toBe("universal");
+    expect(themeRites.calligraphy).toBe("hindu");
     expect(themeRites.fairytale).toBe("universal");
   });
 
@@ -67,7 +67,7 @@ describe("Hindu themes", () => {
     expect(blessing?.text).toBe("॥ श्री गणेशाय नमः ॥");
     expect(blessing?.script).toBe("sanskrit");
     expect(riteBlessing("eid")?.text).toContain("بِسْمِ");
-    expect(riteBlessing("classic")).toBeNull();
+    expect(riteBlessing("luxury")).toBeNull();
   });
 
   it("uses the fifth layout count unchanged", () => {
@@ -92,7 +92,7 @@ describe("LivingScene", () => {
   });
 
   it("shows no diya row on the small stage layer, only the sky show", () => {
-    const html = renderToStaticMarkup(<LivingScene theme="mughal" variant="stage" />);
+    const html = renderToStaticMarkup(<LivingScene theme="eid" variant="stage" />);
     expect(html).not.toContain("living-diya-row");
     expect(html).toContain("living-fireworks");
     expect(html).toContain('data-rite="muslim"');

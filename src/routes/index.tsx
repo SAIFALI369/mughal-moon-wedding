@@ -14,6 +14,8 @@ import {
   Sparkles,
 } from "lucide-react";
 import { PlatformShell } from "@/components/platform/platform-shell";
+import { ThemeDemoCard } from "@/components/wedding/theme-demo-card";
+import { themeDemos } from "@/config/theme-demos";
 import { useAuth } from "@/lib/auth-context";
 import { Dashboard } from "./dashboard";
 
@@ -38,30 +40,6 @@ export const Route = createFileRoute("/")({
   }),
   component: Home,
 });
-
-const collection = [
-  {
-    name: "Moonlit Courtyard",
-    style: "moon",
-    category: "REGAL · TIMELESS",
-    names: ["Ayaan", "Zara"],
-    caption: "For a love written in the stars.",
-  },
-  {
-    name: "Rosewater Romance",
-    style: "rose",
-    category: "SOFT · ROMANTIC",
-    names: ["Arjun", "Meera"],
-    caption: "A softer shade of forever.",
-  },
-  {
-    name: "The Royal Edit",
-    style: "royal",
-    category: "BOLD · ELEGANT",
-    names: ["Kabir", "Aisha"],
-    caption: "A celebration fit for your story.",
-  },
-];
 
 export function Home() {
   const { user, loading } = useAuth();
@@ -198,48 +176,28 @@ export function Home() {
               <span className="studio-eyebrow">THE DESIGN COLLECTION</span>
               <h2>A mood for every kind of forever.</h2>
             </div>
-            <span className="studio-collection-tag">
-              Personalise every detail <Sparkles size={14} />
-            </span>
-          </div>
-          <div className="studio-template-grid">
-            {collection.map((template) => (
-              <article key={template.name} className="studio-template">
-                <div className={`studio-template-art ${template.style}`}>
-                  <span className="studio-template-label">STYLE INSPIRATION</span>
-                  <div className="studio-template-frame">
-                    <span className="studio-template-symbol">
-                      {template.style === "rose" ? "❦" : template.style === "royal" ? "✧" : "☾"}
-                    </span>
-                    <span className="studio-template-kicker">THE WEDDING CELEBRATION OF</span>
-                    <span className="studio-template-names">
-                      {template.names[0]}
-                      <em>&</em>
-                      {template.names[1]}
-                    </span>
-                    <span className="studio-template-ornament">― ✧ ―</span>
-                    <span className="studio-template-caption">{template.caption}</span>
-                  </div>
-                </div>
-                <div className="studio-template-info">
-                  <div>
-                    <span>{template.category}</span>
-                    <h3>{template.name}</h3>
-                  </div>
-                  <Link
-                    to="/sign-in"
-                    aria-label={`Create an invitation inspired by ${template.name}`}
-                  >
-                    <ArrowUpRight size={20} />
-                  </Link>
-                </div>
-              </article>
-            ))}
+            <Link to="/themes" className="studio-text-button">
+              Open all {themeDemos.length} demos <ArrowUpRight size={15} />
+            </Link>
           </div>
           <p className="studio-collection-note">
-            Illustrative design inspiration. Choose and customise your theme inside the invitation
-            editor.
+            These are not sketches of invitations — each tile below opens a finished demo card with
+            its own couple, city, film, gallery photos, ceremony order and a YouTube soundtrack.
+            Scroll one all the way to the end, then pick the theme that already feels like yours.
           </p>
+          <div className="theme-demo-grid">
+            {themeDemos.map((demo, index) => (
+              <ThemeDemoCard key={demo.theme} demo={demo} priority={index < 4} />
+            ))}
+          </div>
+          <div className="flex flex-wrap items-center gap-3 pt-6">
+            <Link to="/sign-in" className="studio-button">
+              Sign in to start <ArrowRight size={16} />
+            </Link>
+            <Link to="/themes" className="studio-text-button">
+              Compare them side by side <ArrowUpRight size={15} />
+            </Link>
+          </div>
         </section>
         <section className="studio-bottom-banner">
           <span className="studio-banner-icon">✧</span>

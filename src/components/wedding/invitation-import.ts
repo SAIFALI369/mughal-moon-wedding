@@ -211,7 +211,7 @@ const CEREMONY_WORDS: { pattern: RegExp; label: string; theme: InvitationTheme; 
     {
       pattern: /\bnikah\b|\bnikaah\b|\bnikkah\b/i,
       label: "Nikah ceremony",
-      theme: "mughal",
+      theme: "royal-rajmahal",
       main: true,
     },
     {
@@ -236,7 +236,7 @@ const CEREMONY_WORDS: { pattern: RegExp; label: string; theme: InvitationTheme; 
     {
       pattern: /\bengagement\b|\broka\b/i,
       label: "Engagement ceremony",
-      theme: "classic",
+      theme: "calligraphy",
       main: true,
     },
     {

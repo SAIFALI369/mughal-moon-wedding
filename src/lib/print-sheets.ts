@@ -55,14 +55,6 @@ const PALETTES: Record<string, PrintPalette> = {
     tint: "#e8d7ba",
   },
   eid: { paper: "#fbf8f1", ink: "#22322c", accent: "#2f6b57", soft: "#6f7f78", tint: "#eef4f0" },
-  mughal: { paper: "#fbf5e9", ink: "#361a30", accent: "#8a2440", soft: "#7a6455", tint: "#f6e9d8" },
-  classic: {
-    paper: "#fdf8ee",
-    ink: "#3a3128",
-    accent: "#9a7a35",
-    soft: "#7d7164",
-    tint: "#f7eddb",
-  },
   aladin: { paper: "#f9f4fb", ink: "#38235e", accent: "#6f4a9c", soft: "#71638a", tint: "#f1e9f8" },
   "bihari-vibe": {
     paper: "#fdf5ee",

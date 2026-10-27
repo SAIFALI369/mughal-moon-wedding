@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
 import { useAuth } from "@/lib/auth-context";
 import { Home } from "@/routes/index";
+import { themeDemos } from "@/config/theme-demos";
 
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (options: unknown) => options,
@@ -49,10 +50,18 @@ describe("Creator homepage", () => {
     );
     expect(screen.getByRole("link", { name: /Template collection/ })).toHaveAttribute(
       "href",
-      "#collection",
+      "/themes",
     );
     expect(document.getElementById("collection")).toBeInTheDocument();
-    expect(screen.getAllByText("STYLE INSPIRATION")).toHaveLength(3);
+  });
+
+  it("shows one complete demo card per theme, each opening its own page", () => {
+    render(<Home />);
+    const demos = screen.getAllByRole("link", { name: /demo invitation for/ });
+    expect(demos).toHaveLength(themeDemos.length);
+    for (const demo of demos) expect(demo).toHaveAttribute("href", "/theme/$themeId");
+    // The old illustrative "style inspiration" cards are gone for good.
+    expect(screen.queryByText("STYLE INSPIRATION")).not.toBeInTheDocument();
   });
 
   it("opens and closes the mobile navigation accessibly", () => {

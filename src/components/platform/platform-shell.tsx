@@ -26,7 +26,7 @@ export function PlatformShell({
   children: ReactNode;
   workspace?: boolean;
   activeSection?: "invitations" | "templates" | "credits";
-  activePage?: "responses";
+  activePage?: "responses" | "themes";
   onSectionChange?: (section: "invitations" | "templates" | "credits") => void;
 }) {
   const { user, signOut } = useAuth();
@@ -108,11 +108,14 @@ export function PlatformShell({
               <Link to={user ? "/dashboard" : "/sign-in"}>
                 <PanelsTopLeft size={18} /> My invitations
               </Link>
-              <a href="#collection">
+              <Link to="/themes" className={activePage === "themes" ? "is-active" : ""}>
                 <Moon size={18} /> Template collection <span className="studio-new">NEW</span>
-              </a>
+              </Link>
             </>
           )}
+          <Link to="/themes" className={activePage === "themes" ? "is-active" : ""}>
+            <Sparkles size={17} /> Theme demos <span className="studio-new">NEW</span>
+          </Link>
           <Link
             to={user ? "/profile" : "/sign-in"}
             className={activePage === "responses" ? "is-active" : ""}

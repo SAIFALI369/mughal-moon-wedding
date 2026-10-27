@@ -166,7 +166,7 @@ Rules:
 - Names keep the text's own spelling; do not translate or transliterate.
 - "eventType" is the main ceremony: Nikah ceremony, Shubh Vivah, Wedding ceremony, Wedding reception, Engagement ceremony. Extra celebrations go in "additionalEvents" (sangeet, mehndi, haldi, walima…).
 - Put anything written after "gifts", "shagun" or "registry" in "giftsNote"; a live link in "livestreamUrl"; a maps link in "mapUrl"; a phone in "contactPhone"; a #tag in "hashtag".
-- "theme" may only be one of: ${invitationThemeIds.join(", ")}. Pick the closest mood (nikah/masjid → mughal; riad/lantern → riad-noor; mehndi → mehndi-night; haldi → haldi-baag (baag/courtyard); mandap → diya-utsav; balcony/jharokha/dawn → jharokha-dawn; minimal/paper/ink → vows-in-ink; reception → ballroom). Use "" if unsure.
+- "theme" may only be one of: ${invitationThemeIds.join(", ")}. Pick the closest mood (nikah/masjid → royal-rajmahal; riad/lantern → riad-noor; mehndi → mehndi-night; haldi → haldi-baag (baag/courtyard); mandap → diya-utsav; balcony/jharokha/dawn → jharokha-dawn; minimal/paper/ink → vows-in-ink; reception → ballroom). Use "" if unsure.
 - "framework" may only be one of: ${invitationFrameworkIds.join(", ")}. Use "" if unsure.
 - "check" lists field names whose value is plausible but ambiguous (for example a numeric date like 03/04/2027).
 - "notes" is at most three short sentences telling the partner what to look at. Never repeat the whole form.

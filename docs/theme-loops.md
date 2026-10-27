@@ -7,23 +7,23 @@ stays underneath as the poster frame.
 - Built by `node scripts/build-theme-loops.mjs`
 - Output: `public/film/<theme>.mp4` — 8 s, 1024×576, H.264 (main), ~120–580 KB
 - Rendered by `src/components/wedding/theme-loop.tsx`
-- Gallery of all 24, with live playback state: **`/films`**
+- Gallery of all 22, with live playback state: **`/films`**
 - Tests: `src/test/theme-loops.test.tsx`
 
 ## What each film is
 
 The illustration is the plate; the script adds the movement and the air:
 
-The frame is cut to each illustration's own aspect ratio (the three Eid-sky
-themes and the cinematic theme are not 16:9), so the film fades in over its
+The frame is cut to each illustration's own aspect ratio (Eid Light's wide sky
+and the vertical Mughal Moon film are not 16:9), so the film fades in over its
 still without the picture jumping.
 
 | Camera move | Where it is used | Feel |
 | --- | --- | --- |
 | `push` | luxury, fairytale | a 20 % dolly-in, no sway |
 | `drift` | rajmahal, aladin, ballroom, mehndi, mela, riad, bihari, haldi, calligraphy, diya | push plus a 60 px sideways sway |
-| `breathe` | lotus, classic, mandap, jharokha, vows-in-ink, mecca | gentle 8 % light-led zoom, minimal sway |
-| `rise` | eid, mughal, futuristic, chand-bagh | a 14 % push while the lens lifts ~96 px toward the sky |
+| `breathe` | lotus, mandap, jharokha, vows-in-ink, mecca | gentle 8 % light-led zoom, minimal sway |
+| `rise` | eid, futuristic, chand-bagh | a 14 % push while the lens lifts ~96 px toward the sky |
 | `water` | kashi-ghat | a push plus downward travel, so the river reads as flowing |
 
 The moves are deliberately readable: a guest should notice within two seconds
@@ -33,7 +33,7 @@ On top of the plate, one ambient layer drifts continuously:
 
 - **petals** — soft bokeh petals (wedding, spring, mehndi, haldi themes)
 - **embers** — rising sparks and diya light (luxury, calligraphy, kashi, diya)
-- **stars** — fine twinkle over the night skies (eid, mughal, chand-bagh)
+- **stars** — fine twinkle over the night skies (eid, mecca, chand-bagh)
 - **lantern** — large, dim lantern bokeh (rajmahal, aladin, ballroom, riad)
 
 Everything is derived from the theme's own art, so a theme recolor reskins both
@@ -44,14 +44,14 @@ the still and the film. The cut list lives at the top of the script; change a
 
 ```bash
 node scripts/build-theme-loops.mjs            # rebuild only what changed
-node scripts/build-theme-loops.mjs --force    # rebuild all 24
+node scripts/build-theme-loops.mjs --force    # rebuild all 22
 node scripts/build-theme-loops.mjs --theme riad-noor
 ```
 
 Requirements: `ffmpeg` (bundled via `@ffmpeg-installer/ffmpeg`, a devDependency)
 and ImageMagick's `convert` for the particle overlays. The script is idempotent:
 it skips any film newer than its illustration and itself, so a normal build never
-re-encodes 24 videos.
+re-encodes 22 videos.
 
 ## How it plays
 

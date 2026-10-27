@@ -9,8 +9,6 @@ type Effect = "lanterns" | "fireflies" | "diyas" | "petals" | "embers" | "snow" 
 const effectByTheme: Record<string, Effect> = {
   "mughal-moon-film": "lanterns",
   eid: "stars",
-  mughal: "lanterns",
-  classic: "petals",
   aladin: "stars",
   "bihari-vibe": "petals",
   mecca_madinah: "rays",

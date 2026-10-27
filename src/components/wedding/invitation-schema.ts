@@ -3,6 +3,7 @@ import {
   defaultInvitationElements,
   invitationFrameworkIds,
   invitationThemeIds,
+  normalizeInvitationTheme,
 } from "./invitation-options";
 import {
   INVITATION_DATE_FORMAT_ERROR,
@@ -156,7 +157,12 @@ export const invitationContentSchema = z.object({
   songs: z.array(songSchema).max(INVITATION_SONG_LIMIT, "Add at most five songs").default([]),
   groomPhoto: portraitSchema,
   bridePhoto: portraitSchema,
-  theme: z.enum(invitationThemeIds).default("eid"),
+  // Old cards may still carry an id for a theme that was removed as a duplicate;
+  // `normalizeInvitationTheme` maps those onto the surviving design.
+  theme: z.preprocess(
+    (value) => normalizeInvitationTheme(value) ?? "eid",
+    z.enum(invitationThemeIds).default("eid"),
+  ),
   framework: z.enum(invitationFrameworkIds).default("moonlit"),
   elements: elementsSchema.default(defaultInvitationElements),
 });

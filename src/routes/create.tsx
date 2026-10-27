@@ -125,7 +125,13 @@ export function CreateInvitationPage() {
   const canCreate = !online || (!!partner?.active && remaining > 0);
 
   useEffect(() => {
-    if (!authLoading && !user) navigate({ to: "/sign-in" });
+    // Keep the chosen theme: a guest who taps "Use this theme" on a demo should
+    // land in the same theme after signing in, not in the default one.
+    if (!authLoading && !user)
+      navigate({
+        to: "/sign-in",
+        search: { redirect: `/create?theme=${encodeURIComponent(theme)}` },
+      });
   }, [authLoading, user, navigate]);
 
   // Keep the page exactly as tall as the visible screen: when the phone keyboard

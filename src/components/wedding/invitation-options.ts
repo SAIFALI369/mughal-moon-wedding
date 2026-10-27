@@ -1,8 +1,6 @@
 export const invitationThemeIds = [
   "mughal-moon-film",
   "eid",
-  "mughal",
-  "classic",
   "aladin",
   "bihari-vibe",
   "mecca_madinah",
@@ -25,6 +23,24 @@ export const invitationThemeIds = [
   "calligraphy",
 ] as const;
 export type InvitationTheme = (typeof invitationThemeIds)[number];
+
+/**
+ * Two themes used to be the Eid Light artwork with a colour filter — the same
+ * picture, the same film and the same layout under a second name. They were
+ * duplicates, so they are gone; cards saved under the old ids are mapped to the
+ * nearest surviving design instead of breaking or silently resetting.
+ */
+export const legacyThemeAliases: Record<string, InvitationTheme> = {
+  mughal: "royal-rajmahal",
+  classic: "calligraphy",
+};
+
+export function normalizeInvitationTheme(value: unknown): InvitationTheme | undefined {
+  if (typeof value !== "string") return undefined;
+  const key = value.trim();
+  if ((invitationThemeIds as readonly string[]).includes(key)) return key as InvitationTheme;
+  return legacyThemeAliases[key];
+}
 
 export const invitationFrameworkIds = [
   "moonlit",
@@ -100,11 +116,6 @@ export const invitationThemeCategories = [
     label: "Modern & Luxury",
     description: "Marble, glass and editorial restraint",
   },
-  {
-    id: "classic",
-    label: "Classic",
-    description: "The original timeless ivory and gold",
-  },
 ] as const;
 export type InvitationThemeCategory = (typeof invitationThemeCategories)[number]["id"];
 
@@ -158,20 +169,6 @@ export const invitationThemes: {
     description: "The original luminous moonlit sky",
     swatch: "#d7e7df",
     category: "islamic",
-  },
-  {
-    id: "mughal",
-    label: "Mughal Night",
-    description: "Deep burgundy and antique gold",
-    swatch: "#361a30",
-    category: "islamic",
-  },
-  {
-    id: "classic",
-    label: "Classic",
-    description: "Warm ivory and heirloom gold",
-    swatch: "#f3e7cb",
-    category: "classic",
   },
   {
     id: "aladin",

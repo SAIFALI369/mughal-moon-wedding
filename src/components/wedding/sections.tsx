@@ -419,7 +419,7 @@ export function Hero({
   useEffect(() => {
     if (theme) return;
     const sync = () =>
-      setDemoTheme(document.documentElement.classList.contains("dark") ? "mughal" : "eid");
+      setDemoTheme("eid");
     sync();
     window.addEventListener("wedding:theme", sync);
     return () => window.removeEventListener("wedding:theme", sync);
