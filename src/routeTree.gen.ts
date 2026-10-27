@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AiConciergeRouteImport } from './routes/ai-concierge'
+import { Route as CreateRouteImport } from './routes/create'
 import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as DemoRouteImport } from './routes/demo'
 import { Route as DownloadRouteImport } from './routes/download'
@@ -34,6 +35,11 @@ const IndexRoute = IndexRouteImport.update({
 const AiConciergeRoute = AiConciergeRouteImport.update({
   id: '/ai-concierge',
   path: '/ai-concierge',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CreateRoute = CreateRouteImport.update({
+  id: '/create',
+  path: '/create',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DashboardRoute = DashboardRouteImport.update({
@@ -110,6 +116,7 @@ const InviteSlugRoute = InviteSlugRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
+  '/create': typeof CreateRoute
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
   '/download': typeof DownloadRoute
@@ -128,6 +135,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
+  '/create': typeof CreateRoute
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
   '/download': typeof DownloadRoute
@@ -147,6 +155,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/ai-concierge': typeof AiConciergeRoute
+  '/create': typeof CreateRoute
   '/dashboard': typeof DashboardRoute
   '/demo': typeof DemoRoute
   '/download': typeof DownloadRoute
@@ -167,6 +176,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/ai-concierge'
+    | '/create'
     | '/dashboard'
     | '/demo'
     | '/download'
@@ -185,6 +195,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/ai-concierge'
+    | '/create'
     | '/dashboard'
     | '/demo'
     | '/download'
@@ -203,6 +214,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/ai-concierge'
+    | '/create'
     | '/dashboard'
     | '/demo'
     | '/download'
@@ -222,6 +234,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AiConciergeRoute: typeof AiConciergeRoute
+  CreateRoute: typeof CreateRoute
   DashboardRoute: typeof DashboardRoute
   DemoRoute: typeof DemoRoute
   DownloadRoute: typeof DownloadRoute
@@ -252,6 +265,13 @@ declare module '@tanstack/react-router' {
       path: '/ai-concierge'
       fullPath: '/ai-concierge'
       preLoaderRoute: typeof AiConciergeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/create': {
+      id: '/create'
+      path: '/create'
+      fullPath: '/create'
+      preLoaderRoute: typeof CreateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dashboard': {
@@ -358,6 +378,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AiConciergeRoute: AiConciergeRoute,
+  CreateRoute: CreateRoute,
   DashboardRoute: DashboardRoute,
   DemoRoute: DemoRoute,
   DownloadRoute: DownloadRoute,

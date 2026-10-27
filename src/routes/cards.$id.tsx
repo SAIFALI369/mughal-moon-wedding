@@ -5,6 +5,7 @@ import { supabase } from "@/lib/db";
 import { useAuth } from "@/lib/auth-context";
 import { Button } from "@/components/ui/button";
 import { PlatformShell } from "@/components/platform/platform-shell";
+import { isPhoneViewport } from "@/lib/viewport";
 import { toast } from "sonner";
 import { invitationContentSchema } from "@/components/wedding/invitation-schema";
 import {
@@ -57,6 +58,12 @@ function CardEditor() {
   useEffect(() => {
     if (!loading && !user) navigate({ to: "/sign-in" });
   }, [user, loading, navigate]);
+
+  // Phones get the dedicated full-page editor; this page stays for desk-size screens.
+  useEffect(() => {
+    if (!id || !isPhoneViewport()) return;
+    navigate({ to: "/create", search: { card: id, theme: "" }, replace: true });
+  }, [id, navigate]);
 
   useEffect(() => {
     async function load() {

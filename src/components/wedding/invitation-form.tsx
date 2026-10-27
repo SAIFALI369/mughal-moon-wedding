@@ -253,7 +253,7 @@ export function InvitationDetailsFields({
       }
     >
       {compact && (
-        <>
+        <div className="editor-mobile-head">
           <div className="editor-mobile-step">
             <div className="editor-mobile-step-copy">
               <span className="editor-mobile-step-label">
@@ -294,7 +294,7 @@ export function InvitationDetailsFields({
               </TabsTrigger>
             ))}
           </TabsList>
-        </>
+        </div>
       )}
 
       {/* 1. DETAILS */}
