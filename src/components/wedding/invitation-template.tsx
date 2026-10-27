@@ -327,6 +327,7 @@ export function PersonalInvitation({
   slug,
   showGate = true,
   preview = false,
+  demoPhotos,
 }: {
   title: string;
   content: unknown;
@@ -334,8 +335,22 @@ export function PersonalInvitation({
   slug?: string;
   showGate?: boolean;
   preview?: boolean;
+  /**
+   * Theme demos carry bundled artwork (a portrait pair plus gallery frames)
+   * instead of the base64 uploads a real card stores, so the demo can show a
+   * complete card — portraits, gallery and all — without asking anyone to
+   * upload eight photos.
+   */
+  demoPhotos?: { groom?: string; bride?: string; gallery?: { src: string; caption: string }[] };
 }) {
-  const details = getInvitationDetails(content);
+  const base = getInvitationDetails(content);
+  const details = demoPhotos
+    ? {
+        ...base,
+        groomPhoto: demoPhotos.groom ?? base.groomPhoto,
+        bridePhoto: demoPhotos.bride ?? base.bridePhoto,
+      }
+    : base;
   const countdownDate = getInvitationCountdownDate(details);
   const calendarUrl = buildInvitationCalendarUrl(details);
   const mapUrl = details.mapUrl || directionsUrl(details.venue, details.address);
@@ -718,6 +733,7 @@ export function PersonalInvitation({
             details={details}
             preview={preview}
             heading={play("gallery") ?? undefined}
+            demoPhotos={demoPhotos?.gallery}
           />
         </div>
       )}

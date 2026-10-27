@@ -37,7 +37,7 @@ const details: PrintDetails = {
   ],
 };
 
-const palette = paletteForTheme("mughal");
+const palette = paletteForTheme("royal-rajmahal");
 
 describe("print palettes", () => {
   it("gives every theme its own ink and paper", () => {

@@ -19,8 +19,6 @@ export const themeRites: Record<InvitationTheme, InvitationRite> = {
   "lotus-goddess": "hindu",
   calligraphy: "hindu",
   eid: "muslim",
-  mughal: "muslim",
-  classic: "universal",
   aladin: "muslim",
   "bihari-vibe": "hindu",
   mecca_madinah: "muslim",
@@ -122,7 +120,6 @@ export function LivingScene({
   const draped = theme === "riad-noor" || theme === "kashi-ghat" || theme === "mehndi-night";
   const night =
     hindu ||
-    theme === "mughal" ||
     theme === "aladin" ||
     theme === "futuristic" ||
     theme === "riad-noor" ||

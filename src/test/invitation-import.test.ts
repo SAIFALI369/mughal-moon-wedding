@@ -101,7 +101,7 @@ describe("reading a partner's notes", () => {
       "theme",
     ]);
     expect(once.additionalEvents).toHaveLength(1);
-    expect(once.theme).toBe("mughal");
+    expect(once.theme).toBe("royal-rajmahal");
     const twice = mergeReadingIntoForm(once, reading, ["additionalEvents", "theme"]);
     expect(twice.additionalEvents).toHaveLength(1);
   });

@@ -147,7 +147,7 @@ describe("Downloadable offline app & online-only publishing", () => {
     }
 
     const sw = readFileSync("public/sw.js", "utf8");
-    expect(sw).toContain("invitingyou-offline-v4");
+    expect(sw).toContain("invitingyou-offline-v5");
     expect(sw).toContain('"/offline-studio"');
     expect(sw).toContain('"/preview-frame"');
     expect(sw).toContain("FORCE_UPDATE_CACHE");
@@ -319,7 +319,7 @@ describe("Downloadable offline app & online-only publishing", () => {
         time: "7:00 PM",
         venue: "Patna Club",
         address: "Patna, Bihar",
-        theme: "mughal",
+        theme: "royal-rajmahal",
         framework: "royal-folio",
       }),
     });

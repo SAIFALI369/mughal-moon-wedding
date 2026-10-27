@@ -36,6 +36,7 @@ import {
   UploadCloud,
   WifiOff,
   Pencil,
+  ArrowUpRight,
 } from "lucide-react";
 import {
   InvitationDetailsFields,
@@ -52,6 +53,8 @@ import {
 } from "@/components/wedding/invitation-form-data";
 import { invitationExpiry } from "@/components/wedding/invitation-details";
 import { ThemeLoop } from "@/components/wedding/theme-loop";
+import { ThemeDemoCard } from "@/components/wedding/theme-demo-card";
+import { demoForTheme } from "@/config/theme-demos";
 import { invitationArt } from "@/components/wedding/invitation-art";
 import {
   invitationThemeCategories,
@@ -815,29 +818,64 @@ export function Dashboard() {
                 ))}
               </div>
 
+              <p className="dashboard-list-heading">
+                <span>
+                  Every theme has a complete demo card — its own couple, gallery and soundtrack.
+                </span>
+                <Link to="/themes" className="studio-text-button">
+                  Open the demo collection <ArrowUpRight size={14} />
+                </Link>
+              </p>
+
               <div className="admin-template-grid">
                 {visibleTemplates.map((theme) => (
-                  <button
-                    key={theme.id}
-                    type="button"
-                    disabled={!canCreate}
-                    onClick={() => startNew(theme.id)}
-                    className="admin-template-card group"
-                  >
-                    <div className="admin-template-thumb" style={{ backgroundColor: theme.swatch }}>
-                      <img
-                        src={invitationArt[theme.id]}
-                        alt=""
-                        loading="lazy"
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
-                      />
-                      <ThemeLoop theme={theme.id} className="object-cover" />
-                    </div>
-                    <div className="admin-template-meta">
-                      <strong>{theme.label}</strong>
-                      <Plus size={14} aria-hidden="true" />
-                    </div>
-                  </button>
+                  <div key={theme.id} className="admin-template-item">
+                    <button
+                      type="button"
+                      disabled={!canCreate}
+                      onClick={() => startNew(theme.id)}
+                      className="admin-template-card group"
+                    >
+                      <div
+                        className="admin-template-thumb"
+                        style={{ backgroundColor: theme.swatch }}
+                      >
+                        <img
+                          src={invitationArt[theme.id]}
+                          alt=""
+                          loading="lazy"
+                          className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                        />
+                        <ThemeLoop theme={theme.id} className="object-cover" />
+                      </div>
+                      <div className="admin-template-meta">
+                        <strong>{theme.label}</strong>
+                        <Plus size={14} aria-hidden="true" />
+                      </div>
+                    </button>
+                    <Link
+                      to="/theme/$themeId"
+                      params={{ themeId: theme.id }}
+                      className="admin-template-demo"
+                      aria-label={`See the ${theme.label} demo card`}
+                    >
+                      Demo <ArrowUpRight size={11} aria-hidden="true" />
+                    </Link>
+                  </div>
+                ))}
+              </div>
+
+              <p className="admin-templates-subhead">
+                Or open any theme as a finished card — its own couple, gallery photos, ceremony
+                order and a YouTube soundtrack are already inside.
+              </p>
+              <div className="theme-demo-grid">
+                {visibleTemplates.map((theme, index) => (
+                  <ThemeDemoCard
+                    key={`demo-${theme.id}`}
+                    demo={demoForTheme(theme.id)}
+                    priority={index < 2}
+                  />
                 ))}
               </div>
             </section>

@@ -181,8 +181,8 @@ describe("Personal invitation workspace", () => {
       button: 0,
       ctrlKey: false,
     });
-    fireEvent.click(screen.getByRole("button", { name: /Mughal Night/ }));
-    expect(screen.getByTestId("editor-theme")).toHaveTextContent("mughal");
+    fireEvent.click(screen.getByRole("button", { name: /Royal Rajmahal/ }));
+    expect(screen.getByTestId("editor-theme")).toHaveTextContent("royal-rajmahal");
   });
 
   it("disables new invitations when ten lifetime credits have been spent", async () => {
@@ -204,7 +204,7 @@ describe("Personal invitation workspace", () => {
       button: 0,
       ctrlKey: false,
     });
-    expect(screen.getByRole("button", { name: /Mughal Night/ })).toBeDisabled();
+    expect(screen.getByRole("button", { name: /Royal Rajmahal/ })).toBeDisabled();
   });
 
   it("shows both phone and desktop previews on desktop, and only phone preview on a phone", async () => {
@@ -365,7 +365,7 @@ describe("Personal invitation workspace", () => {
     render(<Dashboard />);
     await screen.findByText("No invitations yet");
     expect(screen.queryByRole("region", { name: "Partner card package" })).not.toBeInTheDocument();
-    expect(screen.queryByRole("button", { name: /Mughal Night/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /Royal Rajmahal/ })).not.toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: "Credits & access" }));
     expect(screen.getByRole("region", { name: "Partner card package" })).toBeInTheDocument();
     expect(screen.queryByRole("searchbox")).not.toBeInTheDocument();

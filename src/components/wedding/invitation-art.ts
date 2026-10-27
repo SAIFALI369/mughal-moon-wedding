@@ -29,8 +29,6 @@ export const invitationArt: Record<InvitationTheme, string> = {
   "lotus-goddess": lotusGoddess,
   calligraphy,
   eid: eidSky,
-  mughal: eidSky,
-  classic: eidSky,
   aladin,
   "bihari-vibe": bihariVibe,
   mecca_madinah: meccaMadinah,

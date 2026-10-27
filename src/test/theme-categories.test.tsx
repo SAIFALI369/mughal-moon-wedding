@@ -1,11 +1,15 @@
 // @vitest-environment node
 import { renderToStaticMarkup } from "react-dom/server";
+import { createHash } from "node:crypto";
+import { readFileSync } from "node:fs";
+import { join } from "node:path";
 import { describe, expect, it } from "vitest";
 import { invitationArt } from "@/components/wedding/invitation-art";
 import {
   invitationThemeCategories,
   invitationThemeIds,
   invitationThemes,
+  normalizeInvitationTheme,
 } from "@/components/wedding/invitation-options";
 import { paletteForTheme } from "@/lib/print-sheets";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
@@ -36,7 +40,7 @@ const newThemes = ["riad-noor", "kashi-ghat", "mehndi-night"] as const;
 
 describe("three more themes", () => {
   it("registers Riad Noor, Kashi Ghat and Mehndi Night with full artwork", () => {
-    expect(invitationThemeIds).toHaveLength(24);
+    expect(invitationThemeIds).toHaveLength(22);
     const labels = invitationThemes.map((theme) => theme.label);
     for (const label of ["Riad Noor", "Kashi Ghat", "Mehndi Night"]) {
       expect(labels).toContain(label);
@@ -67,8 +71,8 @@ describe("three more themes", () => {
 });
 
 describe("theme categories", () => {
-  it("groups all twenty-four themes into nine labelled groups with no orphan", () => {
-    expect(invitationThemeCategories).toHaveLength(9);
+  it("groups all twenty-two themes into eight labelled groups with no orphan", () => {
+    expect(invitationThemeCategories).toHaveLength(8);
     const grouped = invitationThemeCategories.flatMap((category) =>
       invitationThemes.filter((theme) => theme.category === category.id),
     );
@@ -86,6 +90,26 @@ describe("theme categories", () => {
       expect(size).toBeGreaterThan(0);
       expect(size).toBeLessThanOrEqual(5);
     }
+  });
+
+  it("keeps retired duplicate themes out of the collection", () => {
+    const ids = invitationThemeIds as readonly string[];
+    for (const retired of ["mughal", "classic"]) expect(ids).not.toContain(retired);
+    // Old cards still open on the nearest surviving design instead of resetting.
+    expect(normalizeInvitationTheme("mughal")).toBe("royal-rajmahal");
+    expect(normalizeInvitationTheme("classic")).toBe("calligraphy");
+    expect(normalizeInvitationTheme("kashi-ghat")).toBe("kashi-ghat");
+    expect(normalizeInvitationTheme("nonsense")).toBeUndefined();
+  });
+
+  it("gives no two themes the same artwork or the same film", () => {
+    const art = invitationThemeIds.map((theme) => invitationArt[theme]);
+    expect(new Set(art).size).toBe(invitationThemeIds.length);
+    const hashes = invitationThemeIds.map((theme) => {
+      const file = readFileSync(join("public", "film", `${theme}.mp4`));
+      return createHash("md5").update(file).digest("hex");
+    });
+    expect(new Set(hashes).size).toBe(invitationThemeIds.length);
   });
 
   it("places each new theme with its tradition", () => {

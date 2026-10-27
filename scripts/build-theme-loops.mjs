@@ -61,8 +61,6 @@ const cuts = {
   "lotus-goddess": { art: "lotus-goddess.webp", move: "breathe", air: "petals" },
   calligraphy: { art: "calligraphy.webp", move: "drift", air: "embers" },
   eid: { art: "../eid-sky.webp", move: "rise", air: "stars", size: [1200, 800] },
-  mughal: { art: "../eid-sky.webp", move: "rise", air: "stars", size: [1200, 800] },
-  classic: { art: "../eid-sky.webp", move: "breathe", air: "petals", size: [1200, 800] },
   aladin: { art: "aladin.webp", move: "drift", air: "lantern" },
   "bihari-vibe": { art: "bihari-vibe.webp", move: "drift", air: "petals" },
   mecca_madinah: { art: "mecca-madinah.webp", move: "breathe", air: "stars" },

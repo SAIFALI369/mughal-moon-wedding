@@ -24,7 +24,7 @@ const baseCard = {
   time: "7:00 PM",
   venue: "Garden Pavilion",
   address: "Patna, Bihar",
-  theme: "mughal" as const,
+  theme: "royal-rajmahal" as const,
   framework: "royal-folio" as const,
 };
 
@@ -110,6 +110,7 @@ describe("soundtrack door-open autoplay", () => {
         title="Our Day"
         content={{
           ...baseCard,
+          theme: "eid",
           songs: [{ title: "", url: "/music/sitar.mp3" }],
         }}
       />,
@@ -145,6 +146,7 @@ describe("soundtrack door-open autoplay", () => {
         title="Our Day"
         content={{
           ...baseCard,
+          theme: "eid",
           songs: [{ title: "Wedding Song", url: "https://youtu.be/dQw4w9WgXcQ" }],
         }}
       />,
@@ -186,6 +188,7 @@ describe("soundtrack door-open autoplay", () => {
         title="Our Day"
         content={{
           ...baseCard,
+          theme: "eid",
           songs: [
             { title: "Spotify Love", url: "https://open.spotify.com/track/4uLU6hMCjMI75M1A2tKUQC" },
           ],

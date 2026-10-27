@@ -1,7 +1,7 @@
 import {
   defaultInvitationElements,
   invitationFrameworkIds,
-  invitationThemeIds,
+  normalizeInvitationTheme,
   type InvitationElements,
   type InvitationFramework,
   type InvitationTheme,
@@ -155,11 +155,7 @@ export function getInvitationDetails(content: unknown): InvitationDetails {
       .slice(0, 4),
     groomPhoto: groomPhoto && isSafePortrait(groomPhoto) ? groomPhoto : null,
     bridePhoto: bridePhoto && isSafePortrait(bridePhoto) ? bridePhoto : null,
-    theme:
-      typeof data.theme === "string" &&
-      (invitationThemeIds as readonly string[]).includes(data.theme)
-        ? (data.theme as InvitationTheme)
-        : "eid",
+    theme: normalizeInvitationTheme(data.theme) ?? "eid",
     framework:
       typeof data.framework === "string" &&
       (invitationFrameworkIds as readonly string[]).includes(data.framework)

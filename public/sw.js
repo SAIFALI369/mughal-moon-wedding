@@ -1,4 +1,4 @@
-const CACHE_NAME = "invitingyou-offline-v4";
+const CACHE_NAME = "invitingyou-offline-v5";
 
 const SHELL_PATHS = [
   "/",
@@ -10,6 +10,7 @@ const SHELL_PATHS = [
   "/sign-in",
   "/demo",
   "/storybook?theme=royal-rajmahal",
+  "/themes",
   "/manifest.webmanifest",
   "/favicon.ico",
   "/icon-192.png",

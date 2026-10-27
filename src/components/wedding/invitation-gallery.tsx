@@ -27,13 +27,24 @@ export function InvitationGallery({
   details,
   preview = false,
   heading,
+  demoPhotos,
 }: {
   cardId?: string;
   details: InvitationDetails;
   preview?: boolean;
   heading?: { eyebrow: string; title: string };
+  /** Theme demos show bundled photos instead of a card's uploaded gallery. */
+  demoPhotos?: { src: string; caption: string }[];
 }) {
-  const [photos, setPhotos] = useState<GalleryPhoto[]>([]);
+  const [photos, setPhotos] = useState<GalleryPhoto[]>(
+    () =>
+      demoPhotos?.map((photo, index) => ({
+        slot: index,
+        image_data: photo.src,
+        caption: photo.caption,
+        source: "host" as const,
+      })) ?? [],
+  );
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState("");
   const [selected, setSelected] = useState<number | null>(null);
@@ -77,6 +88,8 @@ export function InvitationGallery({
   }, [cardId]);
 
   useEffect(() => {
+    // A demo's frames are fixed artwork bundled with the app: nothing to fetch.
+    if (demoPhotos) return;
     if (!cardId) return;
     if (isOfflineDraftId(cardId)) {
       setPhotos(getOfflineDraftPhotos(cardId));
@@ -104,7 +117,7 @@ export function InvitationGallery({
     return () => {
       void supabase.removeChannel(channel);
     };
-  }, [cardId, preview, load]);
+  }, [cardId, preview, load, demoPhotos]);
 
   useEffect(() => {
     if (selected === null) return;
