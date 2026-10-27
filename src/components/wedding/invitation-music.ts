@@ -4,7 +4,13 @@ import { MUSIC_LIBRARY } from "../../../supabase/functions/_shared/music";
 export const INVITATION_SONG_LIMIT = 5;
 export const INVITATION_MUSIC_EVENT = "invitation:music-command";
 
-export type InvitationSong = { title: string; url: string };
+export type InvitationSong = {
+  title: string;
+  url: string;
+  /** Host-chosen excerpt inside the track, in whole seconds. 0 = no clip bound. */
+  clipStart?: number;
+  clipEnd?: number;
+};
 
 export type SongSource =
   | { kind: "audio"; src: string }
@@ -17,6 +23,37 @@ export type SongSource =
       embedUrl: string;
       openUrl: string;
     };
+
+/** Sanitises a host-chosen excerpt into { start, end } seconds (end null = to the end). */
+export function songClip(song: Pick<InvitationSong, "clipStart" | "clipEnd">): {
+  start: number;
+  end: number | null;
+} {
+  const start = Math.max(0, Math.min(7200, Math.floor(Number(song.clipStart) || 0)));
+  const rawEnd = Math.max(0, Math.min(7200, Math.floor(Number(song.clipEnd) || 0)));
+  const end = rawEnd > start + 2 ? rawEnd : null;
+  return { start, end };
+}
+
+/** Adds `start` / `end` to a YouTube embed so the guest hears exactly that excerpt. */
+export function withYouTubeClip(
+  embedUrl: string,
+  song: Pick<InvitationSong, "clipStart" | "clipEnd">,
+) {
+  const { start, end } = songClip(song);
+  if (!start && !end) return embedUrl;
+  const params = new URLSearchParams();
+  if (start) params.set("start", String(start));
+  if (end) params.set("end", String(end));
+  return `${embedUrl}${embedUrl.includes("?") ? "&" : "?"}${params.toString()}`;
+}
+
+/** Human label for a second count, e.g. 95 → "1:35". */
+export function formatClipTime(seconds: number): string {
+  const safe = Math.max(0, Math.floor(Number(seconds) || 0));
+  const minutes = Math.floor(safe / 60);
+  return `${minutes}:${String(safe % 60).padStart(2, "0")}`;
+}
 
 const YOUTUBE_HOSTS = new Set([
   "youtube.com",
@@ -160,7 +197,11 @@ export function sanitizeInvitationSongs(value: unknown): InvitationSong[] {
       const url = typeof item.url === "string" ? item.url.trim() : "";
       const rawTitle = typeof item.title === "string" ? item.title.trim().slice(0, 80) : "";
       const title = rawTitle || (isSafeSongUrl(url) ? defaultSongTitleForUrl(url, index) : "");
-      return { title, url };
+      const clipStart = Math.max(0, Math.min(7200, Math.floor(Number(item.clipStart) || 0)));
+      const clipEnd = Math.max(0, Math.min(7200, Math.floor(Number(item.clipEnd) || 0)));
+      // Only carry an excerpt when the host actually picked one, so untouched
+      // links keep their original stored shape.
+      return clipStart || clipEnd ? { title, url, clipStart, clipEnd } : { title, url };
     })
     .filter((song) => song.title.length > 0 && isSafeSongUrl(song.url))
     .slice(0, INVITATION_SONG_LIMIT);

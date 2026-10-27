@@ -79,6 +79,10 @@ const extraEventSchema = z.object({
 
 const songSchema = z.object({
   title: z.string().trim().max(80).default("Wedding Song"),
+  /** Second the guest's excerpt starts at (absent = from the top of the track). */
+  clipStart: z.number().int().min(0).max(7200).optional(),
+  /** Second the excerpt stops at (absent = play to the end of the track). */
+  clipEnd: z.number().int().min(0).max(7200).optional(),
   url: z
     .string()
     .trim()

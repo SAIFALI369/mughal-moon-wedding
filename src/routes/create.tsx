@@ -34,6 +34,7 @@ import {
   updateOfflineDraft,
 } from "@/lib/offline-studio";
 import { searchParam } from "@/lib/viewport";
+import { insertInvitationCard } from "@/lib/invitation-cards";
 
 type EditableCard = {
   id: string;
@@ -291,23 +292,14 @@ export function CreateInvitationPage() {
       const { data: session } = await supabase.auth.getSession();
       if (!session.session) throw new Error("Not authenticated");
       const expires_at = invitationExpiry(content.date);
-      const { error: writeError } = await supabase
-        .from("invitation_cards")
-        .insert({
-          owner_id: session.session.user.id,
-          title,
-          slug: generateSlug(title),
-          status: "draft",
-          content,
-          ...(expires_at ? { expires_at } : {}),
-        })
-        .select()
-        .single();
-      if (writeError) {
-        setError(writeError.message);
-        toast.error(writeError.message);
-        return;
-      }
+      await insertInvitationCard({
+        owner_id: session.session.user.id,
+        title,
+        slug: generateSlug(title),
+        status: "draft",
+        content,
+        ...(expires_at ? { expires_at } : {}),
+      });
       toast.success("Draft saved");
       navigate({ to: "/dashboard" });
     } catch (err: unknown) {

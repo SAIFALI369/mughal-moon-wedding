@@ -48,6 +48,7 @@ import {
 import { formatDdMmYyyyTyping, validateInvitationFormDate } from "./invitation-details";
 import { InvitationCover } from "./invitation-template";
 import { InvitationGalleryEditor } from "./invitation-gallery-editor";
+import { SongClipPicker } from "./song-clip-picker";
 import { SimranFormReader, applyReading } from "./form-assistant";
 import type { InvitationReading, ReadingFieldKey } from "./invitation-import";
 
@@ -95,6 +96,8 @@ type Props = {
   cardId?: string;
   simran?: boolean;
   coupleLocked?: boolean;
+  /** Sections the rail should not offer (e.g. the embedded preview in a live editor). */
+  hiddenSections?: readonly InvitationEditorSection[];
 };
 
 function EditorPanel({
@@ -124,6 +127,7 @@ export function InvitationDetailsFields({
   cardId,
   simran = false,
   coupleLocked = false,
+  hiddenSections,
 }: Props) {
   const [localSection, setLocalSection] = useState<InvitationEditorSection>("essentials");
   const [themeCategory, setThemeCategory] = useState<string>("all");
@@ -154,13 +158,14 @@ export function InvitationDetailsFields({
     }
   }
 
-  function addSong(song: { title: string; url: string } = { title: "", url: "" }) {
+  function addSong(song: Partial<InvitationForm["songs"][number]> = { title: "", url: "" }) {
+    const next = { title: song.title ?? "", url: song.url ?? "", clipStart: 0, clipEnd: 0 };
     onChange((form) =>
-      form.songs.length >= INVITATION_SONG_LIMIT ? form : { ...form, songs: [...form.songs, song] },
+      form.songs.length >= INVITATION_SONG_LIMIT ? form : { ...form, songs: [...form.songs, next] },
     );
   }
 
-  function updateSong(index: number, patch: Partial<{ title: string; url: string }>) {
+  function updateSong(index: number, patch: Partial<InvitationForm["songs"][number]>) {
     onChange((form) => ({
       ...form,
       songs: form.songs.map((song, position) => {
@@ -220,6 +225,9 @@ export function InvitationDetailsFields({
   const rsvpDateError = dateFieldError(value.rsvpDeadline, "card-rsvpDeadline");
   const invalidPhone = !!value.contactPhone.trim() && !/^[+0-9().\s-]*$/.test(value.contactPhone);
   const currentSection = (section ?? localSection) as InvitationEditorSection;
+  const railSections = hiddenSections?.length
+    ? invitationEditorSections.filter((item) => !hiddenSections.includes(item.id))
+    : invitationEditorSections;
   const tabsRef = useRef<HTMLDivElement | null>(null);
   const editorStepIndex = Math.max(
     0,
@@ -257,7 +265,7 @@ export function InvitationDetailsFields({
           <div className="editor-mobile-step">
             <div className="editor-mobile-step-copy">
               <span className="editor-mobile-step-label">
-                Step {editorStepIndex + 1} of {invitationEditorSections.length}
+                Step {editorStepIndex + 1} of {railSections.length}
                 <strong>{invitationEditorSections[editorStepIndex]?.label}</strong>
               </span>
               <span className="editor-mobile-step-track">
@@ -287,7 +295,7 @@ export function InvitationDetailsFields({
             className="editor-section-tabs"
             aria-label="Invitation editor sections"
           >
-            {invitationEditorSections.map((item) => (
+            {railSections.map((item) => (
               <TabsTrigger key={item.id} value={item.id} type="button">
                 <item.icon className="editor-tab-icon" size={15} aria-hidden="true" />
                 <span>{item.label}</span>
@@ -1078,6 +1086,15 @@ export function InvitationDetailsFields({
                         </p>
                       )}
                     </div>
+                    {source && (
+                      <div className="sm:col-span-3">
+                        <SongClipPicker
+                          song={song}
+                          index={index}
+                          onChange={(patch) => updateSong(index, patch)}
+                        />
+                      </div>
+                    )}
                     <div className="flex items-end">
                       <Button
                         type="button"

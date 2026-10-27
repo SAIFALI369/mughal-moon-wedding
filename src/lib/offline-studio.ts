@@ -378,21 +378,35 @@ export async function publishOfflineDraftToCloud<
   const slug = draft.slug || generateSlug(draft.title);
   const localPhotos = getOfflineDraftPhotos(draft.id);
 
-  const { data: inserted, error: insertError } = await supabaseClient
-    .from("invitation_cards")
-    .insert({
-      owner_id: ownerId,
-      title: draft.title.trim(),
-      slug,
-      status: "draft",
-      content: parsed.data,
-      ...(expires_at ? { expires_at } : {}),
-    })
-    .select()
-    .single();
+  // The share slug is unique in the database; a collision must never look like
+  // "the card wasn't created", so retry with a fresh slug.
+  let inserted: { id: string } | null = null;
+  let insertError: { code?: string; message?: string } | null = null;
+  for (let attempt = 0; attempt < 4 && !inserted; attempt += 1) {
+    const attemptSlug = attempt === 0 ? slug : generateSlug(draft.title);
+    const { data, error } = await supabaseClient
+      .from("invitation_cards")
+      .insert({
+        owner_id: ownerId,
+        title: draft.title.trim(),
+        slug: attemptSlug,
+        status: "draft",
+        content: parsed.data,
+        ...(expires_at ? { expires_at } : {}),
+      })
+      .select()
+      .single();
+    inserted = (data as { id: string } | null) ?? null;
+    insertError = error;
+    if (error && error.code !== "23505") break;
+  }
 
   if (insertError || !inserted) {
-    throw new Error(insertError?.message || "Unable to upload draft for publishing.");
+    throw new Error(
+      insertError?.code === "P0001"
+        ? insertError.message || "This account cannot publish more cards right now."
+        : insertError?.message || "Unable to upload draft for publishing.",
+    );
   }
 
   if (localPhotos.length > 0 && typeof supabaseClient.rpc === "function") {

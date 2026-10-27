@@ -114,6 +114,31 @@ describe("Personal invitation workspace", () => {
     expect(screen.queryByTestId("editor-theme")).not.toBeInTheDocument();
   });
 
+  it("opens the live preview page on a phone instead of the preview dialog", async () => {
+    setViewportWidth(375);
+    mocks.rows = [
+      {
+        id: "card-live",
+        title: "Ayesha & Imran",
+        slug: "ayesha-imran",
+        status: "published",
+        content: { groomName: "Imran", brideName: "Ayesha" },
+        created_at: "2026-10-19",
+        updated_at: "2026-10-19",
+      },
+    ];
+    render(<Dashboard />);
+    await screen.findByText("1 active invitations");
+
+    fireEvent.click(screen.getByRole("button", { name: "Preview" }));
+    expect(mocks.navigate).toHaveBeenCalledWith({
+      to: "/preview/$cardId",
+      params: { cardId: "card-live" },
+    });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    setViewportWidth(1024);
+  });
+
   it("opens the create page on a phone instead of the desktop dialog", async () => {
     setViewportWidth(375);
     mocks.rows = [
