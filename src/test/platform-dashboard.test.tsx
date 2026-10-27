@@ -171,13 +171,15 @@ describe("Personal invitation workspace", () => {
     expect(phoneBtn).toHaveAttribute("aria-pressed", "true");
     expect(desktopBtn).toHaveAttribute("aria-pressed", "false");
     expect(dialog.querySelector('[data-preview-device="phone"]')).not.toBeNull();
-    expect(dialog.querySelector(".preview-phone-bezel")).not.toBeNull();
+    expect(dialog.querySelector('[data-device="phone"] .device-frame')).not.toBeNull();
+    expect(dialog.querySelector('[data-device="phone"] .device-frame-notch')).not.toBeNull();
 
     // Switch to Desktop preview on desktop
     fireEvent.click(desktopBtn);
     expect(desktopBtn).toHaveAttribute("aria-pressed", "true");
     expect(dialog.querySelector('[data-preview-device="desktop"]')).not.toBeNull();
-    expect(dialog.querySelector(".preview-phone-bezel")).toBeNull();
+    expect(dialog.querySelector('[data-device="phone"] .device-frame')).toBeNull();
+    expect(dialog.querySelector('[data-device="desktop"] .device-frame')).not.toBeNull();
 
     // On a phone screen: only phone preview is shown, no desktop toggle
     setViewportWidth(375);
@@ -186,7 +188,9 @@ describe("Personal invitation workspace", () => {
     });
     expect(within(dialog).queryByRole("button", { name: "Desktop" })).toBeNull();
     expect(dialog.querySelector('[data-preview-device="phone"]')).not.toBeNull();
-    expect(dialog.querySelector(".preview-phone-bezel")).toBeNull();
+    // A real phone renders the invitation natively: no fake bezel or notch.
+    expect(dialog.querySelector('[data-native="true"]')).not.toBeNull();
+    expect(dialog.querySelector(".device-frame-notch")).toBeNull();
   });
 
   it("shows a printable QR code for each card", async () => {
