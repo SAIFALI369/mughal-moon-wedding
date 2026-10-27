@@ -114,6 +114,41 @@ describe("Personal invitation workspace", () => {
     expect(screen.queryByTestId("editor-theme")).not.toBeInTheDocument();
   });
 
+  it("opens the create page on a phone instead of the desktop dialog", async () => {
+    setViewportWidth(375);
+    mocks.rows = [
+      {
+        id: "card-mobile",
+        title: "Ayesha & Imran",
+        slug: "ayesha-imran",
+        status: "draft",
+        content: { groomName: "Imran", brideName: "Ayesha" },
+        created_at: "2026-10-19",
+        updated_at: "2026-10-19",
+      },
+    ];
+    render(<Dashboard />);
+    await screen.findByText("1 active invitations");
+
+    fireEvent.click(screen.getByRole("button", { name: "Create invitation" }));
+    expect(mocks.navigate).toHaveBeenCalledWith({
+      to: "/create",
+      search: { theme: "eid", card: "" },
+    });
+    // No dialog is mounted over the phone layout.
+    expect(screen.queryByRole("dialog")).toBeNull();
+    expect(screen.queryByTestId("editor-theme")).not.toBeInTheDocument();
+
+    mocks.navigate.mockClear();
+    fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+    expect(mocks.navigate).toHaveBeenCalledWith({
+      to: "/create",
+      search: { card: "card-mobile", theme: "" },
+    });
+    expect(screen.queryByRole("dialog")).toBeNull();
+    setViewportWidth(1024);
+  });
+
   it("starts a draft using the selected real theme", async () => {
     render(<Dashboard />);
     await screen.findByText("No invitations yet");

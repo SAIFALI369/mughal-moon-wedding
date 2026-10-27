@@ -147,7 +147,7 @@ describe("Downloadable offline app & online-only publishing", () => {
     }
 
     const sw = readFileSync("public/sw.js", "utf8");
-    expect(sw).toContain("invitingyou-offline-v2");
+    expect(sw).toContain("invitingyou-offline-v3");
     expect(sw).toContain('"/offline-studio"');
     expect(sw).toContain('"/preview-frame"');
     expect(sw).toContain("FORCE_UPDATE_CACHE");

@@ -1,10 +1,11 @@
-const CACHE_NAME = "invitingyou-offline-v2";
+const CACHE_NAME = "invitingyou-offline-v3";
 
 const SHELL_PATHS = [
   "/",
   "/offline-studio",
   "/download",
   "/dashboard",
+  "/create",
   "/preview-frame",
   "/sign-in",
   "/demo",

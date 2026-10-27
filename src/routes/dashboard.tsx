@@ -78,6 +78,7 @@ import {
   type OfflineInvitationDraft,
 } from "@/lib/offline-studio";
 import { useOnlineStatus } from "@/lib/pwa-install";
+import { isPhoneViewport } from "@/lib/viewport";
 
 type PartnerAllowance = {
   shop_name: string;
@@ -169,6 +170,12 @@ export function Dashboard() {
   }
 
   function startNew(theme = emptyInvitationForm().theme) {
+    // On a phone the form is a page, not a dialog: a modal over a scrolling
+    // studio could not keep its fields inside the screen.
+    if (isPhoneViewport()) {
+      navigate({ to: "/create", search: { theme, card: "" } });
+      return;
+    }
     const storybook = theme === "fairytale" || theme === "ballroom";
     const hindu = theme === "diya-utsav" || theme === "sacred-mandap";
     const next = {
@@ -477,6 +484,10 @@ export function Dashboard() {
   }
 
   function startEdit(card: InvitationCard) {
+    if (isPhoneViewport()) {
+      navigate({ to: "/create", search: { card: card.id, theme: "" } });
+      return;
+    }
     setEditorOpen(true);
     setEditingId(card.id);
     const next = invitationFormForCard(card.title, card.content);
