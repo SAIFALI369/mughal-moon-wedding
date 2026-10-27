@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { Sparkles } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
 import { invitationArt } from "../invitation-art";
+import { ThemeLoop } from "../theme-loop";
 import { getInvitationMonogram, type InvitationDetails } from "../invitation-details";
 
 export function StorybookEntry({
@@ -71,6 +72,7 @@ export function StorybookEntry({
         aria-hidden="true"
         className="sb-entry-backdrop"
       />
+      <ThemeLoop theme={details.theme} className="sb-entry-backdrop sb-entry-video" priority />
       <div className="sb-entry-veil" aria-hidden="true" />
 
       <div className="sb-door sb-door-left" aria-hidden="true">
