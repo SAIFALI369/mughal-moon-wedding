@@ -51,6 +51,7 @@ import {
   invitationThemes,
 } from "@/components/wedding/invitation-options";
 import { PlatformShell } from "@/components/platform/platform-shell";
+import { OfflineReadiness } from "@/components/platform/offline-readiness";
 import { CardPrintDialog } from "@/components/platform/card-print-dialog";
 import { InvitationPreview } from "@/components/platform/invitation-preview";
 import {
@@ -303,21 +304,8 @@ export function OfflineStudioPage() {
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
               <h1>Offline Studio</h1>
-              <span
-                className={`offline-status-pill ${online ? "is-online" : "is-offline"}`}
-                role="status"
-              >
-                {online ? (
-                  <>
-                    <Globe2 size={12} aria-hidden="true" /> Online · Ready to publish
-                  </>
-                ) : (
-                  <>
-                    <WifiOff size={12} aria-hidden="true" /> Offline · Drafts saved on device
-                  </>
-                )}
-              </span>
             </div>
+            <OfflineReadiness compact />
             <div className="admin-metrics" aria-label="Offline workspace summary">
               <span>
                 <strong>{drafts.length}</strong> offline {drafts.length === 1 ? "draft" : "drafts"}

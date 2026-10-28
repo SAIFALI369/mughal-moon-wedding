@@ -14,7 +14,9 @@ import {
   Sparkles,
 } from "lucide-react";
 import { PlatformShell } from "@/components/platform/platform-shell";
+import { ReleaseCard } from "@/components/platform/release-card";
 import { ThemeDemoCard } from "@/components/wedding/theme-demo-card";
+import { OFFLINE_APP_RELEASE } from "@/config/app-release";
 import { themeDemos } from "@/config/theme-demos";
 import { useAuth } from "@/lib/auth-context";
 import { Dashboard } from "./dashboard";
@@ -219,14 +221,16 @@ export function Home() {
         >
           <div className="studio-download-copy">
             <span className="studio-eyebrow">
-              <span /> OFFLINE STUDIO APP · LATEST RELEASE
+              <span /> OFFLINE STUDIO APP · v{OFFLINE_APP_RELEASE.version} ·{" "}
+              {OFFLINE_APP_RELEASE.releasedOn.toUpperCase()}
             </span>
             <h2>Design offline. Publish when online.</h2>
             <p>
-              Download the latest InvitingYou Offline App for your shop counter or phone. Create
-              cards, add photos, and scroll full previews without Wi-Fi—internet is only needed when
-              you publish.
+              The new release opens with no internet at all — flight mode, dead shop Wi-Fi or a
+              dropped hotspot all still get you the full studio, your drafts and your previews.
+              Create cards, add photos, print proof sheets, and connect only when you publish.
             </p>
+            <ReleaseCard />
           </div>
           <div className="studio-download-actions">
             <Link to="/download" className="studio-button">

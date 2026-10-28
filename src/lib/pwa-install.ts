@@ -1,8 +1,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { invitationArt } from "@/components/wedding/invitation-art";
 import { suggestedInvitationSongs } from "@/components/wedding/invitation-music";
+import { invitationThemeIds } from "@/components/wedding/invitation-options";
+import {
+  OFFLINE_APP_CACHE_NAME,
+  OFFLINE_APP_RELEASED_ON,
+  OFFLINE_APP_VERSION,
+} from "@/config/app-release";
 
-export const OFFLINE_APP_VERSION = "2.0";
+export { OFFLINE_APP_VERSION };
 
 interface BeforeInstallPromptEvent extends Event {
   readonly platforms: string[];
@@ -10,9 +16,28 @@ interface BeforeInstallPromptEvent extends Event {
   prompt(): Promise<void>;
 }
 
+export type OfflineCacheStatus = {
+  /** Files the service worker holds for offline use. */
+  count: number;
+  /** `ready` after a normal precache, `updated` after a forced refresh. */
+  state: "idle" | "ready" | "updated";
+  /** Version the service worker itself reports, so an old cache is visible. */
+  workerVersion: string;
+  /** False when the worker is stale — the device is running an older app. */
+  upToDate: boolean;
+};
+
 let deferredPromptEvent: BeforeInstallPromptEvent | null = null;
 let swRegistered = false;
 let cacheReadyGlobal = false;
+let cacheStatusGlobal: OfflineCacheStatus = {
+  count: 0,
+  state: "idle",
+  workerVersion: "",
+  upToDate: true,
+};
+/** The worker that is waiting to take over: a new version is installed. */
+let waitingWorker: ServiceWorker | null = null;
 const promptSubscribers = new Set<() => void>();
 
 function notifyPromptSubscribers() {
@@ -37,7 +62,10 @@ function collectStudioAssetUrls(): string[] {
     "/offline-studio",
     "/download",
     "/dashboard",
+    "/create",
+    "/themes",
     "/preview-frame",
+    "/offline.html",
     "/sign-in",
     "/demo",
     "/storybook?theme=royal-rajmahal",
@@ -45,6 +73,9 @@ function collectStudioAssetUrls(): string[] {
     "/icon-192.png",
     "/icon-512.png",
     "/apple-touch-icon.png",
+    // The studio's theme picker draws these small posters; the invitation
+    // preview behind it needs the full artwork. Songs are optional offline.
+    ...invitationThemeIds.map((theme) => `/demo/poster/${theme}.webp`),
     ...Object.values(invitationArt),
     ...suggestedInvitationSongs.map((s) => s.url),
   ]);
@@ -56,6 +87,13 @@ function collectStudioAssetUrls(): string[] {
     document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"][href]').forEach((el) => {
       if (el.href && el.href.startsWith(window.location.origin)) urls.add(el.href);
     });
+    document
+      .querySelectorAll<HTMLLinkElement>(
+        'link[rel="modulepreload"][href], link[rel="preload"][href]',
+      )
+      .forEach((el) => {
+        if (el.href && el.href.startsWith(window.location.origin)) urls.add(el.href);
+      });
   }
 
   return Array.from(urls);
@@ -97,8 +135,27 @@ export function registerOfflineServiceWorker(): void {
   if (!("serviceWorker" in navigator)) return;
 
   navigator.serviceWorker.addEventListener("message", (event) => {
-    if (event.data?.type === "OFFLINE_CACHE_READY") {
+    const data = event.data as
+      | {
+          type?: string;
+          count?: number;
+          state?: "ready" | "updated";
+          version?: string;
+        }
+      | undefined;
+    if (data?.type === "OFFLINE_CACHE_READY") {
       cacheReadyGlobal = true;
+      notifyPromptSubscribers();
+      return;
+    }
+    if (data?.type === "OFFLINE_CACHE_STATUS") {
+      cacheReadyGlobal = (data.count ?? 0) > 0 || cacheReadyGlobal;
+      cacheStatusGlobal = {
+        count: data.count ?? 0,
+        state: data.state ?? "ready",
+        workerVersion: data.version ?? "",
+        upToDate: !data.version || data.version === OFFLINE_APP_VERSION,
+      };
       notifyPromptSubscribers();
     }
   });
@@ -118,6 +175,9 @@ export function registerOfflineServiceWorker(): void {
             }
           });
         });
+        // Ask the active worker what it is actually holding, so the UI can say
+        // "22 themes cached" only when that is true.
+        registration.active?.postMessage({ type: "GET_CACHE_STATUS" });
         void precacheOfflineStudio();
       })
       .catch(() => {
@@ -128,6 +188,18 @@ export function registerOfflineServiceWorker(): void {
   window.addEventListener("online", () => {
     void precacheOfflineStudio(true);
   });
+
+  // A worker that is waiting means a newer app is already downloaded: remember
+  // it so the UI can offer "Reload to update" instead of silently running old JS.
+  void navigator.serviceWorker.ready
+    .then((registration) => {
+      waitingWorker = registration.waiting;
+      registration.addEventListener("updatefound", () => {
+        waitingWorker = registration.installing;
+      });
+      notifyPromptSubscribers();
+    })
+    .catch(() => {});
 
   if (document.readyState === "complete") {
     doRegister();
@@ -153,6 +225,38 @@ export function useOnlineStatus(): boolean {
   }, []);
 
   return online;
+}
+
+/** Swap a downloaded-but-waiting worker in and reload once it controls the page. */
+export async function applyOfflineUpdate(): Promise<boolean> {
+  if (isTestDom() || !("serviceWorker" in navigator)) return false;
+  try {
+    const registration = await navigator.serviceWorker.getRegistration();
+    const worker = registration?.waiting ?? waitingWorker;
+    if (!worker) return false;
+    worker.postMessage({ type: "SKIP_WAITING" });
+    await new Promise<void>((resolve) => {
+      const timer = setTimeout(resolve, 1500);
+      worker.addEventListener("statechange", () => {
+        if (worker.state === "activated") {
+          clearTimeout(timer);
+          resolve();
+        }
+      });
+    });
+    window.location.reload();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/** Ask the worker for a fresh count of what it holds for offline use. */
+export function refreshOfflineStatus(): void {
+  if (isTestDom() || !("serviceWorker" in navigator)) return;
+  void navigator.serviceWorker.ready
+    .then((registration) => registration.active?.postMessage({ type: "GET_CACHE_STATUS" }))
+    .catch(() => {});
 }
 
 export function useOfflineAppInstaller() {
@@ -202,6 +306,13 @@ export function useOfflineAppInstaller() {
 
   return {
     version: OFFLINE_APP_VERSION,
+    releasedOn: OFFLINE_APP_RELEASED_ON,
+    cacheName: OFFLINE_APP_CACHE_NAME,
+    cacheStatus: cacheStatusGlobal,
+    /** A newer app is downloaded and only needs a reload. */
+    updateAvailable: Boolean(waitingWorker),
+    applyUpdate: applyOfflineUpdate,
+    refreshStatus: refreshOfflineStatus,
     canNativeInstall: Boolean(deferredPromptEvent),
     isInstalled: isStandaloneApp(),
     cacheReady: cacheReadyGlobal,
@@ -300,7 +411,7 @@ export function buildOfflineLauncherHtml(origin: string): string {
 <body>
   <main class="card">
     <div class="seal" aria-hidden="true">☾</div>
-    <span class="badge">Offline Studio v${OFFLINE_APP_VERSION}</span>
+    <span class="badge">Offline Studio v${OFFLINE_APP_VERSION} · ${OFFLINE_APP_RELEASED_ON}</span>
     <h1>InvitingYou Offline Studio</h1>
     <p>Opening your offline invitation workspace. Create, upload photos, and scroll full phone &amp; desktop previews without internet — connect only when ready to publish.</p>
     <a class="btn" href="${studioUrl}">Launch Offline Studio</a>

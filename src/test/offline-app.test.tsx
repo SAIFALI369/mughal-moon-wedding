@@ -14,6 +14,11 @@ import {
 } from "@/lib/offline-studio";
 import { invitationContentSchema } from "@/components/wedding/invitation-schema";
 import { buildOfflineLauncherHtml, OFFLINE_APP_VERSION } from "@/lib/pwa-install";
+import {
+  OFFLINE_APP_CACHE_NAME,
+  OFFLINE_APP_HIGHLIGHTS,
+  OFFLINE_APP_RELEASE,
+} from "@/config/app-release";
 
 const mocks = vi.hoisted(() => ({
   navigate: vi.fn(),
@@ -147,11 +152,45 @@ describe("Downloadable offline app & online-only publishing", () => {
     }
 
     const sw = readFileSync("public/sw.js", "utf8");
-    expect(sw).toContain("invitingyou-offline-v5");
+    // One version for the whole release: the worker, the config and the UI.
+    expect(sw).toContain(OFFLINE_APP_CACHE_NAME);
+    expect(sw).toContain(`APP_VERSION = "${OFFLINE_APP_VERSION}"`);
+    expect(existsSync("public/offline.html")).toBe(true);
     expect(sw).toContain('"/offline-studio"');
     expect(sw).toContain('"/preview-frame"');
     expect(sw).toContain("FORCE_UPDATE_CACHE");
     expect(sw).toContain("supabase");
+  });
+
+  it("ships the same version in the worker, the config and the UI", () => {
+    const sw = readFileSync("public/sw.js", "utf8");
+    expect(sw).toContain(`const CACHE_NAME = "${OFFLINE_APP_CACHE_NAME}"`);
+    expect(OFFLINE_APP_VERSION).toBe(OFFLINE_APP_RELEASE.version);
+    expect(OFFLINE_APP_CACHE_NAME).toBe(OFFLINE_APP_RELEASE.cacheName);
+    expect(OFFLINE_APP_HIGHLIGHTS.length).toBeGreaterThanOrEqual(4);
+    // The offline page is real HTML the worker can always fall back to.
+    const offlinePage = readFileSync("public/offline.html", "utf8");
+    expect(offlinePage).toContain('href="/offline-studio"');
+    expect(offlinePage).toContain(`v${OFFLINE_APP_VERSION}`);
+    expect(offlinePage).not.toContain("<script src=");
+  });
+
+  it("announces the new release on the landing page and on /download", () => {
+    render(<Home />);
+    const bottom = document.getElementById("download-app");
+    expect(bottom).not.toBeNull();
+    expect(bottom?.textContent).toContain(`v${OFFLINE_APP_VERSION}`);
+    expect(screen.getByRole("heading", { name: /What.s new in the Offline App/i })).toBeVisible();
+    for (const highlight of OFFLINE_APP_HIGHLIGHTS) {
+      expect(screen.getByText(new RegExp(highlight.title.slice(0, 24)))).toBeInTheDocument();
+    }
+    cleanup();
+
+    render(<DownloadAppPage />);
+    expect(document.body.textContent).toContain(`v${OFFLINE_APP_VERSION}`);
+    expect(document.body.textContent).toContain(OFFLINE_APP_RELEASE.releasedOn);
+    expect(screen.getByRole("heading", { name: /What.s new in the Offline App/i })).toBeVisible();
+    expect(screen.getByRole("button", { name: /Update offline cache/i })).toBeInTheDocument();
   });
 
   it("places the Download offline app section and footer link at the bottom of the landing page", () => {
@@ -163,10 +202,9 @@ describe("Downloadable offline app & online-only publishing", () => {
     for (const link of downloadLinks) {
       expect(link).toHaveAttribute("href", "/download");
     }
-    expect(screen.getByRole("link", { name: /Open offline studio/i })).toHaveAttribute(
-      "href",
-      "/offline-studio",
-    );
+    const studioLinks = screen.getAllByRole("link", { name: /Open offline studio/i });
+    expect(studioLinks.length).toBeGreaterThanOrEqual(1);
+    for (const link of studioLinks) expect(link).toHaveAttribute("href", "/offline-studio");
   });
 
   it("generates an updated downloadable desktop/mobile launcher and cache refresh on /download", async () => {
