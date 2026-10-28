@@ -54,8 +54,7 @@ import {
 import { invitationExpiry } from "@/components/wedding/invitation-details";
 import { ThemeLoop } from "@/components/wedding/theme-loop";
 import { ThemeDemoCard } from "@/components/wedding/theme-demo-card";
-import { demoForTheme } from "@/config/theme-demos";
-import { invitationArt } from "@/components/wedding/invitation-art";
+import { demoForTheme, demoPoster } from "@/config/theme-demos";
 import {
   invitationThemeCategories,
   invitationThemes,
@@ -841,7 +840,7 @@ export function Dashboard() {
                         style={{ backgroundColor: theme.swatch }}
                       >
                         <img
-                          src={invitationArt[theme.id]}
+                          src={demoPoster(theme.id)}
                           alt=""
                           loading="lazy"
                           className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
@@ -874,7 +873,8 @@ export function Dashboard() {
                   <ThemeDemoCard
                     key={`demo-${theme.id}`}
                     demo={demoForTheme(theme.id)}
-                    priority={index < 2}
+                    priority={index === 0}
+                    compact
                   />
                 ))}
               </div>

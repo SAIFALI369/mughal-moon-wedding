@@ -85,7 +85,7 @@ function ThemeDemosPage() {
 
           <div className="theme-demo-grid">
             {visible.map((demo, index) => (
-              <ThemeDemoCard key={demo.theme} demo={demo} priority={index < 3} />
+              <ThemeDemoCard key={demo.theme} demo={demo} priority={index === 0} />
             ))}
           </div>
 

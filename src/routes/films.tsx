@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { themeLoop } from "@/components/wedding/invitation-art";
+import { filmBudgetLimit, requestFilmSlot } from "@/lib/film-budget";
 import { invitationThemes } from "@/components/wedding/invitation-options";
 
 /**
@@ -31,11 +32,37 @@ type State = "loading" | "playing" | "paused" | "blocked" | "error";
 
 function Tile({ theme, label }: { theme: (typeof invitationThemes)[number]; label: string }) {
   const ref = useRef<HTMLVideoElement>(null);
+  const holder = useRef<HTMLSpanElement>(null);
   const [state, setState] = useState<State>("loading");
+  /** Only the tiles holding a film slot mount a video: see `@/lib/film-budget`. */
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    const element = holder.current;
+    const slot = requestFilmSlot(setAllowed, 1);
+    if (!element || typeof IntersectionObserver === "undefined") {
+      slot.setRatio(1);
+      return () => slot.release();
+    }
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry) return;
+        const height = entry.boundingClientRect.height || 1;
+        const visible = entry.intersectionRect.height || 0;
+        slot.setRatio(entry.isIntersecting ? Math.min(1, visible / height) : 0);
+      },
+      { threshold: [0, 0.15, 0.5, 0.9] },
+    );
+    observer.observe(element);
+    return () => {
+      observer.disconnect();
+      slot.release();
+    };
+  }, []);
 
   useEffect(() => {
     const element = ref.current;
-    if (!element) return;
+    if (!element || !allowed) return;
     const sync = () => {
       if (element.error) return setState("error");
       if (!element.paused) return setState("playing");
@@ -54,25 +81,33 @@ function Tile({ theme, label }: { theme: (typeof invitationThemes)[number]; labe
       window.clearTimeout(timer);
       window.clearInterval(poll);
       for (const event of events) element.removeEventListener(event, sync);
+      element.pause();
     };
-  }, []);
+  }, [allowed]);
 
   return (
     <figure className="film-tile" data-theme={theme.id}>
-      <video
-        ref={ref}
-        src={themeLoop(theme.id)}
-        muted
-        loop
-        playsInline
-        autoPlay
-        preload="auto"
-        disablePictureInPicture
-        aria-label={`${label} hero film`}
-      />
+      <span className="film-tile-holder" ref={holder}>
+        {!allowed && <span className="film-tile-wait">waiting for a film slot…</span>}
+        {allowed && (
+          <video
+            ref={ref}
+            src={themeLoop(theme.id)}
+            muted
+            loop
+            playsInline
+            autoPlay
+            preload="none"
+            disablePictureInPicture
+            aria-label={`${label} hero film`}
+          />
+        )}
+      </span>
       <figcaption>
         <strong>{label}</strong>
-        <span data-state={state}>{state === "loading" ? "loading…" : state}</span>
+        <span data-state={allowed ? state : "waiting"}>
+          {!allowed ? "queued" : state === "loading" ? "loading…" : state}
+        </span>
         <small>{themeLoop(theme.id)}</small>
       </figcaption>
     </figure>
@@ -90,6 +125,10 @@ function FilmWall() {
           Each invitation theme ships a real, silent eight-second hero film, cut from its own
           artwork. These are the same files the cards play behind the names — if they move here, the
           card is playing them too.
+        </p>
+        <p className="film-wall-lede">
+          Only the tiles on screen play at once ({filmBudgetLimit()} at a time on this device) — a
+          wall of decoders is what made the studio stutter. Scroll, and each film takes its turn.
         </p>
         <p className="film-wall-links">
           <Link to="/film">Open the cinematic invitation (/film)</Link>

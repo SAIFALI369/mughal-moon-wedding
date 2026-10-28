@@ -24,7 +24,13 @@ import {
  * story and only then decide "that one is ours".
  */
 
-export type DemoGalleryPhoto = { src: string; caption: string };
+export type DemoGalleryPhoto = {
+  /** Full-size frame, used by the demo card itself. */
+  src: string;
+  /** 320 px still for the tiles — 22 tiles of full-size photos is a slow page. */
+  thumb: string;
+  caption: string;
+};
 
 export type DemoSong = {
   title: string;
@@ -69,13 +75,28 @@ export type ThemeDemo = {
 };
 
 const PHOTOS = [g1, g2, g3, g4, g5, g6];
+/** Basenames of the same six photographs, for the pre-built small stills. */
+const PHOTO_NAMES = ["g1", "g2", "g3", "g4", "g5", "g6"];
 
 /** Rotates the photo strip per demo so no two cards open with the same frame. */
 function frames(offset: number, captions: string[]): DemoGalleryPhoto[] {
-  return captions.map((caption, index) => ({
-    src: PHOTOS[(offset + index) % PHOTOS.length],
-    caption,
-  }));
+  return captions.map((caption, index) => {
+    const photo = (offset + index) % PHOTOS.length;
+    return {
+      src: PHOTOS[photo],
+      thumb: `/demo/photo/${PHOTO_NAMES[photo]}.webp`,
+      caption,
+    };
+  });
+}
+
+/**
+ * A 560 px still of the theme's artwork, built by `scripts/build-demo-thumbs.mjs`.
+ * The collection draws twenty-two of these at once; the full-page art behind
+ * them is 250–380 KB each.
+ */
+export function demoPoster(theme: InvitationTheme): string {
+  return `/demo/poster/${theme}.webp`;
 }
 
 /** Real YouTube tracks — the demo soundtrack a guest hears on opening the card. */

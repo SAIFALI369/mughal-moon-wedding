@@ -92,6 +92,36 @@ private-preview state instead of writing anything.
 4. Keep names, cities, dates and stories unique: the tests assert no two demos
    share a couple, title, venue, date or story.
 
+## Performance: twenty-two cards that still feel instant
+
+The first version of this page drew 22 full-page artworks, 88 full-size gallery
+photos and 22 autoplaying videos at once — which is exactly what "the UX is
+lagging" looks like. Three rules keep it light:
+
+1. **Thumbnails, not artwork.** `npm run demo:thumbs`
+   (`scripts/build-demo-thumbs.mjs`) writes `public/demo/poster/<theme>.webp`
+   (560 px, ~29 KB) and `public/demo/photo/<name>.webp` (320 px, ~14 KB). The
+   collection uses those; the *card itself* still uses the full-size images, so
+   nothing looks soft where it matters. A test asserts every poster exists and
+   stays under 80 KB.
+2. **One decoder at a time.** Films are rationed by `src/lib/film-budget.ts`:
+   every `ThemeLoop` reports how much of itself is on screen and only the most
+   visible one (phone) or two (desktop) may mount a `<video>`. Everyone else
+   shows the still. `/films` obeys the same budget. This replaced the 22 silent
+   videos that used to autoplay on the landing page, the dashboard template
+   grid, the editor's theme picker and the preview dock — all at once.
+3. **Do not repaint the whole grid.** Every tile image is `loading="lazy"` +
+   `decoding="async"`, `.theme-demo-card` is its own rendering island
+   (`contain: layout paint`, so one hovering card never re-styles the other
+   twenty-one), and only the first tile is `priority` — eager, holding a film
+   slot from the server render. (`content-visibility: auto` was tried and
+   dropped: the placeholder height shifts the page as each card is first
+   measured, which reads as jank.)
+
+On phones the invitation's own full-screen blurred backdrop drops from a 30 px
+to a 16 px blur, the animated film grain becomes a still texture, and half of the
+ambient bokeh is hidden — at 390 px nobody can tell, and the frame budget can.
+
 ## Retired themes (the duplicate cleanup)
 
 `mughal` and `classic` were **the same design as Eid Light**: the identical
