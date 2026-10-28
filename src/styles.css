@@ -16135,3 +16135,40 @@ body:has(.preview-frame-document) {
     padding: 15px 14px 13px;
   }
 }
+
+/* Release chip in the top bar — the new version is visible without scrolling. */
+.release-chip.release-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: 0;
+  padding: 5px 11px;
+  border: 1px solid #e0dcc7;
+  border-radius: 999px;
+  background: #fdfbf1;
+  color: #4a5a3f;
+  font-size: 10.5px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition:
+    border-color 0.2s ease,
+    background 0.2s ease;
+}
+.release-chip.release-chip:hover {
+  border-color: #c3b483;
+  background: #fbf6e6;
+}
+.release-chip-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: #b6913f;
+  box-shadow: 0 0 0 3px rgba(182, 145, 63, 0.16);
+}
+@media (max-width: 640px) {
+  .release-chip.release-chip {
+    font-size: 9px;
+    padding: 4px 9px;
+  }
+}

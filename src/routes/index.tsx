@@ -51,6 +51,9 @@ export function Home() {
       <div className="studio-topbar">
         <span>The digital invitation studio for printing shops</span>
         <div>
+          <Link to="/download" className="release-chip">
+            <span className="release-chip-dot" /> New · Offline App v{OFFLINE_APP_RELEASE.version}
+          </Link>
           <span className="studio-status-dot" /> Your invitation studio{" "}
           <Link to="/sign-in">
             Sign in <ArrowUpRight size={14} />
