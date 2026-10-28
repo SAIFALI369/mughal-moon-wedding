@@ -15988,3 +15988,150 @@ body:has(.preview-frame-document) {
     display: none;
   }
 }
+
+/* ------------------------------------------------------------------
+   Offline readiness strip — the app says what works without internet.
+   ------------------------------------------------------------------ */
+.offline-readiness {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 9px;
+  margin: 8px 0 2px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  border: 1px solid #e6e4d6;
+  background: #fbfaf3;
+  color: #55584a;
+  font-size: 11.5px;
+  line-height: 1.6;
+}
+.offline-readiness svg {
+  flex-shrink: 0;
+}
+.offline-readiness span {
+  min-width: 0;
+}
+.offline-readiness button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-left: auto;
+  padding: 4px 9px;
+  border-radius: 999px;
+  border: 1px solid #d8d6c4;
+  background: #fff;
+  color: #3f4436;
+  font-size: 10.5px;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.offline-readiness button:hover {
+  background: #f1efe2;
+}
+.offline-readiness.is-ready {
+  border-color: #dfe6d6;
+  background: #f6f9f0;
+  color: #4c5c40;
+}
+.offline-readiness.is-offline {
+  border-color: #eddcc4;
+  background: #fdf6e9;
+  color: #6b5233;
+}
+.offline-readiness.is-warn {
+  border-color: #e7dcc2;
+  background: #fdfaf0;
+}
+.offline-readiness.is-update {
+  border-color: #d5dfe8;
+  background: #f3f8fc;
+  color: #35506a;
+}
+
+/* ------------------------------------------------------------------
+   Release card: the current offline app version, on the landing page.
+   ------------------------------------------------------------------ */
+.release-card {
+  display: grid;
+  gap: 14px;
+  margin: 4px 0 0;
+  padding: 18px 18px 16px;
+  border: 1px solid #e2e1d2;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fffdf7, #f8f6ec);
+}
+.release-card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+.release-card-version {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #2c3324;
+  color: #f4efdd;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+.release-card-date {
+  font-size: 10.5px;
+  color: #8b8c76;
+  letter-spacing: 0.04em;
+}
+.release-card h3 {
+  font-family: var(--font-serif);
+  font-size: 20px;
+  font-weight: 500;
+  color: #2a2a20;
+  margin: 0;
+}
+.release-highlights {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.release-highlights li {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 8px;
+  font-size: 11.5px;
+  line-height: 1.65;
+  color: #6d6f59;
+}
+.release-highlights strong {
+  color: #33342a;
+  font-weight: 600;
+}
+.release-highlights .release-tick {
+  color: #9a7333;
+  font-weight: 700;
+  line-height: 1.5;
+}
+.release-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+.release-card-meta {
+  font-size: 10px;
+  color: #94957f;
+}
+@media (max-width: 640px) {
+  .release-highlights li {
+    font-size: 11px;
+  }
+  .release-card {
+    padding: 15px 14px 13px;
+  }
+}

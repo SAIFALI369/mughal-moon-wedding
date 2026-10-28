@@ -1,0 +1,213 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Offline — InvitingYou Offline Studio</title>
+    <meta name="robots" content="noindex" />
+    <meta name="theme-color" content="#260e17" />
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #253329;
+        --ink-soft: #646c5f;
+        --paper: #f5f4ed;
+        --card: #fdfcf8;
+        --line: #e4e3d6;
+        --gold: #a8863f;
+        --deep: #260e17;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 22px;
+        background:
+          radial-gradient(circle at 18% 12%, #efe9d8 0%, transparent 46%),
+          radial-gradient(circle at 82% 88%, #ece7dc 0%, transparent 44%), var(--paper);
+        color: var(--ink);
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+      }
+      main {
+        width: 100%;
+        max-width: 520px;
+        background: var(--card);
+        border: 1px solid var(--line);
+        border-radius: 18px;
+        padding: 34px 26px 26px;
+        box-shadow: 0 28px 70px -40px rgba(0, 0, 0, 0.3);
+        text-align: center;
+      }
+      .seal {
+        width: 58px;
+        height: 58px;
+        margin: 0 auto 14px;
+        border-radius: 50%;
+        display: grid;
+        place-items: center;
+        background: var(--deep);
+        color: #d6ad62;
+        border: 2px solid #d6ad62;
+        font-size: 25px;
+        line-height: 1;
+      }
+      .badge {
+        display: inline-block;
+        margin-bottom: 12px;
+        padding: 4px 10px;
+        border-radius: 999px;
+        background: #ecebe2;
+        color: #4f584b;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+      h1 {
+        margin: 0 0 8px;
+        font-size: 23px;
+        line-height: 1.25;
+      }
+      .lede {
+        margin: 0 auto 22px;
+        max-width: 40ch;
+        font-size: 13.5px;
+        line-height: 1.7;
+        color: var(--ink-soft);
+      }
+      .row {
+        display: grid;
+        gap: 10px;
+      }
+      a.btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        min-height: 46px;
+        padding: 12px 18px;
+        border-radius: 10px;
+        text-decoration: none;
+        font-size: 13.5px;
+        font-weight: 500;
+      }
+      a.primary {
+        background: var(--ink);
+        color: #fff;
+      }
+      a.ghost {
+        border: 1px solid #dcdbc9;
+        color: #3d4438;
+        background: #fff;
+      }
+      ul {
+        margin: 22px 0 0;
+        padding: 18px 0 0;
+        border-top: 1px solid #eeede2;
+        list-style: none;
+        text-align: left;
+        display: grid;
+        gap: 9px;
+      }
+      li {
+        display: grid;
+        grid-template-columns: 16px 1fr;
+        gap: 8px;
+        font-size: 12.5px;
+        line-height: 1.55;
+        color: #545c4f;
+      }
+      li b {
+        color: var(--ink);
+        font-weight: 600;
+      }
+      .check {
+        color: var(--gold);
+        font-weight: 700;
+      }
+      .foot {
+        margin: 20px 0 0;
+        font-size: 11px;
+        color: #909483;
+      }
+      .connection {
+        margin-top: 14px;
+        font-size: 11.5px;
+        color: #8a8e80;
+        min-height: 16px;
+      }
+      .connection.is-back {
+        color: #2f6b57;
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="seal" aria-hidden="true">☾</div>
+      <span class="badge">Offline Studio v3.0</span>
+      <h1>You're offline — your studio is still here.</h1>
+      <p class="lede">
+        This device is not connected to the internet right now, so the page you asked for could not
+        be downloaded. Everything you saved on the counter is still on this device, and the Offline
+        Studio opens without a connection.
+      </p>
+
+      <div class="row">
+        <a class="btn primary" href="/offline-studio">Open Offline Studio</a>
+        <a class="btn ghost" href="/">Go to the homepage</a>
+        <a class="btn ghost" id="retry" href="/offline-studio">Reload the page I wanted</a>
+      </div>
+
+      <p class="connection" id="connection" role="status" aria-live="polite"></p>
+
+      <ul>
+        <li>
+          <span class="check">✓</span
+          ><span><b>Works offline:</b> create cards, add couple &amp; gallery photos, print QR / A5 proof sheets.</span>
+        </li>
+        <li>
+          <span class="check">✓</span
+          ><span><b>Saved on this device:</b> drafts, photos and previews stay in local storage.</span>
+        </li>
+        <li>
+          <span class="check">✓</span
+          ><span><b>Needs internet:</b> publishing a live link, syncing the shared gallery, and guest replies.</span>
+        </li>
+      </ul>
+
+      <p class="foot">InvitingYou · A beautiful beginning.</p>
+    </main>
+    <script>
+      (function () {
+        var retry = document.getElementById("retry");
+        var connection = document.getElementById("connection");
+        // The page the guest was trying to open, if the server told us.
+        var params = new URLSearchParams(window.location.search);
+        var wanted = params.get("from");
+        if (wanted && wanted.charAt(0) === "/") retry.setAttribute("href", wanted);
+
+        function mark() {
+          var online = navigator.onLine !== false;
+          connection.textContent = online
+            ? "You're back online — reload to pick up where you left off."
+            : "No connection detected. The Offline Studio still works.";
+          connection.className = online ? "connection is-back" : "connection";
+        }
+        mark();
+        window.addEventListener("online", mark);
+        window.addEventListener("offline", mark);
+        if (navigator.onLine !== false) {
+          // Back online: the page the guest wanted is worth another try.
+          setTimeout(function () {
+            if (wanted) window.location.replace(wanted);
+          }, 900);
+        }
+      })();
+    </script>
+  </body>
+</html>

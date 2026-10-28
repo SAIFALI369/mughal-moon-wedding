@@ -60,6 +60,7 @@ import {
   invitationThemes,
 } from "@/components/wedding/invitation-options";
 import { PlatformShell } from "@/components/platform/platform-shell";
+import { OfflineReadiness } from "@/components/platform/offline-readiness";
 import { CardPrintDialog } from "@/components/platform/card-print-dialog";
 import { InvitationPreview } from "@/components/platform/invitation-preview";
 import { cleanupExpiredMemories, deleteSimranMemory } from "@/lib/simran-memory";
@@ -538,12 +539,8 @@ export function Dashboard() {
           <div>
             <div className="flex flex-wrap items-center gap-2.5">
               <h1>{partner?.shop_name || username || "Studio"}</h1>
-              {!online && (
-                <span className="offline-status-pill is-offline" role="status">
-                  <WifiOff size={12} aria-hidden="true" /> Offline · Connect to publish
-                </span>
-              )}
             </div>
+            <OfflineReadiness compact />
             <div className="admin-metrics" aria-label="Workspace summary">
               <span>
                 <strong>{fetching ? "—" : remaining}</strong> credits left

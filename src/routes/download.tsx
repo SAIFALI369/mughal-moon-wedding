@@ -13,6 +13,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PlatformShell } from "@/components/platform/platform-shell";
+import { ReleaseCard } from "@/components/platform/release-card";
+import { OfflineReadiness } from "@/components/platform/offline-readiness";
 import {
   downloadOfflineStudioLauncher,
   useOfflineAppInstaller,
@@ -37,9 +39,13 @@ export function DownloadAppPage() {
   const online = useOnlineStatus();
   const {
     version,
+    releasedOn,
     canNativeInstall,
     isInstalled,
     cacheReady,
+    cacheStatus,
+    updateAvailable,
+    applyUpdate,
     installing,
     updatingCache,
     installNativeApp,
@@ -72,11 +78,23 @@ export function DownloadAppPage() {
       return;
     }
     const ok = await refreshOfflineCache();
-    if (ok) {
-      toast.success(`Offline App updated to v${version}`);
-    } else {
-      toast.info("Latest version is already active in this browser.");
-    }
+    // Give the worker a moment to answer with its real inventory.
+    setTimeout(() => {
+      if (updateAvailable) {
+        toast.success(`v${version} downloaded — reload to switch this device over.`);
+        return;
+      }
+      toast.success(
+        ok
+          ? `Offline App v${version} is stored on this device — it now opens with the internet off.`
+          : "Latest version is already active in this browser.",
+      );
+    }, 600);
+  }
+
+  async function handleApplyUpdate() {
+    const applied = await applyUpdate();
+    if (!applied) toast.info("Close and reopen the app to finish updating.");
   }
 
   return (
@@ -85,7 +103,7 @@ export function DownloadAppPage() {
         <section className="download-app-hero">
           <div className="download-app-card">
             <span className="studio-eyebrow">
-              <span /> OFFLINE DESKTOP &amp; MOBILE APP · v{version}
+              <span /> OFFLINE DESKTOP &amp; MOBILE APP · v{version} · {releasedOn.toUpperCase()}
             </span>
             <h1>
               Design offline.
@@ -97,6 +115,8 @@ export function DownloadAppPage() {
               and scroll full phone &amp; desktop previews with zero internet—connect only when
               you’re ready to publish the live link.
             </p>
+
+            <OfflineReadiness />
 
             <div className="download-app-actions">
               {isInstalled ? (
@@ -138,14 +158,39 @@ export function DownloadAppPage() {
               <Check size={14} />
               <span>
                 {isInstalled
-                  ? `Installed on this device (v${version}) · Ready for offline use`
-                  : cacheReady
-                    ? `All 23 themes, previews & studio tools (v${version}) cached for offline use`
+                  ? `Installed on this device (v${version}) · Opens with the internet off`
+                  : cacheReady || cacheStatus.count > 0
+                    ? `All 22 themes, previews & studio tools (v${version}) stored on this device${
+                        cacheStatus.count > 0 ? ` · ${cacheStatus.count} files` : ""
+                      }`
                     : downloadedLauncher
-                      ? `Latest v${version} launcher saved · Offline studio assets caching in background`
+                      ? `Latest v${version} launcher saved · App files downloading in the background`
                       : `Latest v${version} · Works on Windows, macOS, Android & iOS`}
               </span>
             </div>
+
+            {updateAvailable && (
+              <p className="download-app-hint" role="status">
+                <strong>v{version} is ready.</strong> Reload to switch this device to the new
+                version — your drafts and photos stay exactly where they are.
+                <button
+                  type="button"
+                  className="studio-text-button"
+                  onClick={() => void handleApplyUpdate()}
+                >
+                  <RefreshCw size={13} /> Reload to update
+                </button>
+              </p>
+            )}
+
+            <p className="download-app-hint">
+              <strong>First time offline?</strong> Install or press{" "}
+              <strong>Update offline cache</strong> once with the internet on. That single visit is
+              what lets the app open later with no network at all — including a cold start from your
+              home screen.
+            </p>
+
+            <ReleaseCard audience="partner" />
 
             {!isInstalled && !canNativeInstall && (
               <p className="download-app-hint">
@@ -162,7 +207,7 @@ export function DownloadAppPage() {
               <div>
                 <h2>100% offline editing, photos &amp; scrollable previews</h2>
                 <p>
-                  Choose from all 23 themes, upload couple &amp; gallery photos, and smoothly scroll
+                  Choose from all 22 themes, upload couple &amp; gallery photos, and smoothly scroll
                   full phone &amp; desktop previews without Wi-Fi.
                 </p>
               </div>
