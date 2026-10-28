@@ -2,6 +2,8 @@
 import { cleanup, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { ReactNode } from "react";
+import { existsSync, statSync } from "node:fs";
+import { join } from "node:path";
 import { invitationThemeIds } from "@/components/wedding/invitation-options";
 import { invitationContentSchema } from "@/components/wedding/invitation-schema";
 import { demoContent, demoDateLabel, demoForTheme, themeDemos } from "@/config/theme-demos";
@@ -132,6 +134,23 @@ describe("theme demos", () => {
       expect(content.theme).toBe(demo.theme);
       expect(Object.values(content.elements).every(Boolean)).toBe(true);
       expect(content.additionalEvents).toHaveLength(demo.additionalEvents.length);
+    }
+  });
+
+  it("ships a small poster for every theme and every strip photo", () => {
+    for (const theme of invitationThemeIds) {
+      const file = join(process.cwd(), "public", "demo", "poster", `${theme}.webp`);
+      expect(existsSync(file), `${theme} poster`).toBe(true);
+      // Tiles must stay thumbnails: full-page art at 250–380 KB is what made the
+      // collection slow in the first place.
+      expect(statSync(file).size / 1024).toBeLessThan(80);
+    }
+    const thumbs = new Set(themeDemos.flatMap((demo) => demo.gallery.map((photo) => photo.thumb)));
+    expect(thumbs.size).toBe(6);
+    for (const thumb of thumbs) {
+      const file = join(process.cwd(), "public", thumb);
+      expect(existsSync(file), thumb).toBe(true);
+      expect(statSync(file).size / 1024).toBeLessThan(40);
     }
   });
 

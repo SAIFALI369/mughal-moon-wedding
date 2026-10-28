@@ -29,7 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { InvitationPreview } from "@/components/platform/invitation-preview";
 import type { InvitationForm } from "./invitation-form-data";
 import { ThemeLoop } from "./theme-loop";
-import { invitationArt } from "./invitation-art";
+import { demoPoster } from "@/config/theme-demos";
 import {
   invitationCeremonyPresets,
   invitationDressCodePresets,
@@ -640,7 +640,7 @@ export function InvitationDetailsFields({
                       style={{ backgroundColor: theme.swatch }}
                     >
                       <img
-                        src={invitationArt[theme.id]}
+                        src={demoPoster(theme.id)}
                         alt=""
                         loading="lazy"
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"

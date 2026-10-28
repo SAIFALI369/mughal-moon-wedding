@@ -15908,3 +15908,83 @@ body:has(.preview-frame-document) {
   color: #78716c;
   max-width: 60ch;
 }
+
+/* ------------------------------------------------------------------
+   Smoothness pass — the collection draws 22 tiles, so every tile is cheap.
+   Thumbnail posters, stills instead of decoders, and off-screen cards that
+   are not painted at all.
+   ------------------------------------------------------------------ */
+.theme-loop-cover {
+  object-fit: cover;
+}
+.theme-demo-card {
+  /*
+   * A card is its own rendering island: a hover or a film swap inside one card
+   * never re-styles the other twenty-one. Deliberately not `content-visibility:
+   * auto` — the placeholder height would shift the page as each card is measured
+   * on its first scroll, which reads as jank.
+   */
+  contain: layout paint;
+}
+.theme-demo-art > img,
+.theme-demo-strip img {
+  display: block;
+}
+.film-tile-holder {
+  position: relative;
+  display: block;
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  background: #14120e;
+  overflow: hidden;
+}
+.film-tile-wait {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 11px;
+  color: #8d8776;
+}
+
+/*
+ * Phones: the invitation keeps a blurred copy of its own artwork behind every
+ * section. A 30 px blur across a full screen is the single most expensive
+ * thing on the card, and nobody can tell 30 px from 16 px at arm's length.
+ */
+@media (max-width: 767px) {
+  .invite-backdrop-art {
+    filter: blur(14px) saturate(1.08) brightness(0.55);
+    transform: none;
+  }
+  .full-art-fill {
+    filter: blur(16px) brightness(0.72) saturate(1.1);
+    transform: none;
+  }
+}
+/* Invisible visibility probe for a rationed film: same box, no paint. */
+.theme-loop-sentinel {
+  position: absolute;
+  inset: 0;
+  display: block;
+  visibility: hidden;
+  pointer-events: none;
+}
+
+/*
+ * Phones: fewer moving parts, same picture. Half of the ambient bokeh is
+ * invisible at 390 px, and a full-screen animated grain over a blend mode is
+ * the most expensive overlay on the cinematic theme — it stays, but still.
+ */
+@media (max-width: 767px) {
+  .film-grain,
+  .reel-grain {
+    animation: none;
+    inset: 0;
+  }
+  .tcine i:nth-child(n + 6),
+  .spark:nth-child(n + 8),
+  .living-bokeh i:nth-child(n + 6) {
+    display: none;
+  }
+}

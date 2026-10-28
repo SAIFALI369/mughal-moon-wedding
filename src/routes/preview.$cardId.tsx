@@ -47,6 +47,7 @@ import {
   type InvitationTheme,
 } from "@/components/wedding/invitation-options";
 import { ThemeLoop } from "@/components/wedding/theme-loop";
+import { demoPoster } from "@/config/theme-demos";
 import {
   getOfflineDraftsSync,
   isOfflineDraftId,
@@ -409,7 +410,11 @@ export function LivePreviewPage() {
                       className={`invitation-choice live-preview-theme${active ? " is-active" : ""}`}
                     >
                       <span className="live-preview-theme-art" style={{ background: theme.swatch }}>
-                        <ThemeLoop theme={theme.id} className="object-cover" />
+                        <ThemeLoop
+                          theme={theme.id}
+                          className="object-cover"
+                          poster={demoPoster(theme.id)}
+                        />
                         {active && (
                           <span className="live-preview-theme-check">
                             <Check size={11} aria-hidden="true" />

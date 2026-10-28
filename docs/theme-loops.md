@@ -53,7 +53,15 @@ and ImageMagick's `convert` for the particle overlays. The script is idempotent:
 it skips any film newer than its illustration and itself, so a normal build never
 re-encodes 22 videos.
 
-## How it plays
+## How it plays (and how it stays smooth)
+
+Playback is rationed by `src/lib/film-budget.ts`. A page can show twenty-odd
+theme tiles; twenty-odd decoders is what made the studio stutter. Every
+`ThemeLoop` reports how much of itself is on screen and the budget hands the
+film to the most visible one or two players (one on a phone, two on a desktop,
+none under reduced motion or data saver). Every other tile keeps the still,
+which is the same picture. `/films` obeys the same budget and says so.
+
 
 - `<video autoplay muted loop playsinline preload="none">`, `aria-hidden`, no
   controls — a background film, never a second player competing with the

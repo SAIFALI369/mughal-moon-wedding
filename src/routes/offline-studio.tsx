@@ -45,7 +45,7 @@ import {
   type InvitationContent,
 } from "@/components/wedding/invitation-schema";
 import { ThemeLoop } from "@/components/wedding/theme-loop";
-import { invitationArt } from "@/components/wedding/invitation-art";
+import { demoPoster } from "@/config/theme-demos";
 import {
   invitationThemeCategories,
   invitationThemes,
@@ -546,7 +546,7 @@ export function OfflineStudioPage() {
                   >
                     <div className="admin-template-thumb" style={{ backgroundColor: theme.swatch }}>
                       <img
-                        src={invitationArt[theme.id]}
+                        src={demoPoster(theme.id)}
                         alt=""
                         loading="lazy"
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"

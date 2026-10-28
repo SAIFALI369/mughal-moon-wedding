@@ -1,27 +1,31 @@
+import { memo } from "react";
 import { Link } from "@tanstack/react-router";
 import { ArrowUpRight, Film, Images, Music2 } from "lucide-react";
-import { invitationArt } from "./invitation-art";
 import { ThemeLoop } from "./theme-loop";
 import {
   demoCategoryLabel,
   demoCityLabel,
   demoDateLabel,
+  demoPoster,
   demoThemeLabel,
   type ThemeDemo,
 } from "@/config/theme-demos";
 
 /**
  * A pickable theme, shown as the real card it opens into: the theme's own hero
- * film looping over its artwork, the demo couple's names and date, and a strip
- * of that demo's actual gallery photos. Tap it and the whole invitation opens.
+ * film over its artwork, the demo couple's names and date, and a strip of that
+ * demo's actual gallery photos. Tap it and the whole invitation opens.
+ *
+ * Everything here is cheap on purpose — a 560 px poster, 320 px stills and a
+ * film that only decodes while this tile is the most visible one on screen.
  */
-export function ThemeDemoCard({
+export const ThemeDemoCard = memo(function ThemeDemoCard({
   demo,
   priority = false,
   compact = false,
 }: {
   demo: ThemeDemo;
-  /** Above the fold: load the film immediately instead of on approach. */
+  /** Above the fold: wins the film budget, loads eagerly. */
   priority?: boolean;
   compact?: boolean;
 }) {
@@ -36,8 +40,20 @@ export function ThemeDemoCard({
         aria-label={`Open the ${label} demo invitation for ${demo.groomName} and ${demo.brideName}`}
       >
         <div className="theme-demo-art">
-          <img src={invitationArt[demo.theme]} alt="" loading={priority ? "eager" : "lazy"} />
-          <ThemeLoop theme={demo.theme} priority={priority} className="theme-demo-film" />
+          <img
+            src={demoPoster(demo.theme)}
+            alt=""
+            width={560}
+            height={700}
+            loading={priority ? "eager" : "lazy"}
+            fetchPriority={priority ? "high" : "low"}
+            decoding="async"
+          />
+          <ThemeLoop
+            theme={demo.theme}
+            priority={priority}
+            className="theme-demo-film theme-loop-cover"
+          />
           <span className="theme-demo-badge">
             <Film size={11} aria-hidden="true" /> Live film
           </span>
@@ -56,7 +72,15 @@ export function ThemeDemoCard({
         {!compact && (
           <div className="theme-demo-strip" aria-hidden="true">
             {demo.gallery.slice(0, 4).map((photo) => (
-              <img key={photo.caption} src={photo.src} alt="" loading="lazy" />
+              <img
+                key={photo.caption}
+                src={photo.thumb}
+                alt=""
+                width={320}
+                height={320}
+                loading="lazy"
+                decoding="async"
+              />
             ))}
           </div>
         )}
@@ -82,4 +106,4 @@ export function ThemeDemoCard({
       </Link>
     </article>
   );
-}
+});

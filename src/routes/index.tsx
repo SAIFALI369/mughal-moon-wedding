@@ -187,7 +187,7 @@ export function Home() {
           </p>
           <div className="theme-demo-grid">
             {themeDemos.map((demo, index) => (
-              <ThemeDemoCard key={demo.theme} demo={demo} priority={index < 4} />
+              <ThemeDemoCard key={demo.theme} demo={demo} priority={index === 0} />
             ))}
           </div>
           <div className="flex flex-wrap items-center gap-3 pt-6">
