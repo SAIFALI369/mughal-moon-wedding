@@ -16172,3 +16172,60 @@ body:has(.preview-frame-document) {
     padding: 4px 9px;
   }
 }
+
+/* ── Full-bleed heroes: edge to edge, no framing borders ── */
+.cinema-hero :is(.eid-hero, .invitation-stage, section[id="invitation-top"], #invitation-top) {
+  min-height: 100svh;
+}
+.cinema-hero :is(.invite-hero-frame, .stage-frame, .sb-hero-frame::before) {
+  display: none;
+}
+.cinema-hero .sb-hero-frame {
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+.personal-invite-cover :is(.cover-outline, .cover-outline-inner) {
+  display: none;
+}
+
+/* ── Main page photo cards: borderless, full photo ── */
+.theme-demo-link {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+.theme-demo-link:hover,
+.theme-demo-link:focus-visible {
+  border: 0;
+  box-shadow: none;
+}
+.theme-demo-art {
+  border-radius: 14px;
+  box-shadow: 0 22px 44px -30px color-mix(in oklch, var(--foreground) 45%, transparent);
+}
+
+/* ── A distinct scrolling background for every theme ── */
+.personal-invite[data-theme="aladin"] { --background: oklch(0.2 0.075 300); }
+.personal-invite[data-theme="mecca_madinah"] { --background: oklch(0.2 0.06 155); }
+.personal-invite[data-theme="luxury"] { --background: oklch(0.15 0.008 60); }
+.personal-invite[data-theme="futuristic"] { --background: oklch(0.15 0.06 250); }
+.personal-invite[data-theme="diya-utsav"] { --background: oklch(0.2 0.06 45); }
+.personal-invite[data-theme="riad-noor"] { --background: oklch(0.22 0.06 230); }
+.personal-invite[data-theme="kashi-ghat"] { --background: oklch(0.21 0.05 275); }
+.personal-invite[data-theme="mehndi-night"] { --background: oklch(0.2 0.055 130); }
+.personal-invite[data-theme="chand-bagh"] { --background: oklch(0.19 0.06 255); }
+.personal-invite[data-theme="royal-rajmahal"] { --background: oklch(0.2 0.07 10); }
+.personal-invite[data-theme="mughal-moon-film"] { --background: oklch(0.17 0.035 285); }
+.personal-invite[data-theme="bihari-vibe"] { --background: oklch(0.95 0.05 70); }
+.personal-invite[data-theme="fairytale"] { --background: oklch(0.96 0.03 320); }
+.personal-invite[data-theme="ballroom"] { --background: oklch(0.965 0.025 90); }
+.personal-invite[data-theme="sacred-mandap"] { --background: oklch(0.96 0.03 25); }
+.personal-invite[data-theme="jharokha-dawn"] { --background: oklch(0.95 0.035 50); }
+.personal-invite[data-theme="haldi-baag"] { --background: oklch(0.96 0.07 98); }
+.personal-invite[data-theme="vows-in-ink"] { --background: oklch(0.95 0.008 240); }
+.personal-invite[data-theme="mela-maidan"] { --background: oklch(0.95 0.045 355); }
+.personal-invite[data-theme="lotus-goddess"] { --background: oklch(0.965 0.03 340); }
+.personal-invite[data-theme="calligraphy"] { --background: oklch(0.93 0.04 78); }
+.personal-invite[data-theme="eid"] { --background: oklch(0.975 0.015 230); }
