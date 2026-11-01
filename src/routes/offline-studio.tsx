@@ -326,7 +326,11 @@ export function OfflineStudioPage() {
               )}
             </div>
           </div>
-          <button type="button" className="studio-button" onClick={() => startNew()}>
+          <button
+            type="button"
+            className={`studio-button${drafts.length === 0 ? " offline-studio-new is-empty" : ""}`}
+            onClick={() => startNew()}
+          >
             <Plus size={16} /> New offline draft
           </button>
         </header>
@@ -346,9 +350,7 @@ export function OfflineStudioPage() {
           <TabsContent value="invitations">
             <section aria-label="Offline drafts" className="dashboard-list-section">
               <div className="dashboard-list-heading">
-                <p className="text-xs font-medium text-muted-foreground">
-                  Saved locally on this device · Publishing requires internet
-                </p>
+                <p className="text-xs font-medium text-muted-foreground">Saved on this device</p>
                 {drafts.length > 0 && (
                   <div className="dashboard-filters">
                     <label className="dashboard-search">

@@ -48,10 +48,9 @@ describe("Creator homepage", () => {
       "href",
       "/sign-in",
     );
-    expect(screen.getByRole("link", { name: /Template collection/ })).toHaveAttribute(
-      "href",
-      "/themes",
-    );
+    // One entry point to the collection — it used to be listed twice.
+    expect(screen.getByRole("link", { name: /Theme demos/ })).toHaveAttribute("href", "/themes");
+    expect(screen.queryByRole("link", { name: /Template collection/ })).toBeNull();
     expect(document.getElementById("collection")).toBeInTheDocument();
   });
 
@@ -62,6 +61,36 @@ describe("Creator homepage", () => {
     for (const demo of demos) expect(demo).toHaveAttribute("href", "/theme/$themeId");
     // The old illustrative "style inspiration" cards are gone for good.
     expect(screen.queryByText("STYLE INSPIRATION")).not.toBeInTheDocument();
+  });
+
+  it("keeps a phone screen short: four featured demos and one way to the rest", () => {
+    // A 390 px handset must not scroll through twenty-two full-height posters.
+    const originalWidth = window.innerWidth;
+    const originalMatch = window.matchMedia;
+    Object.defineProperty(window, "innerWidth", { configurable: true, value: 390 });
+    window.matchMedia = vi.fn().mockImplementation((query: string) => ({
+      matches: /max-width:\s*767px/.test(query),
+      media: query,
+      onchange: null,
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    }));
+    try {
+      render(<Home />);
+      const demos = screen.getAllByRole("link", { name: /demo invitation for/ });
+      expect(demos).toHaveLength(4);
+      expect(
+        screen.getByRole("link", { name: `See all ${themeDemos.length} demos` }),
+      ).toHaveAttribute("href", "/themes");
+      // The floating artwork chips are decoration that costs scroll on a phone.
+      expect(document.querySelectorAll(".studio-art-chip")).toHaveLength(2);
+    } finally {
+      Object.defineProperty(window, "innerWidth", { configurable: true, value: originalWidth });
+      window.matchMedia = originalMatch;
+    }
   });
 
   it("opens and closes the mobile navigation accessibly", () => {

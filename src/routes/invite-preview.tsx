@@ -9,6 +9,7 @@ import {
 } from "@/components/platform/invitation-preview";
 import {
   invitationFrameworkIds,
+  invitationFrameworks,
   invitationLayoutFor,
   invitationThemeCategories,
   invitationThemeIds,
@@ -113,6 +114,7 @@ function DesignPreview() {
   );
 
   useEffect(() => {
+    // Closed on a phone: the invitation is the page, the panel is optional.
     setOpen(window.innerWidth >= 720);
     const params = new URLSearchParams(window.location.search);
     const wantedTheme = params.get("theme");
@@ -155,6 +157,12 @@ function DesignPreview() {
         </div>
         {open && (
           <div className="preview-panel">
+            {isPhone && (
+              <p className="preview-panel-hint">
+                Tap a theme to see it instantly. Close this panel to keep the invitation full
+                screen.
+              </p>
+            )}
             <label>
               <span>Theme</span>
               <select
@@ -182,14 +190,19 @@ function DesignPreview() {
               >
                 {invitationFrameworkIds.map((id) => (
                   <option key={id} value={id}>
-                    {id}
+                    {invitationFrameworks.find((item) => item.id === id)?.label ?? id}
                   </option>
                 ))}
               </select>
             </label>
-            <p className="preview-note">
-              Layout: <b>{layout}</b>
-            </p>
+            {/* On a phone the panel is a bottom sheet: the picker already names
+                the layout, and the description would only add a fourth line. */}
+            {!isPhone && (
+              <p className="preview-note">
+                Layout: <b>{layout}</b> —{" "}
+                {invitationFrameworks.find((item) => item.id === framework)?.description}
+              </p>
+            )}
           </div>
         )}
       </div>

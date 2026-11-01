@@ -146,7 +146,7 @@ export function DownloadAppPage() {
                   type="button"
                   onClick={() => void handleRefreshUpdate()}
                   disabled={updatingCache}
-                  className="studio-outline-button"
+                  className="studio-outline-button download-app-secondary"
                 >
                   <RefreshCw size={14} className={updatingCache ? "animate-spin" : ""} />
                   {updatingCache ? "Updating…" : "Update offline cache"}
@@ -154,20 +154,18 @@ export function DownloadAppPage() {
               )}
             </div>
 
-            <div className="download-app-status" role="status">
-              <Check size={14} />
-              <span>
-                {isInstalled
-                  ? `Installed on this device (v${version}) · Opens with the internet off`
-                  : cacheReady || cacheStatus.count > 0
-                    ? `All 22 themes, previews & studio tools (v${version}) stored on this device${
-                        cacheStatus.count > 0 ? ` · ${cacheStatus.count} files` : ""
-                      }`
+            {(isInstalled || downloadedLauncher || (!cacheReady && cacheStatus.count === 0)) && (
+              <div className="download-app-status" role="status">
+                <Check size={14} />
+                <span>
+                  {isInstalled
+                    ? `Installed on this device (v${version}) · Opens with the internet off`
                     : downloadedLauncher
                       ? `Latest v${version} launcher saved · App files downloading in the background`
                       : `Latest v${version} · Works on Windows, macOS, Android & iOS`}
-              </span>
-            </div>
+                </span>
+              </div>
+            )}
 
             {updateAvailable && (
               <p className="download-app-hint" role="status">
@@ -183,22 +181,25 @@ export function DownloadAppPage() {
               </p>
             )}
 
-            <p className="download-app-hint">
-              <strong>First time offline?</strong> Install or press{" "}
-              <strong>Update offline cache</strong> once with the internet on. That single visit is
-              what lets the app open later with no network at all — including a cold start from your
-              home screen.
-            </p>
+            <div className="download-app-help">
+              <details>
+                <summary>First time offline? How the install works</summary>
+                <p className="download-app-hint">
+                  Install or press <strong>Update offline cache</strong> once with the internet on.
+                  That single visit is what lets the app open later with no network at all —
+                  including a cold start from your home screen.
+                </p>
+                {!isInstalled && !canNativeInstall && (
+                  <p className="download-app-hint">
+                    <strong>Tip:</strong> In Chrome or Edge, click the install icon in the address
+                    bar to pin InvitingYou to your Desktop or Taskbar. On iPhone/iPad Safari, tap{" "}
+                    <strong>Share → Add to Home Screen</strong>.
+                  </p>
+                )}
+              </details>
+            </div>
 
             <ReleaseCard audience="partner" />
-
-            {!isInstalled && !canNativeInstall && (
-              <p className="download-app-hint">
-                <strong>Tip:</strong> In Chrome or Edge, click the install icon in the address bar
-                to pin InvitingYou to your Desktop or Taskbar. On iPhone/iPad Safari, tap{" "}
-                <strong>Share → Add to Home Screen</strong>.
-              </p>
-            )}
           </div>
 
           <div className="download-app-features">

@@ -89,6 +89,10 @@ export const ThemeDemoCard = memo(function ThemeDemoCard({
             <span className="theme-demo-group">{demoCategoryLabel(demo.theme)}</span>
             <strong>{label}</strong>
             <span className="theme-demo-mood">{demo.mood}</span>
+            {/* Phones show this row instead of the poster's name plate. */}
+            <span className="theme-demo-couple">
+              {demo.groomName} &amp; {demo.brideName} · {demoDateLabel(demo)} · {city}
+            </span>
           </div>
           <span className="theme-demo-go" aria-hidden="true">
             <ArrowUpRight size={18} />

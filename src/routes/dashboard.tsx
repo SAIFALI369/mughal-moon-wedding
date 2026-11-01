@@ -669,6 +669,7 @@ export function Dashboard() {
                         <Button
                           size="sm"
                           variant="outline"
+                          className="dashboard-row-action-extra"
                           onClick={() => setQrCard(card)}
                           aria-label={`Print card & QR for ${card.title}`}
                         >
