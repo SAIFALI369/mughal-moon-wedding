@@ -108,11 +108,10 @@ export function PlatformShell({
               <Link to={user ? "/dashboard" : "/sign-in"}>
                 <PanelsTopLeft size={18} /> My invitations
               </Link>
-              <Link to="/themes" className={activePage === "themes" ? "is-active" : ""}>
-                <Moon size={18} /> Template collection <span className="studio-new">NEW</span>
-              </Link>
             </>
           )}
+          {/* One way to the collection. "Template collection" and "Theme demos"
+              opened the same page, which made the phone menu five items deep. */}
           <Link to="/themes" className={activePage === "themes" ? "is-active" : ""}>
             <Sparkles size={17} /> Theme demos <span className="studio-new">NEW</span>
           </Link>

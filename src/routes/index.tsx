@@ -1,4 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import {
   ArrowRight,
   ArrowUpRight,
@@ -19,6 +20,7 @@ import { ThemeDemoCard } from "@/components/wedding/theme-demo-card";
 import { OFFLINE_APP_RELEASE } from "@/config/app-release";
 import { themeDemos } from "@/config/theme-demos";
 import { useAuth } from "@/lib/auth-context";
+import { isPhoneViewport } from "@/lib/viewport";
 import { Dashboard } from "./dashboard";
 
 export const Route = createFileRoute("/")({
@@ -45,6 +47,16 @@ export const Route = createFileRoute("/")({
 
 export function Home() {
   const { user, loading } = useAuth();
+  // A phone gets four featured demos and a link to the full collection instead
+  // of twenty-two full-height posters. Measured after mount, so the server HTML
+  // and the first client paint always agree.
+  const [isPhone, setIsPhone] = useState(false);
+  useEffect(() => {
+    const sync = () => setIsPhone(isPhoneViewport());
+    sync();
+    window.addEventListener("resize", sync);
+    return () => window.removeEventListener("resize", sync);
+  }, []);
   if (user) return <Dashboard />;
   return (
     <PlatformShell>
@@ -54,7 +66,9 @@ export function Home() {
           <Link to="/download" className="release-chip">
             <span className="release-chip-dot" /> New · Offline App v{OFFLINE_APP_RELEASE.version}
           </Link>
-          <span className="studio-status-dot" /> Your invitation studio{" "}
+          <span className="studio-topbar-status">
+            <span className="studio-status-dot" /> Your invitation studio
+          </span>{" "}
           <Link to="/sign-in">
             Sign in <ArrowUpRight size={14} />
           </Link>
@@ -191,16 +205,23 @@ export function Home() {
             Scroll one all the way to the end, then pick the theme that already feels like yours.
           </p>
           <div className="theme-demo-grid">
-            {themeDemos.map((demo, index) => (
+            {(isPhone ? themeDemos.slice(0, 4) : themeDemos).map((demo, index) => (
               <ThemeDemoCard key={demo.theme} demo={demo} priority={index === 0} />
             ))}
           </div>
-          <div className="flex flex-wrap items-center gap-3 pt-6">
-            <Link to="/sign-in" className="studio-button">
-              Sign in to start <ArrowRight size={16} />
-            </Link>
+          <div className="theme-collection-actions">
+            {isPhone ? (
+              <Link to="/themes" className="studio-button">
+                See all {themeDemos.length} demos <ArrowUpRight size={16} />
+              </Link>
+            ) : (
+              <Link to="/sign-in" className="studio-button">
+                Sign in to start <ArrowRight size={16} />
+              </Link>
+            )}
             <Link to="/themes" className="studio-text-button">
-              Compare them side by side <ArrowUpRight size={15} />
+              {isPhone ? "Filter by occasion" : "Compare them side by side"}{" "}
+              <ArrowUpRight size={15} />
             </Link>
           </div>
         </section>

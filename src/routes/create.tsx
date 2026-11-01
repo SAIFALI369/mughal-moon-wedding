@@ -405,9 +405,6 @@ export function CreateInvitationPage() {
             </p>
           )}
           <div className="create-page-actions">
-            <Button type="button" variant="ghost" onClick={leave} disabled={busy}>
-              Cancel
-            </Button>
             <div className="create-page-steps">
               <Button
                 type="button"
@@ -417,17 +414,19 @@ export function CreateInvitationPage() {
               >
                 Back
               </Button>
-              <Button
-                type="button"
-                variant="outline"
-                disabled={busy || stepIndex === lastStep}
-                onClick={() => setSection(invitationEditorSections[stepIndex + 1].id)}
-              >
-                Next
-              </Button>
-              <Button type="submit" disabled={busy || (!cardId && !canCreate)}>
-                {busy ? "Saving…" : cardId ? "Save" : "Create"}
-              </Button>
+              {stepIndex === lastStep ? (
+                <Button type="submit" disabled={busy || (!cardId && !canCreate)}>
+                  {busy ? "Saving…" : cardId ? "Save" : "Create"}
+                </Button>
+              ) : (
+                <Button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => setSection(invitationEditorSections[stepIndex + 1].id)}
+                >
+                  Next
+                </Button>
+              )}
             </div>
           </div>
         </div>

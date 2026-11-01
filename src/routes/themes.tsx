@@ -62,7 +62,7 @@ function ThemeDemosPage() {
             not saved.
           </p>
 
-          <div className="flex flex-wrap gap-1.5" role="group" aria-label="Filter themes by group">
+          <div className="theme-filter-row" role="group" aria-label="Filter themes by group">
             <button
               type="button"
               onClick={() => setCategory("all")}
@@ -89,7 +89,7 @@ function ThemeDemosPage() {
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center gap-3 pt-6">
+          <div className="theme-collection-actions">
             <Link to="/" className="studio-text-button">
               <ArrowLeft size={14} /> Back to the studio
             </Link>

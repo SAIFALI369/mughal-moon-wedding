@@ -100,7 +100,8 @@ describe("dedicated create-invitation page", () => {
     expect(body).not.toBeNull();
     expect(footer).not.toBeNull();
     expect(body?.contains(footer)).toBe(false);
-    expect(screen.getByRole("button", { name: "Cancel" })).toBeInTheDocument();
+    // Back to the studio is the header arrow; the footer keeps one next step.
+    expect(screen.getByRole("button", { name: "Back to studio" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Back" })).toBeDisabled();
     expect(screen.getAllByRole("button", { name: "Create" }).length).toBeGreaterThan(0);
   });
