@@ -18,6 +18,7 @@ import { Route as DownloadRouteImport } from './routes/download'
 import { Route as FilmRouteImport } from './routes/film'
 import { Route as FilmsRouteImport } from './routes/films'
 import { Route as InvitePreviewRouteImport } from './routes/invite-preview'
+import { Route as NoorArchRouteImport } from './routes/noor-arch'
 import { Route as OfflineStudioRouteImport } from './routes/offline-studio'
 import { Route as PreviewFrameRouteImport } from './routes/preview-frame'
 import { Route as ProfileRouteImport } from './routes/profile'
@@ -73,6 +74,11 @@ const FilmsRoute = FilmsRouteImport.update({
 const InvitePreviewRoute = InvitePreviewRouteImport.update({
   id: '/invite-preview',
   path: '/invite-preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NoorArchRoute = NoorArchRouteImport.update({
+  id: '/noor-arch',
+  path: '/noor-arch',
   getParentRoute: () => rootRouteImport,
 } as any)
 const OfflineStudioRoute = OfflineStudioRouteImport.update({
@@ -141,6 +147,7 @@ export interface FileRoutesByFullPath {
   '/film': typeof FilmRoute
   '/films': typeof FilmsRoute
   '/invite-preview': typeof InvitePreviewRoute
+  '/noor-arch': typeof NoorArchRoute
   '/offline-studio': typeof OfflineStudioRoute
   '/preview-frame': typeof PreviewFrameRoute
   '/profile': typeof ProfileRoute
@@ -163,6 +170,7 @@ export interface FileRoutesByTo {
   '/film': typeof FilmRoute
   '/films': typeof FilmsRoute
   '/invite-preview': typeof InvitePreviewRoute
+  '/noor-arch': typeof NoorArchRoute
   '/offline-studio': typeof OfflineStudioRoute
   '/preview-frame': typeof PreviewFrameRoute
   '/profile': typeof ProfileRoute
@@ -186,6 +194,7 @@ export interface FileRoutesById {
   '/film': typeof FilmRoute
   '/films': typeof FilmsRoute
   '/invite-preview': typeof InvitePreviewRoute
+  '/noor-arch': typeof NoorArchRoute
   '/offline-studio': typeof OfflineStudioRoute
   '/preview-frame': typeof PreviewFrameRoute
   '/profile': typeof ProfileRoute
@@ -210,6 +219,7 @@ export interface FileRouteTypes {
     | '/film'
     | '/films'
     | '/invite-preview'
+    | '/noor-arch'
     | '/offline-studio'
     | '/preview-frame'
     | '/profile'
@@ -232,6 +242,7 @@ export interface FileRouteTypes {
     | '/film'
     | '/films'
     | '/invite-preview'
+    | '/noor-arch'
     | '/offline-studio'
     | '/preview-frame'
     | '/profile'
@@ -254,6 +265,7 @@ export interface FileRouteTypes {
     | '/film'
     | '/films'
     | '/invite-preview'
+    | '/noor-arch'
     | '/offline-studio'
     | '/preview-frame'
     | '/profile'
@@ -277,6 +289,7 @@ export interface RootRouteChildren {
   FilmRoute: typeof FilmRoute
   FilmsRoute: typeof FilmsRoute
   InvitePreviewRoute: typeof InvitePreviewRoute
+  NoorArchRoute: typeof NoorArchRoute
   OfflineStudioRoute: typeof OfflineStudioRoute
   PreviewFrameRoute: typeof PreviewFrameRoute
   ProfileRoute: typeof ProfileRoute
@@ -353,6 +366,13 @@ declare module '@tanstack/react-router' {
       path: '/invite-preview'
       fullPath: '/invite-preview'
       preLoaderRoute: typeof InvitePreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/noor-arch': {
+      id: '/noor-arch'
+      path: '/noor-arch'
+      fullPath: '/noor-arch'
+      preLoaderRoute: typeof NoorArchRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/offline-studio': {
@@ -445,6 +465,7 @@ const rootRouteChildren: RootRouteChildren = {
   FilmRoute: FilmRoute,
   FilmsRoute: FilmsRoute,
   InvitePreviewRoute: InvitePreviewRoute,
+  NoorArchRoute: NoorArchRoute,
   OfflineStudioRoute: OfflineStudioRoute,
   PreviewFrameRoute: PreviewFrameRoute,
   ProfileRoute: ProfileRoute,
