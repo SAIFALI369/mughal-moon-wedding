@@ -166,7 +166,7 @@ export const invitationThemes: {
   {
     id: "eid",
     label: "Eid Light",
-    description: "The original luminous moonlit sky",
+    description: "A sealed box that opens into a lantern-lit archway",
     swatch: "#d7e7df",
     category: "islamic",
   },

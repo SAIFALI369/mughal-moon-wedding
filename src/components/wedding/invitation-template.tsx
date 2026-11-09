@@ -78,6 +78,7 @@ import { InvitationMusicPlayer } from "./invitation-music-player";
 import { sendInvitationMusicCommand } from "./invitation-music";
 import { InvitationGallery } from "./invitation-gallery";
 import { InvitationWishes } from "./invitation-wishes";
+import { NoorArchExperience } from "./noor-arch-gate";
 
 function directionsUrl(venue: string, address: string): string | null {
   const location = [venue, address].filter(Boolean).join(", ");
@@ -387,6 +388,7 @@ export function PersonalInvitation({
   // The film theme has no gate and no poster: the hero itself is the film,
   // already running. "Watch the film" opens the full cut with sound on top.
   const isFilmTheme = details.theme === "mughal-moon-film";
+  const noorGate = details.theme === "eid" && gateActive;
   const [filmOpen, setFilmOpen] = useState(false);
   const openFilm = () => {
     setFilmOpen(true);
@@ -461,7 +463,7 @@ export function PersonalInvitation({
       {isFilmTheme && filmOpen && (
         <MughalMoonFilm details={details} preview={preview} autoStart onEnter={closeFilm} />
       )}
-      {!storybook && !isFilmTheme && showGate && !preview && details.elements.gate && (
+      {!storybook && !isFilmTheme && !noorGate && showGate && !preview && details.elements.gate && (
         <Preloader
           onDone={() => window.dispatchEvent(new Event("wedding:revealed"))}
           onEnter={
@@ -1132,10 +1134,39 @@ export function PersonalInvitation({
     </div>
   );
 
-  return interactive ? (
-    <WorldProvider cardKey={cardId || slug || `preview-${details.theme}`}>{page}</WorldProvider>
+  const content = noorGate ? (
+    <NoorArchExperience
+      onOpen={
+        hasSongs ? () => sendInvitationMusicCommand({ action: "play", index: 0 }) : undefined
+      }
+      scenes={[
+        {
+          kicker: "بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
+          title: `${details.groomName} & ${details.brideName}`,
+          body: details.message || undefined,
+        },
+        {
+          kicker: [details.date, details.time].filter(Boolean).join(" · "),
+          title: details.eventType || "The Celebration",
+          body: [details.venue, details.address].filter(Boolean).join(", "),
+        },
+        ...details.additionalEvents.map((e) => ({
+          kicker: [e.date, e.time].filter(Boolean).join(" · "),
+          title: e.title,
+          body: [e.venue, e.address].filter(Boolean).join(", "),
+        })),
+      ]}
+    >
+      {page}
+    </NoorArchExperience>
   ) : (
     page
+  );
+
+  return interactive ? (
+    <WorldProvider cardKey={cardId || slug || `preview-${details.theme}`}>{content}</WorldProvider>
+  ) : (
+    content
   );
 }
 

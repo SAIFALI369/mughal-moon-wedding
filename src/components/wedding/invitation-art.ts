@@ -1,7 +1,8 @@
 import royalRajmahal from "@/assets/themes/royal-rajmahal.webp";
 import lotusGoddess from "@/assets/themes/lotus-goddess.webp";
 import calligraphy from "@/assets/themes/calligraphy.webp";
-import eidSky from "@/assets/eid-sky.webp";
+import noorFinal from "@/assets/noor-arch-final.jpg.asset.json";
+import noorGateVideo from "@/assets/noor-arch-gate.mp4.asset.json";
 import aladin from "@/assets/themes/aladin.webp";
 import bihariVibe from "@/assets/themes/bihari-vibe.webp";
 import meccaMadinah from "@/assets/themes/mecca-madinah.webp";
@@ -28,7 +29,7 @@ export const invitationArt: Record<InvitationTheme, string> = {
   "royal-rajmahal": royalRajmahal,
   "lotus-goddess": lotusGoddess,
   calligraphy,
-  eid: eidSky,
+  eid: noorFinal.url,
   aladin,
   "bihari-vibe": bihariVibe,
   mecca_madinah: meccaMadinah,
@@ -59,6 +60,7 @@ export const invitationArt: Record<InvitationTheme, string> = {
  * seconds of the same scene, built by `scripts/build-theme-loops.mjs`.
  */
 export function themeLoop(theme: InvitationTheme): string {
+  if (theme === "eid") return noorGateVideo.url;
   return `/film/${theme}.mp4`;
 }
 
