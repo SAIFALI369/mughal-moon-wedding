@@ -1134,7 +1134,7 @@ export function PersonalInvitation({
     </div>
   );
 
-  const content = noorGate ? (
+  const wrapped = noorGate ? (
     <NoorArchExperience
       onOpen={
         hasSongs ? () => sendInvitationMusicCommand({ action: "play", index: 0 }) : undefined
@@ -1164,9 +1164,9 @@ export function PersonalInvitation({
   );
 
   return interactive ? (
-    <WorldProvider cardKey={cardId || slug || `preview-${details.theme}`}>{content}</WorldProvider>
+    <WorldProvider cardKey={cardId || slug || `preview-${details.theme}`}>{wrapped}</WorldProvider>
   ) : (
-    content
+    wrapped
   );
 }
 
