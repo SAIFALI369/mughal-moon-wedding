@@ -73,7 +73,7 @@ function NoorArch() {
       {revealed && (
         <div className="relative z-10">
           {scenes.map((s, i) => (
-            <section key={i} className="flex min-h-svh items-center justify-center px-10 py-24">
+            <section key={i} className="flex min-h-svh items-center justify-center px-10 pb-16 pt-[30svh]">
               <motion.div
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
