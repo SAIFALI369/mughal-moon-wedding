@@ -1,4 +1,4 @@
-import { cleanup, fireEvent, render, screen } from "@testing-library/react";
+import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
 import { resolveSongSource, sanitizeInvitationSongs } from "@/components/wedding/invitation-music";
@@ -61,6 +61,7 @@ beforeEach(() => {
 
 afterEach(() => {
   cleanup();
+  vi.useRealTimers();
   vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
@@ -69,10 +70,15 @@ afterEach(() => {
  * Hero films are videos and they autoplay (muted, silently). These tests are
  * about the soundtrack, so count only the <audio> elements that were played.
  */
-function audioPlays(spy: ReturnType<typeof vi.spyOn>): number {
+function audioInstances(spy: ReturnType<typeof vi.spyOn>): HTMLAudioElement[] {
   return (spy.mock.instances as unknown[]).filter(
-    (instance) => typeof HTMLAudioElement !== "undefined" && instance instanceof HTMLAudioElement,
-  ).length;
+    (instance): instance is HTMLAudioElement =>
+      typeof HTMLAudioElement !== "undefined" && instance instanceof HTMLAudioElement,
+  );
+}
+
+function audioPlays(spy: ReturnType<typeof vi.spyOn>): number {
+  return audioInstances(spy).length;
 }
 
 describe("soundtrack door-open autoplay", () => {
@@ -102,10 +108,10 @@ describe("soundtrack door-open autoplay", () => {
     });
   });
 
-  it("plays MP3 audio synchronously when opening Preloader gates on a published card", () => {
+  it("primes MP3 audio on Tap to open and starts audible playback after the opening video finishes", () => {
     const playSpy = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
 
-    render(
+    const { container } = render(
       <PersonalInvitation
         title="Our Day"
         content={{
@@ -117,11 +123,21 @@ describe("soundtrack door-open autoplay", () => {
     );
 
     expect(audioPlays(playSpy)).toBe(0);
-    fireEvent.click(screen.getByRole("button", { name: /Open the gates/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Tap to open$/i }));
+    // Only a silent muted unlock happens on tap; audible playback waits until video completes.
+    const [audio] = audioInstances(playSpy);
+    expect(audio).toBeDefined();
+    expect(audio.muted).toBe(true);
     expect(audioPlays(playSpy)).toBe(1);
+
+    const video = container.querySelector("video")!;
+    fireEvent.ended(video);
+    expect(audio.muted).toBe(false);
+    expect(audioPlays(playSpy)).toBe(2);
   });
 
-  it("plays MP3 audio synchronously when opening Royal Editions double doors", () => {
+  it("plays MP3 audio after the zoom video transition finishes on non-eid themes", () => {
+    vi.useFakeTimers();
     const playSpy = vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
 
     render(
@@ -136,12 +152,20 @@ describe("soundtrack door-open autoplay", () => {
     );
 
     expect(audioPlays(playSpy)).toBe(0);
-    fireEvent.click(screen.getByRole("button", { name: /Open invitation/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Tap to open$/i }));
+    const [audio] = audioInstances(playSpy);
+    expect(audio).toBeDefined();
+    expect(audio.muted).toBe(true);
     expect(audioPlays(playSpy)).toBe(1);
+
+    act(() => vi.advanceTimersByTime(2600));
+    expect(audio.muted).toBe(false);
+    expect(audioPlays(playSpy)).toBe(2);
   });
 
-  it("sends YouTube IFrame API playVideo commands synchronously on door open", () => {
-    render(
+  it("sends YouTube IFrame API playVideo commands right after the opening video finishes", () => {
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
+    const { container } = render(
       <PersonalInvitation
         title="Our Day"
         content={{
@@ -162,14 +186,21 @@ describe("soundtrack door-open autoplay", () => {
       configurable: true,
     });
 
-    fireEvent.click(screen.getByRole("button", { name: /Open the gates/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Tap to open$/i }));
+    // Does not blast YouTube audio mid-transition
+    const midCalls = postMessage.mock.calls.map(([msg]) => JSON.parse(msg as string).func);
+    expect(midCalls).not.toContain("playVideo");
+
+    const video = container.querySelector("video")!;
+    fireEvent.ended(video);
 
     const funcs = postMessage.mock.calls.map(([msg]) => JSON.parse(msg as string).func);
     expect(funcs).toContain("unMute");
     expect(funcs).toContain("playVideo");
   });
 
-  it("calls Spotify Embed Controller play() synchronously on door open", () => {
+  it("calls Spotify Embed Controller play() right after the opening video finishes", () => {
+    vi.spyOn(HTMLMediaElement.prototype, "play").mockResolvedValue();
     const spotifyPlay = vi.fn();
     window.SpotifyIframeApi = {
       createController: (_el, _opts, cb) => {
@@ -183,7 +214,7 @@ describe("soundtrack door-open autoplay", () => {
       },
     };
 
-    render(
+    const { container } = render(
       <PersonalInvitation
         title="Our Day"
         content={{
@@ -197,7 +228,11 @@ describe("soundtrack door-open autoplay", () => {
     );
 
     expect(spotifyPlay).not.toHaveBeenCalled();
-    fireEvent.click(screen.getByRole("button", { name: /Open the gates/i }));
+    fireEvent.click(screen.getByRole("button", { name: /^Tap to open$/i }));
+    expect(spotifyPlay).not.toHaveBeenCalled();
+
+    const video = container.querySelector("video")!;
+    fireEvent.ended(video);
     expect(spotifyPlay).toHaveBeenCalledTimes(1);
 
     delete window.SpotifyIframeApi;

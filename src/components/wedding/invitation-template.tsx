@@ -21,7 +21,7 @@ import {
   Video,
 } from "lucide-react";
 import { toast } from "sonner";
-import { Countdown, Hero, Preloader } from "./sections";
+import { Countdown, Hero } from "./sections";
 import { fadeUp } from "./ornaments";
 import {
   buildInvitationCalendarUrl,
@@ -36,11 +36,11 @@ import {
 } from "./invitation-details";
 import { ThemeLoop } from "./theme-loop";
 import { invitationArt, invitationArtFallback } from "./invitation-art";
-import { CouplePortraits, InvitationStage } from "./invitation-stage";
+import { InvitationStage } from "./invitation-stage";
 import { CurtainStage } from "./invitation-curtain";
 import { MughalMoonFilm } from "./invitation-film-player";
 import { LiveReelHero, ReelInterlude } from "./invitation-reel";
-import { LivingScene, MandapStage, riteBlessing } from "./invitation-rite";
+import { LivingScene, MandapStage } from "./invitation-rite";
 import { InvitationRsvp } from "./invitation-rsvp";
 import {
   invitationFrameworks,
@@ -78,7 +78,7 @@ import { InvitationMusicPlayer } from "./invitation-music-player";
 import { sendInvitationMusicCommand } from "./invitation-music";
 import { InvitationGallery } from "./invitation-gallery";
 import { InvitationWishes } from "./invitation-wishes";
-import { NoorArchExperience } from "./noor-arch-gate";
+import { isDarkOpeningTheme, NoorArchExperience } from "./noor-arch-gate";
 
 function directionsUrl(venue: string, address: string): string | null {
   const location = [venue, address].filter(Boolean).join(", ");
@@ -112,9 +112,8 @@ export function InvitationCover({ content }: { content: unknown }) {
   const framework = invitationFrameworks.find((value) => value.id === details.framework);
   const theme = invitationThemes.find((value) => value.id === details.theme);
   const layout = invitationLayoutFor(details.theme, details.framework);
-  const monogram = getInvitationMonogram(details);
   const plate = datePlate(details.date);
-  const blessing = details.theme === "mecca_madinah" || details.framework === "moonlit";
+  const darkSurface = isDarkOpeningTheme(details.theme);
 
   const [coverFallback, setCoverFallback] = useState(false);
   const fallbackArt = invitationArtFallback[details.theme];
@@ -159,78 +158,31 @@ export function InvitationCover({ content }: { content: unknown }) {
       ) : layout === "mela-maidan" ? (
         <MelaCover details={details} />
       ) : (
-        <div className="cover-inner relative flex min-h-[23rem] flex-col items-center justify-center px-7 py-9">
-          <div className="cover-blessing flex w-full items-center justify-center gap-2 text-gold">
-            <span className="cover-hairline" aria-hidden="true" />
-            {riteBlessing(details.theme) ? (
-              <p
-                dir={riteBlessing(details.theme)?.script === "arabic" ? "rtl" : "ltr"}
-                className={`${
-                  riteBlessing(details.theme)?.script === "arabic" ? "font-arabic" : "font-sanskrit"
-                } text-lg leading-none text-gold`}
-              >
-                {riteBlessing(details.theme)?.text}
-              </p>
-            ) : blessing ? (
-              <p dir="rtl" className="font-arabic text-lg leading-none text-gold">
-                بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-              </p>
-            ) : (
-              <p className="cover-emblem text-lg leading-none" aria-hidden="true">
-                ✧
-              </p>
-            )}
-            <span className="cover-hairline" aria-hidden="true" />
-          </div>
-          <p className="cover-kicker mt-4 text-[9px] uppercase tracking-[0.26em] text-gold">
-            {details.hosts || "Together with their families"}
-          </p>
-
-          <InviteMonogram
-            left={monogram.left}
-            right={monogram.right}
-            size="sm"
-            className="cover-monogram mt-4"
-          />
-
-          <h3 className="cover-names mt-4 flex max-w-full flex-col items-center font-serif leading-tight">
-            <span className="max-w-full break-words text-3xl sm:text-4xl">{details.groomName}</span>
-            <span className="cover-amp text-gold-shimmer font-script text-2xl">
-              {details.framework === "moonlit" ? "weds" : "&"}
-            </span>
-            <span className="max-w-full break-words text-3xl sm:text-4xl">{details.brideName}</span>
-          </h3>
-
-          <CouplePortraits details={details} compact />
-
-          <div className="cover-date-plate mt-4">
-            {plate ? (
-              <>
-                <span className="cover-date-day">{plate.day}</span>
-                <span className="cover-date-divider" aria-hidden="true" />
-                <span className="cover-date-copy">
-                  <span className="cover-date-month">
-                    {plate.month} {plate.year}
-                  </span>
-                  {details.time && <span className="cover-date-time">{details.time}</span>}
-                </span>
-              </>
-            ) : (
-              <span className="cover-date-fallback">{details.date || "Date to be announced"}</span>
-            )}
-          </div>
-          {plate && <span className="sr-only">{details.date}</span>}
-
-          {details.venue && (
-            <p className="cover-venue mt-3 flex items-center gap-1.5 font-serif text-sm italic">
-              <MapPin className="h-3 w-3 text-gold" aria-hidden="true" />
-              <span className="line-clamp-2">{details.venue}</span>
+        <div className="cover-inner relative flex min-h-[23rem] flex-col items-center justify-center px-6 py-9">
+          <div
+            className={`card-calligraphy-plate w-full max-w-xs ${
+              darkSurface ? "is-dark-art" : "is-light-art"
+            }`}
+          >
+            <h3 className="cover-names card-calligraphy-names flex max-w-full flex-col items-center">
+              <span className="card-calligraphy-name max-w-full break-words text-3xl">
+                {details.groomName}
+              </span>
+              <span className="cover-amp card-calligraphy-amp text-2xl">&amp;</span>
+              <span className="card-calligraphy-name max-w-full break-words text-3xl">
+                {details.brideName}
+              </span>
+            </h3>
+            <span className="card-calligraphy-rule" aria-hidden="true" />
+            <p className="card-calligraphy-date mt-3 text-sm">
+              {plate
+                ? `${plate.day} ${plate.month} ${plate.year}`
+                : details.date || "Save the date"}
             </p>
-          )}
-
-          <span className="cover-label mt-5 text-[9px] uppercase tracking-[0.2em] text-gold">
-            {theme?.label} · {framework?.label}
-          </span>
+            <span className="cover-label mt-4 block text-[9px] uppercase tracking-[0.2em] text-[#7a5426]">
+              {theme?.label} · {framework?.label}
+            </span>
+          </div>
         </div>
       )}
       <span className="cover-sheen" aria-hidden="true" />
@@ -363,13 +315,20 @@ export function PersonalInvitation({
   const calendarUrl = buildInvitationCalendarUrl(details);
   const mapUrl = details.mapUrl || directionsUrl(details.venue, details.address);
   const dateLine = [details.date, details.time].filter(Boolean).join(" · ");
-  const gateDateLine = [details.date, details.venue].filter(Boolean).join(" · ");
   const art = invitationArt[details.theme];
   const layout = invitationLayoutFor(details.theme, details.framework);
   const interactive = isInteractiveLayout(layout);
   const storybook = isStorybook(details.theme);
   const hasSongs = details.songs.length > 0;
   const gateActive = !preview && showGate && details.elements.gate;
+  const [scrolledPastHero, setScrolledPastHero] = useState(false);
+
+  useEffect(() => {
+    const syncScroll = () => setScrolledPastHero(window.scrollY > 80);
+    syncScroll();
+    window.addEventListener("scroll", syncScroll, { passive: true });
+    return () => window.removeEventListener("scroll", syncScroll);
+  }, []);
 
   useEffect(() => {
     if (preview || !hasSongs || gateActive) return;
@@ -395,7 +354,7 @@ export function PersonalInvitation({
   // The film theme has no gate and no poster: the hero itself is the film,
   // already running. "Watch the film" opens the full cut with sound on top.
   const isFilmTheme = details.theme === "mughal-moon-film";
-  const noorGate = details.theme === "eid" && gateActive;
+  const unifiedGate = !storybook && !isFilmTheme && gateActive;
   const [filmOpen, setFilmOpen] = useState(false);
   const openFilm = () => {
     setFilmOpen(true);
@@ -452,6 +411,11 @@ export function PersonalInvitation({
         <StorybookEntry
           details={details}
           enabled={showGate && details.elements.gate}
+          onPrime={
+            !preview && hasSongs
+              ? () => sendInvitationMusicCommand({ action: "prime", index: 0 })
+              : undefined
+          }
           onEnter={
             !preview && hasSongs
               ? () => sendInvitationMusicCommand({ action: "play", index: 0 })
@@ -470,23 +434,14 @@ export function PersonalInvitation({
       {isFilmTheme && filmOpen && (
         <MughalMoonFilm details={details} preview={preview} autoStart onEnter={closeFilm} />
       )}
-      {!storybook && !isFilmTheme && !noorGate && showGate && !preview && details.elements.gate && (
-        <Preloader
-          onDone={() => window.dispatchEvent(new Event("wedding:revealed"))}
-          onEnter={
-            hasSongs ? () => sendInvitationMusicCommand({ action: "play", index: 0 }) : undefined
-          }
-          groomName={details.groomName}
-          brideName={details.brideName}
-          dateLine={gateDateLine}
-          enableMusic={false}
-          backgroundImage={art}
-          curtain={details.framework === "curtain-call"}
-          theme={details.theme}
-        />
-      )}
       {!preview && (
-        <header className="wedding-header sticky inset-x-0 top-0 z-40 px-3 pt-3 sm:px-6">
+        <header
+          className={`wedding-header fixed inset-x-0 top-0 z-40 px-3 pt-3 transition-all duration-300 sm:px-6 ${
+            scrolledPastHero
+              ? "translate-y-0 opacity-100"
+              : "pointer-events-none -translate-y-4 opacity-0"
+          }`}
+        >
           <nav
             aria-label="Invitation sections"
             className="wedding-nav glass-card mx-auto flex max-w-6xl items-center justify-between gap-3 rounded-full px-4 py-2.5 shadow-gold sm:px-6"
@@ -498,7 +453,7 @@ export function PersonalInvitation({
             >
               <InviteMonogram left={monogram.left} right={monogram.right} size="sm" />
               <span className="min-w-0 truncate">
-                <span className="block font-script text-xl leading-none text-gold sm:text-2xl">
+                <span className="font-calligraphy-simple block text-xl leading-none text-gold sm:text-2xl">
                   {details.groomName[0]} &amp; {details.brideName[0]}
                 </span>
                 <span className="hidden text-[8px] uppercase tracking-[0.2em] text-muted-foreground sm:block">
@@ -548,7 +503,12 @@ export function PersonalInvitation({
         }
       >
         {storybook ? (
-          <StorybookHero details={details} actions={actions} motion={details.elements.gate} />
+          <StorybookHero
+            details={details}
+            actions={actions}
+            motion={details.elements.gate}
+            waitingForGate={showGate && details.elements.gate}
+          />
         ) : layout === "reel" ? (
           <LiveReelHero
             details={details}
@@ -563,7 +523,7 @@ export function PersonalInvitation({
             backgroundImage={art}
             actions={actions}
             scrollTo={scrollTo}
-            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+            entranceDelay={0}
           />
         ) : layout === "baag" ? (
           <BaagStage
@@ -571,7 +531,7 @@ export function PersonalInvitation({
             backgroundImage={art}
             actions={actions}
             scrollTo={scrollTo}
-            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+            entranceDelay={0}
           />
         ) : layout === "single-stroke" ? (
           <SingleStrokeStage
@@ -579,7 +539,7 @@ export function PersonalInvitation({
             backgroundImage={art}
             actions={actions}
             scrollTo={scrollTo}
-            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+            entranceDelay={0}
           />
         ) : layout === "chand-bagh" ? (
           <ChandBaghStage
@@ -587,7 +547,7 @@ export function PersonalInvitation({
             backgroundImage={art}
             actions={actions}
             scrollTo={scrollTo}
-            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+            entranceDelay={0}
           />
         ) : layout === "mela-maidan" ? (
           <MelaMaidanStage
@@ -595,7 +555,7 @@ export function PersonalInvitation({
             backgroundImage={art}
             actions={actions}
             scrollTo={scrollTo}
-            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+            entranceDelay={0}
           />
         ) : layout === "moonlit" ? (
           <div id="invitation-top" className="invite-hero-wrap">
@@ -603,15 +563,12 @@ export function PersonalInvitation({
               theme={details.theme}
               groomName={details.groomName}
               brideName={details.brideName}
-              dateLine={
-                dateLine || "Together with our families, we invite you to celebrate with us"
-              }
-              entranceDelay={showGate && details.elements.gate && !preview ? 3 : 0}
+              dateLine={dateLine}
+              entranceDelay={0}
               compactNames
               scrollTo={scrollTo}
               actions={actions}
               backgroundImage={art}
-              portraits={<CouplePortraits details={details} />}
             />
             <div className="invite-hero-frame" aria-hidden="true">
               <span className="invite-hero-arch" />
@@ -625,7 +582,7 @@ export function PersonalInvitation({
             backgroundImage={art}
             actions={actions}
             scrollTo={scrollTo}
-            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+            entranceDelay={0}
           />
         ) : layout === "mandap" ? (
           <MandapStage
@@ -633,7 +590,7 @@ export function PersonalInvitation({
             backgroundImage={art}
             actions={actions}
             scrollTo={scrollTo}
-            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+            entranceDelay={0}
           />
         ) : (
           <InvitationStage
@@ -641,7 +598,7 @@ export function PersonalInvitation({
             backgroundImage={art}
             actions={actions}
             scrollTo={scrollTo}
-            entranceDelay={showGate && details.elements.gate && !preview ? 2.7 : 0}
+            entranceDelay={0}
           />
         )}
       </CinematicHero>
@@ -703,7 +660,7 @@ export function PersonalInvitation({
             </p>
             <p className="invite-note-signature">
               With love,
-              <span className="font-script">
+              <span className="font-calligraphy-simple italic">
                 {details.groomName} &amp; {details.brideName}
               </span>
             </p>
@@ -783,8 +740,12 @@ export function PersonalInvitation({
 
           <div className="invite-celebration-details">
             <p className="invite-mini-eyebrow">{details.eventType || title}</p>
+            {details.riteLine && (
+              <p className="mt-1 font-serif text-sm italic text-gold">{details.riteLine}</p>
+            )}
             <h3 className="invite-celebration-names">
-              {details.groomName} <span className="font-script text-gold">&amp;</span>{" "}
+              {details.groomName}{" "}
+              <span className="font-calligraphy-simple italic text-gold">&amp;</span>{" "}
               {details.brideName}
             </h3>
             <p className="invite-celebration-intro">
@@ -1113,7 +1074,7 @@ export function PersonalInvitation({
         </div>
         <InviteCrest className="invite-footer-crest" />
         <InviteMonogram left={monogram.left} right={monogram.right} size="lg" className="mt-4" />
-        <p className="invite-footer-names mt-6 break-words font-script text-4xl sm:text-5xl">
+        <p className="invite-footer-names font-calligraphy-simple mt-6 break-words text-4xl sm:text-5xl">
           {details.groomName} &amp; {details.brideName}
         </p>
         {details.date && <p className="invite-footer-date">{details.date}</p>}
@@ -1141,12 +1102,14 @@ export function PersonalInvitation({
     </div>
   );
 
-  const wrapped = noorGate ? (
+  const wrapped = unifiedGate ? (
     <NoorArchExperience
       groomName={details.groomName}
       brideName={details.brideName}
-      hosts={details.hosts || "Together with their families"}
-      dateLine={gateDateLine}
+      theme={details.theme}
+      onPrime={
+        hasSongs ? () => sendInvitationMusicCommand({ action: "prime", index: 0 }) : undefined
+      }
       onOpen={hasSongs ? () => sendInvitationMusicCommand({ action: "play", index: 0 }) : undefined}
     >
       {page}

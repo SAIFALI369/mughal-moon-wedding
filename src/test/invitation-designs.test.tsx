@@ -158,8 +158,8 @@ describe("creator invitation design and input", () => {
     ]) {
       expect(shown).toContain(`id="${section}"`);
     }
-    expect(shown).toContain("Portrait of Ayaan");
-    expect(shown).toContain("Portrait of Zara");
+    expect(shown).not.toContain("Portrait of Ayaan");
+    expect(shown).not.toContain("Portrait of Zara");
     expect(shown).toContain("This is a private preview");
     expect(shown).not.toContain("guest-name"); // a draft preview cannot write RSVPs
     // The card carries the main invitation's celebration features, not just text.
@@ -169,7 +169,7 @@ describe("creator invitation design and input", () => {
     expect(shown).toContain("Wishes open once this invitation is published.");
   });
 
-  it("lays the Hindu themes over the mandap stage with a Sanskrit blessing and no Arabic one", () => {
+  it("lays the Hindu themes over the mandap stage with clean simple calligraphy and no Arabic text", () => {
     for (const theme of ["diya-utsav", "sacred-mandap"] as const) {
       const page = renderToStaticMarkup(
         <PersonalInvitation
@@ -180,7 +180,7 @@ describe("creator invitation design and input", () => {
         />,
       );
       expect(page).toContain("mandap-stage");
-      expect(page).toContain("॥ श्री गणेशाय नमः ॥");
+      expect(page).toContain("card-calligraphy-names");
       expect(page).toContain("॥ शुभ विवाह ॥");
       expect(page).toContain("living-scene");
       expect(page).toContain("havan-flame");

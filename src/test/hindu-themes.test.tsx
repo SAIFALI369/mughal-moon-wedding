@@ -117,34 +117,38 @@ describe("Mandap stage", () => {
     expect(html).toContain("living-scene");
   });
 
-  it("keeps the couple's own details and Sanskrit lines", () => {
+  it("keeps the couple's simple calligraphy names on the mandap stage without venue or family clutter", () => {
     const html = mandap();
     expect(html).toContain("Arjun");
     expect(html).toContain("Meera");
-    expect(html).toContain("॥ श्री गणेशाय नमः ॥");
-    expect(html).toContain("॥ शुभ विवाह ॥");
-    expect(html).toContain("Lotus Garden");
-    expect(html).toContain("The Sharma and Iyer families");
+    expect(html).toContain("card-calligraphy-names");
+    expect(html).toContain("15 December 2030");
+    expect(html).not.toContain("Lotus Garden");
+    expect(html).not.toContain("The Sharma and Iyer families");
     expect(html).not.toContain("Mohsin");
     expect(html).not.toContain("Simran");
   });
 
-  it("falls back to a neutral line when the host leaves the blessing blank", () => {
+  it("keeps the stage minimal even when riteLine is provided or blank", () => {
     const html = mandap({ ...hindu, riteLine: "" });
-    expect(html).toContain("A sacred celebration");
+    expect(html).toContain("Arjun");
+    expect(html).toContain("Meera");
+    expect(html).not.toContain("See the celebration");
   });
 
-  it("opens the gate with the Sanskrit blessing and the living fire", () => {
+  it("opens the Hindu gate cleanly with the Diya Utsav opening frame, calligraphy and Tap to open", () => {
     const gate = renderToStaticMarkup(<Preloader onDone={() => {}} theme="diya-utsav" />);
-    expect(gate).toContain("॥ श्री गणेशाय नमः ॥");
-    expect(gate).toContain("living-scene");
-    expect(gate).toContain("diya-flame");
+    expect(gate).toContain("Tap to open");
+    expect(gate).toContain("card-calligraphy-names");
+    expect(gate).toContain("diya-utsav.mp4");
+    expect(gate).not.toContain("Open the gates");
     expect(gate).not.toContain("بِسْمِ");
   });
 
-  it("keeps the Muslim gate on the Bismillah", () => {
+  it("keeps the Muslim gate free of Ganesh text and uses Tap to open", () => {
     const gate = renderToStaticMarkup(<Preloader onDone={() => {}} theme="eid" />);
-    expect(gate).toContain("بِسْمِ");
+    expect(gate).toContain("Tap to open");
+    expect(gate).not.toContain("Open the gates");
     expect(gate).not.toContain("गणेश");
   });
 });

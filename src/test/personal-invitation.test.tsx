@@ -111,25 +111,26 @@ describe("personal invitation details", () => {
 });
 
 describe("personal invitation design", () => {
-  it("puts the creator's names, date and venue on the same celestial cover as the main invitation", () => {
+  it("puts the creator's names and date in simple calligraphy on the cover without venue or couple photo", () => {
     const markup = renderToStaticMarkup(<InvitationCover content={content} />);
     expect(markup).toContain("personal-invite-cover");
     expect(markup).toContain(invitationArt.eid);
+    expect(markup).toContain("card-calligraphy-names");
     expect(markup).toContain("Ayaan");
     expect(markup).toContain("Zara");
     expect(markup).toContain("15 December 2026");
-    expect(markup).toContain("Garden Pavilion");
+    expect(markup).not.toContain("Garden Pavilion");
     expect(markup).not.toContain("Mohsin");
     expect(markup).not.toContain("Simran");
   });
 
-  it("opens with a personalized version of the homepage gate without playing the homepage music", () => {
+  it("opens directly onto the couple's Tap to open gate without Open the gates, celebration, or venue clutter", () => {
     const markup = renderToStaticMarkup(<PersonalInvitation title="Our Day" content={content} />);
     expect(markup).toContain('id="gate-title"');
-    expect(markup).toContain("Open the gates");
+    expect(markup).toContain("Tap to open");
     expect(markup).toContain("Ayaan");
     expect(markup).toContain("Zara");
-    expect(markup).toContain("Garden Pavilion");
+    expect(markup).not.toContain("Open the gates");
     expect(markup).not.toContain("Enter with music");
   });
 

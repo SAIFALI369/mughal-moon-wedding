@@ -13,15 +13,9 @@ import { requestFilmSlot } from "@/lib/film-budget";
  * muted, inline and looping behind the invitation, with the illustration as its
  * poster frame, so the card looks complete before a single byte of video lands.
  *
- * Playback is rationed: a page can show twenty-odd theme tiles, and twenty-odd
- * decoders is what made the studio feel slow. Each player reports how much of
- * itself is on screen and the global film budget (`@/lib/film-budget`) lets only
- * the most visible one or two play; everyone else keeps the still, which is the
- * same picture. Scroll, and the film follows the guest — never all at once.
- *
- * Nothing downloads until a tile is on screen, the still stays visible until the
- * first frame is decoded, and guests who ask for reduced motion (or who turn on
- * data saver) never see a video at all — they keep the illustration.
+ * Priority heroes keep their decoded `<video>` mounted across scroll dips so
+ * scrolling back up never drops frames or forces a re-buffer flash. Lower tiles
+ * still yield their decoder cleanly via the viewport film budget.
  */
 
 /** Start a media element without assuming every engine returns a promise. */
@@ -45,31 +39,18 @@ export const ThemeLoop = memo(function ThemeLoop({
   className?: string;
   /** Front of the page: wins the film budget over a thumbnail further down. */
   priority?: boolean;
-  /** Host turned motion off, or the card is printed. */
+  /** Host turned motion off, or the card is holding its stopped final frame. */
   enabled?: boolean;
-  /**
-   * Still image to draw while another tile holds the film budget. Defaults to
-   * nothing, because every call site already paints the theme artwork behind
-   * this element — pass a (small) poster only where it does not.
-   */
   poster?: string | null;
 }) {
   const reduced = useReducedMotion();
   const ref = useRef<HTMLVideoElement>(null);
-  /**
-   * The video only exists while this tile holds the budget, so visibility is
-   * measured on an always-present, invisible box with the same containing
-   * block — otherwise "is this tile on screen?" could never be asked before the
-   * tile was allowed to play, and nothing would ever hand the slot over.
-   */
   const sentinel = useRef<HTMLSpanElement>(null);
   const [failedTheme, setFailedTheme] = useState<string | null>(null);
   const [fallbackTheme, setFallbackTheme] = useState<string | null>(null);
-  // A hero (or the first tile above the fold) renders its film in the server
-  // HTML so the browser can start it before hydration — it is one decoder.
-  // Everything else waits for the budget to say it is the visible one.
   const [mounted, setMounted] = useState(priority);
   const [allowed, setAllowed] = useState(priority);
+  const [decoded, setDecoded] = useState(false);
   const failed = failedTheme === theme;
   const useFallback = fallbackTheme === theme;
   const motion = enabled && !reduced && !failed;
@@ -78,14 +59,16 @@ export const ThemeLoop = memo(function ThemeLoop({
   const fallbackSrc = `/film/${theme}.mp4`;
   const videoSrc = useFallback ? fallbackSrc : primarySrc;
 
+  useEffect(() => {
+    setDecoded(false);
+  }, [videoSrc]);
+
   // Tell the budget how much of this tile is on screen.
   useEffect(() => {
     if (!motion) return;
     const element = sentinel.current;
     const slot = requestFilmSlot(setAllowed, priority ? 0 : 1);
     if (!element || typeof IntersectionObserver === "undefined") {
-      // No observer (old engine, test environment): the caller's own still is
-      // already on screen, so treat this tile as visible and let the budget pick.
       slot.setRatio(1);
       return () => slot.release();
     }
@@ -105,50 +88,52 @@ export const ThemeLoop = memo(function ThemeLoop({
     };
   }, [motion, priority]);
 
-  // Hold the film only while the budget says so: mounting the element is what
-  // costs a decoder, so an unbudgeted tile keeps the still and no video at all.
+  // Keep priority hero `<video>` mounted once loaded so scrolling back never drops a frame.
   useEffect(() => {
-    if (!active) {
-      setMounted(false);
+    if (active) {
+      setMounted(true);
       return;
     }
-    setMounted(true);
-  }, [active]);
+    if (!priority) {
+      setMounted(false);
+    }
+  }, [active, priority]);
 
-  // Play once the element exists, and stop the moment the tab is hidden.
+  // Play once active & visible; pause smoothly when scrolled off or hidden.
   useEffect(() => {
-    if (!mounted || !active) return;
+    if (!mounted) return;
     const video = ref.current;
     if (!video) return;
+    if (video.readyState >= 2) setDecoded(true);
     const sync = () => {
-      if (document.hidden) video.pause();
-      else playMedia(video);
+      if (!active || document.hidden) {
+        if (!video.paused) video.pause();
+      } else {
+        playMedia(video);
+      }
     };
     sync();
     document.addEventListener("visibilitychange", sync);
     return () => {
       document.removeEventListener("visibilitychange", sync);
-      video.pause();
+      if (!video.paused) video.pause();
     };
-  }, [mounted, active]);
+  }, [mounted, active, videoSrc]);
 
   if (!motion) return poster ? <PosterStill src={poster} className={className} /> : null;
 
   return (
     <>
       <span ref={sentinel} className="theme-loop-sentinel" aria-hidden="true" />
-      {/* The still is the poster frame, the fallback when autoplay is refused,
-          and what a guest sees while a decoder is busy with another tile. */}
-      {poster && (!active || !mounted) && <PosterStill src={poster} className={className} />}
-      {mounted && active && (
+      {poster && (!active || !mounted || !decoded) && (
+        <PosterStill src={poster} className={className} />
+      )}
+      {mounted && (priority || active) && (
         <video
           ref={ref}
           className={`theme-loop ${className}`.trim()}
           src={videoSrc}
-          // `autoPlay` matters: the browser starts the muted film itself, without
-          // waiting for hydration or a script. The effect above is the backup (and
-          // the wake-up call for browsers that refused it at load).
-          autoPlay
+          autoPlay={active}
           muted
           loop
           playsInline
@@ -157,6 +142,9 @@ export const ThemeLoop = memo(function ThemeLoop({
           controls={false}
           tabIndex={-1}
           aria-hidden="true"
+          data-ready={decoded ? "true" : "false"}
+          onLoadedData={() => setDecoded(true)}
+          onCanPlay={() => setDecoded(true)}
           onError={() => {
             if (!useFallback && primarySrc !== fallbackSrc) {
               setFallbackTheme(theme);

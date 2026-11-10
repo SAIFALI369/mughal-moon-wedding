@@ -214,7 +214,10 @@ export const suggestedInvitationSongs: InvitationSong[] = MUSIC_LIBRARY.map(({ t
 }));
 
 export type InvitationMusicCommand =
-  { action: "play"; index?: number } | { action: "pause" } | { action: "next" };
+  | { action: "play"; index?: number }
+  | { action: "prime"; index?: number }
+  | { action: "pause" }
+  | { action: "next" };
 
 export function sendInvitationMusicCommand(command: InvitationMusicCommand) {
   window.dispatchEvent(new CustomEvent(INVITATION_MUSIC_EVENT, { detail: command }));

@@ -54,7 +54,6 @@ export const Route = createFileRoute("/demo")({
 });
 
 function Index() {
-  const [ready, setReady] = useState(false);
   const [simranOpen, setSimranOpen] = useState(false);
   const guestName = useInvitedGuestName();
 
@@ -62,20 +61,21 @@ function Index() {
     <NoorArchExperience
       groomName="Mohsin"
       brideName="Simran"
-      dateLine="22–23 November 2026 · New Delhi"
-      enableQuiet
+      theme="eid"
+      onPrime={() => window.dispatchEvent(new Event("wedding:prime-music"))}
       onOpen={(withMusic = true) => {
         window.dispatchEvent(new CustomEvent("wedding:enter", { detail: { music: withMusic } }));
       }}
-      onDone={() => setReady(true)}
     >
       <main className="overflow-x-clip">
         <Navbar onOpenSimran={() => setSimranOpen(true)} />
         <Hero
           guestName={guestName}
           backgroundImage={noorArchStill}
+          dateLine="22–23 November 2026"
+          actions={null}
           theme="eid"
-          entranceDelay={ready ? 0.15 : 0.25}
+          entranceDelay={0}
         />
         <Countdown />
         <Story />

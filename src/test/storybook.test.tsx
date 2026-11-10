@@ -103,17 +103,19 @@ describe("royal editions suite", () => {
     }
   });
 
-  it("opens architectural double doors on tap, fires onEnter synchronously, and restores scroll", () => {
+  it("opens architectural double doors on tap, zooms video, fires onEnter after transition, and restores scroll", () => {
     vi.useFakeTimers();
+    const onPrime = vi.fn();
     const onEnter = vi.fn();
-    render(<StorybookEntry details={details} enabled onEnter={onEnter} />);
+    render(<StorybookEntry details={details} enabled onPrime={onPrime} onEnter={onEnter} />);
     expect(document.body.style.overflow).toBe("hidden");
 
-    fireEvent.click(screen.getByRole("button", { name: /Open invitation/i }));
-    expect(onEnter).toHaveBeenCalledTimes(1);
+    fireEvent.click(screen.getByRole("button", { name: /Tap to open/i }));
+    expect(onPrime).toHaveBeenCalledTimes(1);
     expect(screen.getByRole("dialog").className).toContain("is-opening");
 
-    act(() => vi.advanceTimersByTime(1300));
+    act(() => vi.advanceTimersByTime(2500));
+    expect(onEnter).toHaveBeenCalledTimes(1);
     expect(screen.queryByRole("dialog")).toBeNull();
     expect(document.body.style.overflow).not.toBe("hidden");
   });
