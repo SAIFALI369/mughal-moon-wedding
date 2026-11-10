@@ -850,6 +850,14 @@
     transparent
   );
 }
+.personal-invite-cover[data-theme="eid"] .invite-cover-wash {
+  background: radial-gradient(
+    ellipse at center,
+    oklch(0.99 0.008 82 / 0.72) 10%,
+    oklch(0.99 0.008 82 / 0.22) 64%,
+    transparent 92%
+  );
+}
 
 /* Five art-directed palettes: theme changes the whole invitation, not just a swatch. */
 .personal-invite[data-theme="aladin"],

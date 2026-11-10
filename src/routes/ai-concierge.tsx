@@ -32,6 +32,8 @@ import {
   cleanupExpiredMemories,
 } from "@/lib/simran-memory";
 import { getAiVisitorId } from "@/lib/ai-visitor";
+import { getSiteOrigin } from "@/lib/site-origin";
+import { buildSiteSocialMeta, themeOgImage } from "@/lib/social-preview";
 
 // Matches the server's homepage allowance; the server remains the source of truth.
 /**
@@ -114,19 +116,16 @@ const copy = {
 } satisfies Record<Language, Record<string, string | string[]>>;
 
 export const Route = createFileRoute("/ai-concierge")({
-  head: () => ({
-    meta: [
-      { property: "og:title", content: "Simran — AI Wedding Concierge" },
-      { property: "og:description", content: "Ask Simran about the wedding schedule, venues, music and RSVP." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { title: "Simran — AI Wedding Concierge | Mohsin & Simran" },
-      {
-        name: "description",
-        content:
-          "Ask Simran, Mohsin and Simran’s AI wedding concierge, about the 2026 schedule, venues, dress code, directions, and RSVP.",
-      },
-    ],
+  loader: async () => ({ siteOrigin: await getSiteOrigin() }),
+  head: ({ loaderData }) => ({
+    meta: buildSiteSocialMeta({
+      title: "Simran — AI Wedding Concierge | Mohsin & Simran",
+      description:
+        "Ask Simran, Mohsin and Simran’s AI wedding concierge, about the 2026 schedule, venues, dress code, directions, and RSVP.",
+      origin: loaderData?.siteOrigin,
+      path: "/ai-concierge",
+      imagePath: themeOgImage("eid", loaderData?.siteOrigin).url,
+    }),
   }),
   component: AiConcierge,
 });
@@ -139,6 +138,7 @@ function AiConcierge() {
   const requestLock = useRef(false);
   const [failedQuestion, setFailedQuestion] = useState<string | null>(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [confirmingClear, setConfirmingClear] = useState(false);
   const [chats, setChats] = useState<Chat[]>(() => {
     try {
       const raw = localStorage.getItem("simran-chats");
@@ -295,9 +295,9 @@ function AiConcierge() {
   }
 
   function clearHistory() {
-    if (!confirm("Clear all chat history?")) return;
     setChats([]);
     localStorage.removeItem("simran-chats");
+    setConfirmingClear(false);
     newChat();
   }
 
@@ -428,12 +428,33 @@ function AiConcierge() {
           </div>
 
           <div className="flex gap-2">
-            <button
-              onClick={clearHistory}
-              className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-ivory/20 px-3 py-2 text-xs text-ivory/80 hover:bg-ivory/10"
-            >
-              <Trash2 size={14} /> Clear
-            </button>
+            {confirmingClear ? (
+              <div className="flex flex-1 items-center gap-1.5 rounded-xl border border-rose-300/40 bg-rose-950/50 px-2 py-1.5 text-xs text-ivory">
+                <span className="truncate">Clear all?</span>
+                <button
+                  type="button"
+                  onClick={clearHistory}
+                  className="rounded-lg bg-rose-600 px-2 py-1 font-medium text-white hover:bg-rose-500"
+                >
+                  Yes
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setConfirmingClear(false)}
+                  className="rounded-lg border border-ivory/25 px-2 py-1 text-ivory/80 hover:bg-ivory/10"
+                >
+                  No
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setConfirmingClear(true)}
+                className="flex flex-1 items-center justify-center gap-1 rounded-xl border border-ivory/20 px-3 py-2 text-xs text-ivory/80 hover:bg-ivory/10"
+              >
+                <Trash2 size={14} /> Clear
+              </button>
+            )}
             <Link
               to="/demo"
               className="flex flex-1 items-center justify-center rounded-xl bg-ivory px-3 py-2 text-xs font-medium text-burgundy-deep hover:bg-ivory/90 text-center"
@@ -469,7 +490,7 @@ function AiConcierge() {
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden sm:inline-flex rounded-full border border-gold/30 bg-gold/10 px-3 py-1 text-xs text-burgundy">
-              EID / MUGHAL theme
+              Mohsin &amp; Simran · Concierge
             </span>
             <div className="hidden sm:flex items-center gap-2 text-xs text-muted-foreground">
               <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" /> Online
@@ -629,7 +650,7 @@ function AiConcierge() {
                 dir={direction}
                 placeholder={
                   visitorLeft === 0
-                    ? "Limit reached — 5/5 messages used today"
+                    ? `Daily limit reached — ${visitorLimit}/${visitorLimit} messages used today`
                     : (text.placeholder as string)
                 }
                 aria-label={text.placeholder as string}

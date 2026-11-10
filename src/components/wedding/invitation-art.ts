@@ -1,6 +1,7 @@
 import royalRajmahal from "@/assets/themes/royal-rajmahal.webp";
 import lotusGoddess from "@/assets/themes/lotus-goddess.webp";
 import calligraphy from "@/assets/themes/calligraphy.webp";
+import eidSky from "@/assets/eid-sky.webp";
 import noorFinal from "@/assets/noor-arch-final.jpg.asset.json";
 import noorGateVideo from "@/assets/noor-arch-gate.mp4.asset.json";
 import aladin from "@/assets/themes/aladin.webp";
@@ -63,6 +64,10 @@ export function themeLoop(theme: InvitationTheme): string {
   if (theme === "eid") return noorGateVideo.url;
   return `/film/${theme}.mp4`;
 }
+
+export const invitationArtFallback: Partial<Record<InvitationTheme, string>> = {
+  eid: eidSky,
+};
 
 export const invitationFilmArt = {
   palace: filmPalace,

@@ -6,6 +6,7 @@ import g5 from "@/assets/g5.webp";
 import g6 from "@/assets/g6.webp";
 import groomPortrait from "@/assets/groom.webp";
 import bridePortrait from "@/assets/bride.webp";
+import noorFinal from "@/assets/noor-arch-final.jpg.asset.json";
 import {
   defaultInvitationElements,
   invitationThemeCategories,
@@ -96,6 +97,11 @@ function frames(offset: number, captions: string[]): DemoGalleryPhoto[] {
  * them is 250–380 KB each.
  */
 export function demoPoster(theme: InvitationTheme): string {
+  if (theme === "eid") return noorFinal.url;
+  return `/demo/poster/${theme}.webp`;
+}
+
+export function demoPosterFallback(theme: InvitationTheme): string {
   return `/demo/poster/${theme}.webp`;
 }
 

@@ -35,7 +35,11 @@ describe("real hero films for the themes", () => {
   it("ships an encoded loop beside the illustration of every theme", () => {
     expect(invitationThemeIds.length).toBeGreaterThan(20);
     for (const theme of invitationThemeIds) {
-      expect(themeLoop(theme)).toBe(`/film/${theme}.mp4`);
+      if (theme === "eid") {
+        expect(themeLoop(theme)).toContain("noor-arch-gate.mp4");
+      } else {
+        expect(themeLoop(theme)).toBe(`/film/${theme}.mp4`);
+      }
       const file = path.join(filmDir, `${theme}.mp4`);
       expect(existsSync(file), `missing live film for ${theme}`).toBe(true);
       // A real video, not a placeholder: eight silent seconds of H.264.
@@ -50,7 +54,7 @@ describe("real hero films for the themes", () => {
   it("autoplays the theme's own film behind the invitation: muted, looping, inline", () => {
     for (const theme of ["royal-rajmahal", "kashi-ghat", "ballroom", "eid"] as const) {
       const page = pageFor(theme);
-      expect(page).toContain(`src="/film/${theme}.mp4"`);
+      expect(page).toContain(`src="${themeLoop(theme)}"`);
       const video = page.match(/<video[^>]*>/)?.[0] ?? "";
       expect(video).toContain("muted");
       expect(video).toContain("loop");
@@ -60,7 +64,7 @@ describe("real hero films for the themes", () => {
       // Never somebody else's film.
       for (const other of invitationThemeIds) {
         if (other === theme) continue;
-        expect(page).not.toContain(`src="/film/${other}.mp4"`);
+        expect(page).not.toContain(`src="${themeLoop(other)}"`);
       }
     }
   });

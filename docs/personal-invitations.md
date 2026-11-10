@@ -2,7 +2,7 @@
 
 ## For invitation creators
 
-1. Sign in and open **Your invitations** (`/dashboard`). A new card starts as a **private draft**; each account can have up to three active cards.
+1. Sign in and open **Your invitations** (`/dashboard`). A new card starts as a **private draft** and draws from your partner studio's credit allowance.
 2. Fill in both names, a real wedding date, the time, venue, address/city and main ceremony. All six essential wedding details always appear on the invitation. Add a message, story, hosting families, host contact, arrival notes, RSVP-by date and up to four extra events if you wish. The **host name** field names your card's own AI assistant; if it is blank, the host contact, family line and finally the groom's first name are used.
 3. Choose a **theme** (twenty, grouped by tradition — Jharokha Dawn, Haldi Baag and Vows in Ink in their own Signature Structures group; Eid Light, Mughal Night, Aladin, Mecca–Madinah and Riad Noor; Diya Utsav, Sacred Mandap, Kashi Ghat and Bihari Vibe; Mehndi Night; Fairytale Castle and Grand Ballroom; Luxury and Futuristic; Classic) and separately a **framework** (Moonlit Journey, Royal Folio, Cinematic Stage, Modern Mosaic or Grand Curtain). The cover and full preview update immediately. The original moonlit gate/hero remains the default.
 4. Add up to five songs (title + an `https://` audio link or a bundled `/audio/` file). Guests get a private soundtrack panel; nothing auto-plays. Quick-add buttons offer the six local instrumentals. Only share audio you have permission to distribute.

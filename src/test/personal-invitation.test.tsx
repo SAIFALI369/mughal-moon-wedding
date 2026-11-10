@@ -13,6 +13,7 @@ import {
   validateInvitationFormDate,
 } from "@/components/wedding/invitation-details";
 import { invitationContentSchema } from "@/components/wedding/invitation-schema";
+import { invitationArt } from "@/components/wedding/invitation-art";
 import { InvitationCover, PersonalInvitation } from "@/components/wedding/invitation-template";
 
 const content = {
@@ -113,7 +114,7 @@ describe("personal invitation design", () => {
   it("puts the creator's names, date and venue on the same celestial cover as the main invitation", () => {
     const markup = renderToStaticMarkup(<InvitationCover content={content} />);
     expect(markup).toContain("personal-invite-cover");
-    expect(markup).toContain("eid-sky");
+    expect(markup).toContain(invitationArt.eid);
     expect(markup).toContain("Ayaan");
     expect(markup).toContain("Zara");
     expect(markup).toContain("15 December 2026");

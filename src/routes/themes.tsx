@@ -6,24 +6,19 @@ import { useAuth } from "@/lib/auth-context";
 import { ThemeDemoCard } from "@/components/wedding/theme-demo-card";
 import { invitationThemeCategories } from "@/components/wedding/invitation-options";
 import { themeDemos, type ThemeDemo } from "@/config/theme-demos";
+import { getSiteOrigin } from "@/lib/site-origin";
+import { buildSiteSocialMeta } from "@/lib/social-preview";
 
 export const Route = createFileRoute("/themes")({
-  head: () => ({
-    meta: [
-      { title: "Every theme, as a real demo card — InvitingYou" },
-      {
-        name: "description",
-        content:
-          "Open a finished demo invitation for every theme: its own couple, film, gallery photos and YouTube soundtrack. Pick the one that feels like your celebration.",
-      },
-      { property: "og:title", content: "Every theme, as a real demo card" },
-      {
-        property: "og:description",
-        content: "Twenty-two themes, twenty-two complete sample invitations. Open one and scroll.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
+  loader: async () => ({ siteOrigin: await getSiteOrigin() }),
+  head: ({ loaderData }) => ({
+    meta: buildSiteSocialMeta({
+      title: "Every theme, as a real demo card — InvitingYou",
+      description:
+        "Open a finished demo invitation for every theme: its own couple, film, gallery photos and YouTube soundtrack. Pick the one that feels like your celebration.",
+      origin: loaderData?.siteOrigin,
+      path: "/themes",
+    }),
   }),
   component: ThemeDemosPage,
 });

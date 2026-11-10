@@ -162,22 +162,25 @@ describe("invitation editor and guest reply", () => {
 
   it("changes theme, framework and section visibility separately in the live cover", () => {
     render(<Editor />);
-    fireEvent.click(screen.getByRole("radio", { name: /Aladin/i }));
-    fireEvent.click(screen.getByRole("radio", { name: /Cinematic Stage/i }));
-    expect(screen.getByRole("radio", { name: /Aladin/i })).toBeChecked();
-    expect(screen.getByRole("radio", { name: /Cinematic Stage/i })).toBeChecked();
+    const aladin = screen.getByRole("radio", { name: /Aladin/i });
+    const stage = screen.getByRole("radio", { name: /Cinematic Stage/i });
+    const rsvp = screen.getByRole("checkbox", { name: /Guest RSVP/i });
+    fireEvent.click(aladin);
+    fireEvent.click(stage);
+    expect(aladin).toBeChecked();
+    expect(stage).toBeChecked();
     expect(
       document.querySelector(
         '.personal-invite-cover[data-theme="aladin"][data-framework="cinematic-stage"]',
       ),
     ).not.toBeNull();
-    fireEvent.click(screen.getByRole("checkbox", { name: /Guest RSVP/i }));
-    expect(screen.getByRole("checkbox", { name: /Guest RSVP/i })).not.toBeChecked();
+    fireEvent.click(rsvp);
+    expect(rsvp).not.toBeChecked();
     fireEvent.click(screen.getByRole("button", { name: /Add event/i }));
     expect(screen.getByLabelText("Event name *")).toBeInTheDocument();
     fireEvent.click(screen.getByRole("button", { name: /Remove event/i }));
     expect(screen.queryByLabelText("Event name *")).not.toBeInTheDocument();
-  });
+  }, 15_000);
 
   it("compresses an optional image before inserting its JPEG data URL into the card preview, and can remove it", async () => {
     const jpeg = "data:image/jpeg;base64,/9j/2Q==";

@@ -2,6 +2,7 @@
 import { cleanup, render, waitFor } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { ThemeLoop } from "@/components/wedding/theme-loop";
+import { themeLoop } from "@/components/wedding/invitation-art";
 import { activeFilmCount, filmBudgetLimit, resetFilmBudget } from "@/lib/film-budget";
 
 /**
@@ -140,7 +141,7 @@ describe("film budget", () => {
     );
     reveal(0);
     await waitFor(() => expect(container.querySelectorAll("video")).toHaveLength(1));
-    expect(container.querySelector("video")?.getAttribute("src")).toBe("/film/eid.mp4");
+    expect(container.querySelector("video")?.getAttribute("src")).toBe(themeLoop("eid"));
 
     // Scrolling on: the first tile leaves the screen, the second takes over.
     reveal(0, hidden);
@@ -180,7 +181,7 @@ describe("film budget", () => {
     // The next card is 10% more visible: not worth tearing the film down.
     reveal(1, { ...shown, intersectionRect: { height: 176 } });
     await new Promise((resolve) => setTimeout(resolve, 250));
-    expect(container.querySelector("video")?.getAttribute("src")).toBe("/film/eid.mp4");
+    expect(container.querySelector("video")?.getAttribute("src")).toBe(themeLoop("eid"));
     // Clearly more visible: now the decoder changes hands.
     reveal(1, shown);
     reveal(0, { ...shown, intersectionRect: { height: 60 } });

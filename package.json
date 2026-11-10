@@ -18,7 +18,8 @@
     "partner:account": "node scripts/partner-account.mjs",
     "ai:check": "node scripts/check-free-ai.mjs",
     "film:loops": "node scripts/build-theme-loops.mjs",
-    "demo:thumbs": "node scripts/build-demo-thumbs.mjs"
+    "demo:thumbs": "node scripts/build-demo-thumbs.mjs",
+    "og:images": "node scripts/build-og-images.mjs"
   },
   "overrides": {
     "rolldown": "1.2.1",

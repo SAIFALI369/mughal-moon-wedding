@@ -1,5 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
+import { getSiteOrigin } from "@/lib/site-origin";
+import { buildSiteSocialMeta } from "@/lib/social-preview";
 
 /**
  * Mughal Moon — The Film, as a shareable premiere.
@@ -78,22 +80,17 @@ const filmCard = {
 };
 
 export const Route = createFileRoute("/film")({
-  head: () => ({
-    meta: [
-      { title: "Mohsin & Simran — A Wedding Film" },
-      {
-        name: "description",
-        content:
-          "A cinematic wedding invitation: a twenty-second moonlit film, then an invitation you scroll through like a camera move. Mughal Moon — The Film by InvitingYou.",
-      },
-      { property: "og:title", content: "Mohsin & Simran — A Wedding Film" },
-      {
-        property: "og:description",
-        content: "Twenty seconds under the lanterns, then the invitation itself. #MohsinWedsSimran",
-      },
-      { property: "og:type", content: "video.other" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
+  loader: async () => ({ siteOrigin: await getSiteOrigin() }),
+  head: ({ loaderData }) => ({
+    meta: buildSiteSocialMeta({
+      title: "Mohsin & Simran — A Wedding Film",
+      description:
+        "A cinematic wedding invitation: a twenty-second moonlit film, then an invitation you scroll through like a camera move. Mughal Moon — The Film by InvitingYou.",
+      origin: loaderData?.siteOrigin,
+      path: "/film",
+      imagePath: "/og/themes/mughal-moon-film.jpg",
+      ogType: "video.other",
+    }),
   }),
   component: FilmPremiere,
 });
