@@ -1,7 +1,8 @@
-import { useRef, type ReactNode } from "react";
+import { useRef, useState, type ReactNode } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
+import { invitationArtFallback } from "./invitation-art";
 import { CouplePortraits } from "./invitation-stage";
 import type { InvitationTheme } from "./invitation-options";
 import { ThemeLoop } from "./theme-loop";
@@ -72,18 +73,35 @@ export function FullArtFrame({
   /** False keeps this frame a still, even when a film exists for the theme. */
   motion?: boolean;
 }) {
+  const [failedKey, setFailedKey] = useState<string | null>(null);
+  const key = `${theme ?? ""}:${src}`;
+  const fallbackActive = failedKey === key;
+  const fallbackSrc = theme ? invitationArtFallback[theme] : undefined;
+  const displaySrc = fallbackActive && fallbackSrc ? fallbackSrc : src;
+
   return (
     <div className={`full-art ${className}`.trim()}>
-      <img src={src} alt="" aria-hidden="true" className="full-art-fill" />
+      <img
+        src={displaySrc}
+        alt=""
+        aria-hidden="true"
+        className="full-art-fill"
+        onError={() => {
+          if (fallbackSrc && !fallbackActive) setFailedKey(key);
+        }}
+      />
       {/* The photograph is both the poster frame and the fallback: it is on
           screen before the video, and it stays if the film cannot play. */}
       <img
-        src={src}
+        src={displaySrc}
         alt={alt}
         aria-hidden={alt ? undefined : "true"}
         className="full-art-image"
         fetchPriority={priority ? "high" : undefined}
         loading={priority ? undefined : "lazy"}
+        onError={() => {
+          if (fallbackSrc && !fallbackActive) setFailedKey(key);
+        }}
       />
       {theme && (
         <ThemeLoop theme={theme} className="full-art-video" priority={priority} enabled={motion} />

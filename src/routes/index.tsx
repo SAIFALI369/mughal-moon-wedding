@@ -20,27 +20,21 @@ import { ThemeDemoCard } from "@/components/wedding/theme-demo-card";
 import { OFFLINE_APP_RELEASE } from "@/config/app-release";
 import { themeDemos } from "@/config/theme-demos";
 import { useAuth } from "@/lib/auth-context";
+import { getSiteOrigin } from "@/lib/site-origin";
+import { buildSiteSocialMeta } from "@/lib/social-preview";
 import { isPhoneViewport } from "@/lib/viewport";
 import { Dashboard } from "./dashboard";
 
 export const Route = createFileRoute("/")({
-  head: () => ({
-    meta: [
-      { title: "InvitingYou — Exclusive digital invitations for print shops" },
-      {
-        name: "description",
-        content:
-          "Exclusive digital invitation tools for printing shops. ₹1,000 in cash buys 10 digital card credits. Accounts are personally issued by InvitingYou.",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { property: "og:title", content: "InvitingYou — A beautiful beginning" },
-      {
-        property: "og:description",
-        content:
-          "Your own invitation, soundtrack and AI host. Create privately, publish when ready, and collect guest replies.",
-      },
-    ],
+  loader: async () => ({ siteOrigin: await getSiteOrigin() }),
+  head: ({ loaderData }) => ({
+    meta: buildSiteSocialMeta({
+      title: "InvitingYou — Exclusive digital invitations for print shops",
+      description:
+        "Exclusive digital invitation tools for printing shops. ₹1,000 in cash buys 10 digital card credits. Accounts are personally issued by InvitingYou.",
+      origin: loaderData?.siteOrigin,
+      path: "/",
+    }),
   }),
   component: Home,
 });

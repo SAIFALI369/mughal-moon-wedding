@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
 import type { InvitationTheme } from "./invitation-options";
 import { themeLoop } from "./invitation-art";
@@ -34,7 +34,7 @@ export function playMedia(element: HTMLMediaElement) {
   }
 }
 
-export function ThemeLoop({
+export const ThemeLoop = memo(function ThemeLoop({
   theme,
   className = "",
   priority = false,
@@ -63,14 +63,20 @@ export function ThemeLoop({
    * tile was allowed to play, and nothing would ever hand the slot over.
    */
   const sentinel = useRef<HTMLSpanElement>(null);
-  const [failed, setFailed] = useState(false);
+  const [failedTheme, setFailedTheme] = useState<string | null>(null);
+  const [fallbackTheme, setFallbackTheme] = useState<string | null>(null);
   // A hero (or the first tile above the fold) renders its film in the server
   // HTML so the browser can start it before hydration — it is one decoder.
   // Everything else waits for the budget to say it is the visible one.
   const [mounted, setMounted] = useState(priority);
   const [allowed, setAllowed] = useState(priority);
+  const failed = failedTheme === theme;
+  const useFallback = fallbackTheme === theme;
   const motion = enabled && !reduced && !failed;
   const active = motion && allowed;
+  const primarySrc = themeLoop(theme);
+  const fallbackSrc = `/film/${theme}.mp4`;
+  const videoSrc = useFallback ? fallbackSrc : primarySrc;
 
   // Tell the budget how much of this tile is on screen.
   useEffect(() => {
@@ -138,7 +144,7 @@ export function ThemeLoop({
         <video
           ref={ref}
           className={`theme-loop ${className}`.trim()}
-          src={themeLoop(theme)}
+          src={videoSrc}
           // `autoPlay` matters: the browser starts the muted film itself, without
           // waiting for hydration or a script. The effect above is the backup (and
           // the wake-up call for browsers that refused it at load).
@@ -151,12 +157,18 @@ export function ThemeLoop({
           controls={false}
           tabIndex={-1}
           aria-hidden="true"
-          onError={() => setFailed(true)}
+          onError={() => {
+            if (!useFallback && primarySrc !== fallbackSrc) {
+              setFallbackTheme(theme);
+            } else {
+              setFailedTheme(theme);
+            }
+          }}
         />
       )}
     </>
   );
-}
+});
 
 /** The theme's artwork, positioned exactly where its film would be. */
 function PosterStill({ src, className }: { src: string; className: string }) {

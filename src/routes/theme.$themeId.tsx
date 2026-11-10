@@ -1,35 +1,56 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { ArrowLeft, ArrowUpRight, DoorOpen, Music2, Sparkles } from "lucide-react";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
 import { invitationThemeIds, type InvitationTheme } from "@/components/wedding/invitation-options";
 import {
+  demoCategoryLabel,
   demoContent,
   demoForTheme,
   demoThemeLabel,
   themeDemos,
   type ThemeDemo,
 } from "@/config/theme-demos";
-import { demoCategoryLabel } from "@/config/theme-demos";
+import { getInvitationDetails } from "@/components/wedding/invitation-details";
+import { getSiteOrigin } from "@/lib/site-origin";
+import { buildInvitationSocialMeta, sanitizeGuestParam } from "@/lib/social-preview";
 
 export const Route = createFileRoute("/theme/$themeId")({
-  head: ({ params }) => {
+  validateSearch: (search: Record<string, unknown>): { guest?: string } => {
+    const guest = sanitizeGuestParam(
+      typeof search.guest === "string"
+        ? search.guest
+        : typeof search.to === "string"
+          ? search.to
+          : undefined,
+    );
+    return guest ? { guest } : {};
+  },
+  loaderDeps: ({ search }) => ({ guest: search.guest }),
+  loader: async ({ deps }) => ({
+    siteOrigin: await getSiteOrigin(),
+    guest: deps.guest,
+  }),
+  head: ({ params, loaderData }) => {
     const demo = themeDemos.find((entry) => entry.theme === params.themeId);
-    const label = demo ? demoThemeLabel(demo.theme) : "Invitation";
-    const title = `${demo ? `${demo.groomName} & ${demo.brideName}` : "Demo"} — ${label} demo · InvitingYou`;
-    const description = demo
-      ? `Open the full ${label} invitation: ${demo.mood.toLowerCase()}. ${demo.date} · ${demo.venue}, ${demo.address}.`
-      : "Open a complete InvitingYou invitation demo.";
+    if (!demo) {
+      return {
+        meta: [
+          { title: "Theme Demo — InvitingYou" },
+          { name: "description", content: "Open a complete InvitingYou invitation demo." },
+          { name: "robots", content: "noindex" },
+        ],
+      };
+    }
+    const details = getInvitationDetails(demoContent(demo));
     return {
-      meta: [
-        { title },
-        { name: "description", content: description },
-        { property: "og:title", content: title },
-        { property: "og:description", content: description },
-        { property: "og:type", content: "article" },
-        { property: "twitter:card", content: "summary_large_image" },
-        { name: "robots", content: "noindex" },
-      ],
+      meta: buildInvitationSocialMeta({
+        details,
+        path: `/theme/${demo.theme}`,
+        guest: loaderData?.guest,
+        origin: loaderData?.siteOrigin,
+        robots: "noindex",
+      }),
     };
   },
   component: ThemeDemoPage,
@@ -44,7 +65,11 @@ function ThemeDemoPage() {
   const { themeId } = Route.useParams();
   const navigate = useNavigate();
   const demo = demoForTheme(themeId);
-  const [gated, setGated] = useState(false);
+  const [gated, setGated] = useState(() => demo.theme === "eid");
+
+  useEffect(() => {
+    setGated(demo.theme === "eid");
+  }, [demo.theme]);
 
   return (
     <div className="theme-demo-page">

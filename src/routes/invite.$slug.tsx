@@ -3,43 +3,57 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { getInvitationCardBySlug } from "@/components/wedding/invitation-cards.functions";
 import { getInvitationDetails } from "@/components/wedding/invitation-details";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
+import { getSiteOrigin } from "@/lib/site-origin";
+import {
+  buildCardUnavailableMeta,
+  buildInvitationSocialMeta,
+  sanitizeGuestParam,
+} from "@/lib/social-preview";
 
 export const Route = createFileRoute("/invite/$slug")({
-  loader: async ({ params }) => {
-    // Fetch on the server so the names, date and venue are visible even before hydration.
-    // A private draft, expired card, or unknown slug must reveal no card details.
-    try {
-      return await getInvitationCardBySlug({ data: { slug: params.slug } });
-    } catch (error) {
-      console.error("Could not load public invitation", error);
-      return null;
-    }
-  },
-  head: ({ loaderData: card }) => {
-    const details = card && getInvitationDetails(card.content);
-    const heading = details
-      ? `${details.groomName} & ${details.brideName} — Wedding Invitation`
-      : "Invitation unavailable";
-    const description = details
-      ? `Celebrate with ${details.groomName} and ${details.brideName}${details.date ? ` on ${details.date}` : ""}${details.venue ? ` at ${details.venue}` : ""}.`
-      : "This invitation is not available. Ask the host for a published link.";
+  validateSearch: (search: Record<string, unknown>): { guest?: string; to?: string } => {
+    const guest = sanitizeGuestParam(typeof search.guest === "string" ? search.guest : undefined);
+    const to = sanitizeGuestParam(typeof search.to === "string" ? search.to : undefined);
     return {
-      meta: [
-        { title: heading },
-        { name: "description", content: description },
-        { name: "robots", content: card ? "index, follow" : "noindex" },
-        { property: "og:title", content: heading },
-        { property: "og:description", content: description },
-        { property: "og:type", content: "website" },
-        { name: "twitter:card", content: "summary_large_image" },
-      ],
+      ...(guest ? { guest } : {}),
+      ...(to ? { to } : {}),
+    };
+  },
+  loader: async ({ params }) => {
+    // Fetch on the server so the names, date, venue, entrance-door preview image
+    // and personalised guest greeting are visible even before hydration.
+    // A private draft, expired card, or unknown slug must reveal no card details.
+    const [card, siteOrigin] = await Promise.all([
+      getInvitationCardBySlug({ data: { slug: params.slug } }).catch((error) => {
+        console.error("Could not load public invitation", error);
+        return null;
+      }),
+      getSiteOrigin(),
+    ]);
+    return { card, siteOrigin };
+  },
+  head: ({ loaderData, match }) => {
+    const card = loaderData?.card ?? null;
+    const origin = loaderData?.siteOrigin;
+    const guest = match.search.guest || match.search.to;
+    if (!card) {
+      return { meta: buildCardUnavailableMeta(origin) };
+    }
+    const details = getInvitationDetails(card.content);
+    return {
+      meta: buildInvitationSocialMeta({
+        details,
+        path: `/invite/${card.slug}`,
+        guest,
+        origin,
+      }),
     };
   },
   component: InviteView,
 });
 
 function InviteView() {
-  const card = Route.useLoaderData();
+  const { card } = Route.useLoaderData();
   if (!card) {
     return (
       <main className="flex min-h-screen items-center justify-center bg-background px-4 py-12">

@@ -45,7 +45,7 @@ import {
   type InvitationContent,
 } from "@/components/wedding/invitation-schema";
 import { ThemeLoop } from "@/components/wedding/theme-loop";
-import { demoPoster } from "@/config/theme-demos";
+import { demoPoster, demoPosterFallback } from "@/config/theme-demos";
 import {
   invitationThemeCategories,
   invitationThemes,
@@ -539,9 +539,15 @@ export function OfflineStudioPage() {
                         src={demoPoster(theme.id)}
                         alt=""
                         loading="lazy"
+                        onError={(event) => {
+                          const fallback = demoPosterFallback(theme.id);
+                          if (!event.currentTarget.src.endsWith(fallback)) {
+                            event.currentTarget.src = fallback;
+                          }
+                        }}
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                       />
-                      <ThemeLoop theme={theme.id} className="object-cover" />
+                      <ThemeLoop theme={theme.id} className="theme-loop-cover object-cover" />
                     </div>
                     <div className="admin-template-meta">
                       <strong>{theme.label}</strong>

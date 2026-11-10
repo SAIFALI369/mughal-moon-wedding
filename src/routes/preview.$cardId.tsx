@@ -109,6 +109,7 @@ export function LivePreviewPage() {
   const isPhone = usePhoneScreen();
 
   const [card, setCard] = useState<PreviewCard | null>(null);
+  const [partnerActive, setPartnerActive] = useState(false);
   const [formState, setFormState] = useState<InvitationForm | null>(null);
   const form = formState;
   const [loading, setLoading] = useState(true);
@@ -174,6 +175,16 @@ export function LivePreviewPage() {
         const row = data as PreviewCard;
         setCard(row);
         applyContent(row.title, row.content);
+        if (typeof navigator === "undefined" || navigator.onLine !== false) {
+          const { data: partnerRow } = await supabase
+            .from("print_partners")
+            .select("active")
+            .eq("owner_id", user?.id ?? "")
+            .maybeSingle();
+          if (!cancelled) {
+            setPartnerActive(Boolean((partnerRow as { active?: boolean } | null)?.active));
+          }
+        }
       }
       setLoading(false);
     }
@@ -412,7 +423,7 @@ export function LivePreviewPage() {
                       <span className="live-preview-theme-art" style={{ background: theme.swatch }}>
                         <ThemeLoop
                           theme={theme.id}
-                          className="object-cover"
+                          className="theme-loop-cover object-cover"
                           poster={demoPoster(theme.id)}
                         />
                         {active && (
@@ -437,7 +448,7 @@ export function LivePreviewPage() {
               value={form}
               onChange={setForm}
               cardId={card.id}
-              simran={false}
+              simran={partnerActive}
               coupleLocked={locked}
               hiddenSections={["preview"]}
             />

@@ -7,6 +7,7 @@ import {
   demoCityLabel,
   demoDateLabel,
   demoPoster,
+  demoPosterFallback,
   demoThemeLabel,
   type ThemeDemo,
 } from "@/config/theme-demos";
@@ -48,6 +49,12 @@ export const ThemeDemoCard = memo(function ThemeDemoCard({
             loading={priority ? "eager" : "lazy"}
             fetchPriority={priority ? "high" : "low"}
             decoding="async"
+            onError={(event) => {
+              const fallback = demoPosterFallback(demo.theme);
+              if (!event.currentTarget.src.endsWith(fallback)) {
+                event.currentTarget.src = fallback;
+              }
+            }}
           />
           <ThemeLoop
             theme={demo.theme}

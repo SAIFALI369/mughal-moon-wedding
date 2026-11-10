@@ -20,17 +20,19 @@ import {
   useOfflineAppInstaller,
   useOnlineStatus,
 } from "@/lib/pwa-install";
+import { getSiteOrigin } from "@/lib/site-origin";
+import { buildSiteSocialMeta } from "@/lib/social-preview";
 
 export const Route = createFileRoute("/download")({
-  head: () => ({
-    meta: [
-      { title: "Download Offline App — InvitingYou" },
-      {
-        name: "description",
-        content:
-          "Download the latest InvitingYou Offline Studio App for Windows, Mac, Android, or iOS. Create, upload photos, and scroll full phone & desktop previews offline; internet is needed only for publishing.",
-      },
-    ],
+  loader: async () => ({ siteOrigin: await getSiteOrigin() }),
+  head: ({ loaderData }) => ({
+    meta: buildSiteSocialMeta({
+      title: "Download Offline App — InvitingYou",
+      description:
+        "Download the latest InvitingYou Offline Studio App for Windows, Mac, Android, or iOS. Create, upload photos, and scroll full phone & desktop previews offline; internet is needed only for publishing.",
+      origin: loaderData?.siteOrigin,
+      path: "/download",
+    }),
   }),
   component: DownloadAppPage,
 });

@@ -35,7 +35,7 @@ import {
   type InvitationDetails,
 } from "./invitation-details";
 import { ThemeLoop } from "./theme-loop";
-import { invitationArt } from "./invitation-art";
+import { invitationArt, invitationArtFallback } from "./invitation-art";
 import { CouplePortraits, InvitationStage } from "./invitation-stage";
 import { CurtainStage } from "./invitation-curtain";
 import { MughalMoonFilm } from "./invitation-film-player";
@@ -116,6 +116,10 @@ export function InvitationCover({ content }: { content: unknown }) {
   const plate = datePlate(details.date);
   const blessing = details.theme === "mecca_madinah" || details.framework === "moonlit";
 
+  const [coverFallback, setCoverFallback] = useState(false);
+  const fallbackArt = invitationArtFallback[details.theme];
+  const coverSrc = coverFallback && fallbackArt ? fallbackArt : invitationArt[details.theme];
+
   return (
     <div
       data-theme={details.theme}
@@ -124,12 +128,15 @@ export function InvitationCover({ content }: { content: unknown }) {
       className="personal-invite-cover relative isolate overflow-hidden text-center text-foreground"
     >
       <img
-        src={invitationArt[details.theme]}
+        src={coverSrc}
         alt=""
         aria-hidden="true"
+        onError={() => {
+          if (fallbackArt && !coverFallback) setCoverFallback(true);
+        }}
         className="cover-art absolute inset-0 -z-30 h-full w-full object-cover"
       />
-      <ThemeLoop theme={details.theme} className="cover-art -z-30 object-cover" />
+      <ThemeLoop theme={details.theme} className="cover-art theme-loop-cover -z-30 object-cover" />
       <div className="invite-cover-wash absolute inset-0 -z-20" aria-hidden="true" />
       <div className="cover-glow absolute inset-0 -z-10" aria-hidden="true" />
       <div
@@ -1136,26 +1143,11 @@ export function PersonalInvitation({
 
   const wrapped = noorGate ? (
     <NoorArchExperience
-      onOpen={
-        hasSongs ? () => sendInvitationMusicCommand({ action: "play", index: 0 }) : undefined
-      }
-      scenes={[
-        {
-          kicker: "بِسْمِ ٱللَّٰهِ ٱلرَّحْمَٰنِ ٱلرَّحِيمِ",
-          title: `${details.groomName} & ${details.brideName}`,
-          body: details.message || undefined,
-        },
-        {
-          kicker: [details.date, details.time].filter(Boolean).join(" · "),
-          title: details.eventType || "The Celebration",
-          body: [details.venue, details.address].filter(Boolean).join(", "),
-        },
-        ...details.additionalEvents.map((e) => ({
-          kicker: [e.date, e.time].filter(Boolean).join(" · "),
-          title: e.title,
-          body: [e.venue, e.address].filter(Boolean).join(", "),
-        })),
-      ]}
+      groomName={details.groomName}
+      brideName={details.brideName}
+      hosts={details.hosts || "Together with their families"}
+      dateLine={gateDateLine}
+      onOpen={hasSongs ? () => sendInvitationMusicCommand({ action: "play", index: 0 }) : undefined}
     >
       {page}
     </NoorArchExperience>

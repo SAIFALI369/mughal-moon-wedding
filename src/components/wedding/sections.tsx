@@ -18,6 +18,7 @@ import confetti from "canvas-confetti";
 import { toast } from "sonner";
 import { useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { envSiteOrigin } from "@/lib/site-origin";
 import { Button } from "@/components/ui/button";
 import { askSimranServer } from "./concierge.functions";
 import { normalizeGuestName, rsvpSchema } from "./rsvp-schema";
@@ -140,7 +141,7 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
           <a
             href="/dashboard"
             className="hidden items-center gap-1 rounded-full border border-gold/40 px-3 py-2 text-[11px] uppercase tracking-[0.15em] text-foreground hover:bg-gold/10 sm:inline-flex"
-            title="Create & manage your private invitations (up to 3)"
+            title="Partner studio — create & manage your digital invitations"
           >
             My Invites
           </a>
@@ -418,8 +419,7 @@ export function Hero({
   const [demoTheme, setDemoTheme] = useState<InvitationTheme>("eid");
   useEffect(() => {
     if (theme) return;
-    const sync = () =>
-      setDemoTheme("eid");
+    const sync = () => setDemoTheme("eid");
     sync();
     window.addEventListener("wedding:theme", sync);
     return () => window.removeEventListener("wedding:theme", sync);
@@ -1162,12 +1162,9 @@ export function Footer() {
   const [copied, setCopied] = useState(false);
 
   const buildPersonalUrl = () => {
-    const origin =
-      typeof window !== "undefined"
-        ? window.location.origin
-        : "https://mughal-moon-wedding.lovable.app";
+    const origin = typeof window !== "undefined" ? window.location.origin : envSiteOrigin();
     const clean = inviteGuest.trim();
-    return clean ? `${origin}/?guest=${encodeURIComponent(clean)}` : `${origin}/`;
+    return clean ? `${origin}/demo?guest=${encodeURIComponent(clean)}` : `${origin}/demo`;
   };
 
   const copyInviteLink = async () => {

@@ -29,7 +29,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { InvitationPreview } from "@/components/platform/invitation-preview";
 import type { InvitationForm } from "./invitation-form-data";
 import { ThemeLoop } from "./theme-loop";
-import { demoPoster } from "@/config/theme-demos";
+import { demoPoster, demoPosterFallback } from "@/config/theme-demos";
 import {
   invitationCeremonyPresets,
   invitationDressCodePresets,
@@ -643,9 +643,15 @@ export function InvitationDetailsFields({
                         src={demoPoster(theme.id)}
                         alt=""
                         loading="lazy"
+                        onError={(event) => {
+                          const fallback = demoPosterFallback(theme.id);
+                          if (!event.currentTarget.src.endsWith(fallback)) {
+                            event.currentTarget.src = fallback;
+                          }
+                        }}
                         className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
                       />
-                      <ThemeLoop theme={theme.id} className="object-cover" />
+                      <ThemeLoop theme={theme.id} className="theme-loop-cover object-cover" />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/15 to-transparent" />
                       {selected && (
                         <span className="absolute right-2 top-2 grid h-5 w-5 place-items-center rounded-full bg-white text-black shadow-sm">

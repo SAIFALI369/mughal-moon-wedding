@@ -3,7 +3,14 @@ import { useState } from "react";
 import { wishesQuery } from "@/components/wedding/wishes-query";
 import { Wishes } from "@/components/wedding/wishes";
 import { Divider } from "@/components/wedding/ornaments";
+import { NoorArchExperience, noorArchStill } from "@/components/wedding/noor-arch-gate";
 import { useInvitedGuestName } from "@/hooks/use-invited-guest";
+import { getSiteOrigin } from "@/lib/site-origin";
+import {
+  buildInvitationSocialMeta,
+  demoEidDetails,
+  sanitizeGuestParam,
+} from "@/lib/social-preview";
 import {
   Countdown,
   DressCode,
@@ -13,7 +20,6 @@ import {
   Hero,
   MusicToggle,
   Navbar,
-  Preloader,
   Rsvp,
   SimranFloatingWidget,
   Story,
@@ -21,49 +27,69 @@ import {
 } from "@/components/wedding/sections";
 
 export const Route = createFileRoute("/demo")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(wishesQuery),
-  head: () => ({
-    meta: [
-      { title: "Mohsin & Simran — Wedding Invitation" },
-      {
-        name: "description",
-        content:
-          "Join Mohsin & Simran for their Nikah, Barat and Walima celebrations. RSVP, event details and more.",
-      },
-      { property: "og:title", content: "Mohsin & Simran — Wedding Invitation" },
-      {
-        property: "og:description",
-        content: "You're invited to celebrate the Nikah of Mohsin & Simran. #MohsinWedsSimran",
-      },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-    ],
+  validateSearch: (search: Record<string, unknown>): { guest?: string; to?: string } => {
+    const guest = sanitizeGuestParam(typeof search.guest === "string" ? search.guest : undefined);
+    const to = sanitizeGuestParam(typeof search.to === "string" ? search.to : undefined);
+    return {
+      ...(guest ? { guest } : {}),
+      ...(to ? { to } : {}),
+    };
+  },
+  loader: async ({ context }) => {
+    const [, siteOrigin] = await Promise.all([
+      context.queryClient.ensureQueryData(wishesQuery),
+      getSiteOrigin(),
+    ]);
+    return { siteOrigin };
+  },
+  head: ({ loaderData, match }) => ({
+    meta: buildInvitationSocialMeta({
+      details: demoEidDetails(),
+      path: "/demo",
+      guest: match.search.guest || match.search.to,
+      origin: loaderData?.siteOrigin,
+    }),
   }),
   component: Index,
 });
 
 function Index() {
-  const [, setReady] = useState(false);
+  const [ready, setReady] = useState(false);
   const [simranOpen, setSimranOpen] = useState(false);
   const guestName = useInvitedGuestName();
 
   return (
-    <main className="overflow-x-clip">
-      <Preloader onDone={() => setReady(true)} />
-      <Navbar onOpenSimran={() => setSimranOpen(true)} />
-      <Hero guestName={guestName} />
-      <Countdown />
-      <Story />
-      <Events />
-      <Divider className="bg-muted" />
-      <Gallery />
-      <DressCode />
-      <Rsvp defaultGuestName={guestName} />
-      <VenueMap />
-      <Wishes />
-      <Footer />
-      <SimranFloatingWidget open={simranOpen} onOpenChange={setSimranOpen} />
-      <MusicToggle />
-    </main>
+    <NoorArchExperience
+      groomName="Mohsin"
+      brideName="Simran"
+      dateLine="22–23 November 2026 · New Delhi"
+      enableQuiet
+      onOpen={(withMusic = true) => {
+        window.dispatchEvent(new CustomEvent("wedding:enter", { detail: { music: withMusic } }));
+      }}
+      onDone={() => setReady(true)}
+    >
+      <main className="overflow-x-clip">
+        <Navbar onOpenSimran={() => setSimranOpen(true)} />
+        <Hero
+          guestName={guestName}
+          backgroundImage={noorArchStill}
+          theme="eid"
+          entranceDelay={ready ? 0.15 : 0.25}
+        />
+        <Countdown />
+        <Story />
+        <Events />
+        <Divider className="bg-muted" />
+        <Gallery />
+        <DressCode />
+        <Rsvp defaultGuestName={guestName} />
+        <VenueMap />
+        <Wishes />
+        <Footer />
+        <SimranFloatingWidget open={simranOpen} onOpenChange={setSimranOpen} />
+        <MusicToggle />
+      </main>
+    </NoorArchExperience>
   );
 }

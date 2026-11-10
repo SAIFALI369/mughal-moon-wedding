@@ -10,7 +10,9 @@ import { toast } from "sonner";
 export const Route = createFileRoute("/sign-in")({
   validateSearch: (search: Record<string, unknown>): { redirect?: string } => ({
     redirect:
-      typeof search.redirect === "string" && search.redirect.startsWith("/")
+      typeof search.redirect === "string" &&
+      search.redirect.startsWith("/") &&
+      !search.redirect.startsWith("//")
         ? search.redirect
         : undefined,
   }),
@@ -98,9 +100,17 @@ function SignIn() {
       }
 
       toast.success("Signed in");
-      const destination =
-        redirect === "/offline-studio" ? ("/offline-studio" as const) : ("/dashboard" as const);
-      await navigate({ to: destination, replace: true });
+      if (redirect && redirect.startsWith("/") && !redirect.startsWith("//")) {
+        const parsed = new URL(redirect, "https://invitingyou.local");
+        const searchEntries = Object.fromEntries(parsed.searchParams.entries());
+        await navigate({
+          to: parsed.pathname as never,
+          ...(Object.keys(searchEntries).length ? { search: searchEntries as never } : {}),
+          replace: true,
+        });
+      } else {
+        await navigate({ to: "/dashboard", replace: true });
+      }
     } catch (err: unknown) {
       console.error("Sign-in failed", err);
       setError("Sign-in failed. Check your connection and try again.");

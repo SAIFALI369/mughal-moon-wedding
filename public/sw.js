@@ -227,7 +227,12 @@ async function reportCacheStatus(client, state = "ready") {
 function shouldBypassCache(url) {
   if (url.protocol !== "http:" && url.protocol !== "https:") return true;
   if (url.hostname.endsWith(".supabase.co") || url.hostname.includes("supabase")) return true;
-  if (url.pathname.startsWith("/_serverFn") || url.pathname.startsWith("/api/")) return true;
+  if (
+    url.pathname.startsWith("/_serverFn") ||
+    url.pathname.startsWith("/api/") ||
+    url.pathname.startsWith("/og/")
+  )
+    return true;
   if (url.pathname.startsWith("/@vite") || url.pathname.startsWith("/@fs")) return true;
   return false;
 }

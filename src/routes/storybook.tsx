@@ -2,6 +2,8 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PersonalInvitation } from "@/components/wedding/invitation-template";
 import { storybookThemes } from "@/components/wedding/storybook";
 import wedding from "@/config/wedding.config.json";
+import { getSiteOrigin } from "@/lib/site-origin";
+import { buildSiteSocialMeta } from "@/lib/social-preview";
 
 export const Route = createFileRoute("/storybook")({
   validateSearch: (search: Record<string, unknown>) => ({
@@ -9,17 +11,20 @@ export const Route = createFileRoute("/storybook")({
       ? (search.theme as (typeof storybookThemes)[number])
       : ("royal-rajmahal" as const),
   }),
-  head: () => ({
-    meta: [
-      { title: "Royal Editions — InvitingYou" },
-      { name: "description", content: "Preview Royal Rajmahal, Lotus Goddess and Calligraphy invitations." },
-      { property: "og:title", content: "Royal Editions — InvitingYou" },
-      { property: "og:description", content: "Preview Royal Rajmahal, Lotus Goddess and Calligraphy invitations." },
-      { property: "og:type", content: "website" },
-      { name: "twitter:card", content: "summary_large_image" },
-      { name: "robots", content: "noindex" },
-    ],
-  }),
+  loader: async () => ({ siteOrigin: await getSiteOrigin() }),
+  head: ({ loaderData, match }) => {
+    const theme = match.search.theme;
+    return {
+      meta: buildSiteSocialMeta({
+        title: "Royal Editions — InvitingYou",
+        description: "Preview Royal Rajmahal, Lotus Goddess and Calligraphy invitations.",
+        origin: loaderData?.siteOrigin,
+        path: `/storybook?theme=${encodeURIComponent(theme)}`,
+        imagePath: `/og/themes/${theme}.jpg`,
+        robots: "noindex",
+      }),
+    };
+  },
   component: StorybookPreview,
 });
 function StorybookPreview() {
@@ -40,11 +45,7 @@ function StorybookPreview() {
         </select>
         <span>Sample invitation · no replies saved</span>
       </nav>
-      <PersonalInvitation
-        title={wedding.title}
-        content={{ ...wedding, theme }}
-        preview
-      />
+      <PersonalInvitation title={wedding.title} content={{ ...wedding, theme }} preview />
     </>
   );
 }
