@@ -232,7 +232,7 @@ export const invitationThemes: {
   {
     id: "sacred-mandap",
     label: "Sacred Mandap",
-    description: "A sunlit flower mandap with a living havan fire",
+    description: "A cinematic floral mandap with flowing ivory drapes and sacred fire",
     swatch: "#e9c98a",
     category: "hindu",
     immersive: true,

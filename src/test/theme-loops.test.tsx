@@ -37,6 +37,8 @@ describe("real hero films for the themes", () => {
     for (const theme of invitationThemeIds) {
       if (theme === "eid") {
         expect(themeLoop(theme)).toContain("noor-arch-gate.mp4");
+      } else if (theme === "sacred-mandap") {
+        expect(themeLoop(theme)).toContain("sacred-mandap-silent.mp4");
       } else {
         expect(themeLoop(theme)).toBe(`/film/${theme}.mp4`);
       }
@@ -52,7 +54,7 @@ describe("real hero films for the themes", () => {
   });
 
   it("autoplays the theme's own film behind the invitation: muted, looping, inline", () => {
-    for (const theme of ["royal-rajmahal", "kashi-ghat", "ballroom", "eid"] as const) {
+    for (const theme of ["royal-rajmahal", "kashi-ghat", "ballroom", "eid", "sacred-mandap"] as const) {
       const page = pageFor(theme);
       expect(page).toContain(`src="${themeLoop(theme)}"`);
       const video = page.match(/<video[^>]*>/)?.[0] ?? "";

@@ -13,6 +13,8 @@ import fairytale from "@/assets/themes/fairytale.webp";
 import ballroom from "@/assets/themes/ballroom.webp";
 import diyaUtsav from "@/assets/themes/diya-utsav.webp";
 import sacredMandap from "@/assets/themes/sacred-mandap.webp";
+import sacredMandapPoster from "@/assets/sacred-mandap-poster.jpg.asset.json";
+import sacredMandapVideo from "@/assets/sacred-mandap-silent.mp4.asset.json";
 import riadNoor from "@/assets/themes/riad-noor.webp";
 import kashiGhat from "@/assets/themes/kashi-ghat.webp";
 import mehndiNight from "@/assets/themes/mehndi-night.webp";
@@ -39,7 +41,7 @@ export const invitationArt: Record<InvitationTheme, string> = {
   fairytale,
   ballroom,
   "diya-utsav": diyaUtsav,
-  "sacred-mandap": sacredMandap,
+  "sacred-mandap": sacredMandapPoster.url,
   "riad-noor": riadNoor,
   "kashi-ghat": kashiGhat,
   "mehndi-night": mehndiNight,
@@ -62,11 +64,13 @@ export const invitationArt: Record<InvitationTheme, string> = {
  */
 export function themeLoop(theme: InvitationTheme): string {
   if (theme === "eid") return noorGateVideo.url;
+  if (theme === "sacred-mandap") return sacredMandapVideo.url;
   return `/film/${theme}.mp4`;
 }
 
 export const invitationArtFallback: Partial<Record<InvitationTheme, string>> = {
   eid: eidSky,
+  "sacred-mandap": sacredMandap,
 };
 
 export const invitationFilmArt = {
