@@ -365,7 +365,9 @@ export function PersonalInvitation({
   const dateLine = [details.date, details.time].filter(Boolean).join(" · ");
   const gateDateLine = [details.date, details.venue].filter(Boolean).join(" · ");
   const art = invitationArt[details.theme];
-  const layout = invitationLayoutFor(details.theme, details.framework);
+  const layout = details.theme === "sacred-mandap"
+    ? "mandap"
+    : invitationLayoutFor(details.theme, details.framework);
   const interactive = isInteractiveLayout(layout);
   const storybook = isStorybook(details.theme);
   const hasSongs = details.songs.length > 0;
