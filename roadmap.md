@@ -1,5 +1,10 @@
 # Wedding invitation update
 
+## Sacred Mandap generated footage
+- [x] Generate exactly one cinematic clip and prepare a silent lightweight loop with a matching poster.
+- [x] Connect Sacred Mandap's existing gate, hero and template cards without changing Eid or other themes.
+- [ ] Run focused checks and verify Sacred Mandap's opening and hero.
+
 ## Actual cinematic video coverage
 - [x] Audit the 24 registered themes and shared entry, hero, event and finale insertion points.
 - [ ] Source verified, theme-matched footage and integrate actual video through all 24 themes; first generated clip rejected for insufficient credits (approximately 3.05 credits). No video assets or app-code changes made; stock sources found but not downloaded or license-verified.

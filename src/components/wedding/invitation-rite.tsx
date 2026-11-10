@@ -104,7 +104,7 @@ export function FullArtFrame({
         }}
       />
       {theme && (
-        <ThemeLoop theme={theme} className="full-art-video" priority={priority} enabled={motion} />
+        <ThemeLoop theme={theme} className="full-art-video" priority={priority} enabled={motion} poster={displaySrc} />
       )}
     </div>
   );
@@ -252,6 +252,7 @@ export function MandapStage({
 }) {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
+  const cinematic = details.theme === "sacred-mandap";
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
 
   const sceneScale = useTransform(scrollYProgress, [0, 1], [1.05, 1.34]);
@@ -271,7 +272,7 @@ export function MandapStage({
       <div className="mandap-sticky">
         <motion.div
           className="mandap-scene"
-          style={reduced ? undefined : { scale: sceneScale, y: sceneY }}
+          style={reduced || cinematic ? undefined : { scale: sceneScale, y: sceneY }}
         >
           <FullArtFrame
             src={backgroundImage}

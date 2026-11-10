@@ -14,3 +14,4 @@
 - Load public wishes through the route query loader and invalidate that query on Realtime inserts and successful submissions so every viewer receives saved replies.
 - Keep cinematic motion in the shared CinematicHero presentation boundary; theme-key only its hero scene, never forms or concierge, to preserve guest state during theme changes.
 - Pause cinematic background loops behind the entry gate, offscreen and in hidden tabs; disable scroll-frame work on phones and reduced-motion devices to avoid unnecessary rendering.
+- Register generated theme footage and matching posters in invitation-art so the existing gates, heroes and pickers share one source and retain ThemeLoop playback safeguards.
