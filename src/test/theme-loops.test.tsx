@@ -39,6 +39,8 @@ describe("real hero films for the themes", () => {
         expect(themeLoop(theme)).toContain("noor-arch-gate.mp4");
       } else if (theme === "sacred-mandap") {
         expect(themeLoop(theme)).toContain("sacred-mandap-silent.mp4");
+      } else if (theme === "aladin") {
+        expect(themeLoop(theme)).toContain("aladin-silent.mp4");
       } else {
         expect(themeLoop(theme)).toBe(`/film/${theme}.mp4`);
       }
