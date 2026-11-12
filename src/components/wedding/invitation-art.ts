@@ -65,7 +65,8 @@ export const invitationArt: Record<InvitationTheme, string> = {
  * seconds of the same scene, built by `scripts/build-theme-loops.mjs`.
  */
 export function themeLoop(theme: InvitationTheme): string {
-  if (theme === "eid") return noorGateVideo.url;
+  // Eid hero/cards loop the calm moonlit scene; the door-opening film plays once, only at the gate.
+  if (theme === "eid") return "/film/eid.mp4";
   if (theme === "sacred-mandap") return sacredMandapVideo.url;
   if (theme === "aladin") return aladinVideo.url;
   return `/film/${theme}.mp4`;
