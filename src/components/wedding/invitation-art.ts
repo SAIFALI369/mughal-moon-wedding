@@ -7,6 +7,7 @@ import noorGateVideo from "@/assets/noor-arch-gate.mp4.asset.json";
 import aladin from "@/assets/themes/aladin.webp";
 import aladinPoster from "@/assets/aladin-poster.jpg.asset.json";
 import aladinVideo from "@/assets/aladin-silent.mp4.asset.json";
+import haldiBaagVideo from "@/assets/haldi-baag-cinema.mp4.asset.json";
 import bihariVibe from "@/assets/themes/bihari-vibe.webp";
 import meccaMadinah from "@/assets/themes/mecca-madinah.webp";
 import luxury from "@/assets/themes/luxury.webp";
@@ -69,6 +70,7 @@ export function themeLoop(theme: InvitationTheme): string {
   if (theme === "eid") return "/film/eid.mp4";
   if (theme === "sacred-mandap") return sacredMandapVideo.url;
   if (theme === "aladin") return aladinVideo.url;
+  if (theme === "haldi-baag") return haldiBaagVideo.url;
   return `/film/${theme}.mp4`;
 }
 
