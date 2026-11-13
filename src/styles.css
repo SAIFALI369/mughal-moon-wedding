@@ -16841,3 +16841,45 @@ body:has(.preview-frame-document) {
     object-position: center;
   }
 }
+
+/* Full-screen video for Eid Light and Sacred Mandap on every screen size */
+.personal-invite[data-theme="eid"] :is(.eid-hero, .gate-sky),
+.personal-invite[data-theme="sacred-mandap"] :is(.gate-sky, .mandap-scene, .invitation-stage) {
+  min-height: 100svh;
+}
+.personal-invite:is([data-theme="eid"], [data-theme="sacred-mandap"]) :is(.theme-loop, .full-art-video, .full-art-image) {
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Mughal Moon polish: moonlit glow, gold-shimmer titles, glass cards */
+.personal-invite[data-theme="mughal-moon-film"] h1,
+.personal-invite[data-theme="mughal-moon-film"] h2 {
+  background: var(--gradient-gold);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: mm-shimmer 9s linear infinite;
+  text-shadow: none;
+  filter: drop-shadow(0 2px 18px oklch(0.82 0.105 82 / 0.28));
+}
+.personal-invite[data-theme="mughal-moon-film"]::before {
+  content: "";
+  position: fixed;
+  inset: -10% -10% auto auto;
+  width: 60vmin;
+  height: 60vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle, oklch(0.95 0.04 88 / 0.18), transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+.personal-invite[data-theme="mughal-moon-film"] :is(.card, [class*="rounded-"][class*="border"]) {
+  backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: var(--shadow-gold), inset 0 1px 0 oklch(0.92 0.07 88 / 0.18);
+}
+@keyframes mm-shimmer { to { background-position: 200% center; } }
+@media (prefers-reduced-motion: reduce) {
+  .personal-invite[data-theme="mughal-moon-film"] :is(h1, h2) { animation: none; }
+}
