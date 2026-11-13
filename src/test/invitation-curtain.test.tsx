@@ -70,18 +70,18 @@ describe("Grand Curtain layout", () => {
     expect(html).toContain("curtain-arch");
     expect(html).toContain("curtain-valance");
     expect(html).toContain("curtain-rays");
-    expect(html).toContain("Enter the celebration");
+    expect(html).toContain("card-calligraphy-names");
   });
 
-  it("keeps the couple's own details on the stage", () => {
+  it("keeps the couple's simple calligraphy names and date cleanly on the stage without venue or celebration clutter", () => {
     const html = stage();
     expect(html).toContain("Ayaan");
     expect(html).toContain("Zara");
     expect(html).toContain("15 December 2030");
-    expect(html).toContain("Garden Pavilion");
-    expect(html).toContain("The Khan family");
-    expect(html).toContain("See the celebration");
     expect(html).toContain('href="#countdown"');
+    expect(html).not.toContain("Garden Pavilion");
+    expect(html).not.toContain("The Khan family");
+    expect(html).not.toContain("See the celebration");
     expect(html).not.toContain("Mohsin");
     expect(html).not.toContain("Simran");
   });

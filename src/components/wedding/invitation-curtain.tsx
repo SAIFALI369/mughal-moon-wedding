@@ -1,25 +1,19 @@
 import { useRef, type ReactNode } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
-import { CouplePortraits } from "./invitation-stage";
+import { heroVideoForTheme } from "./invitation-art";
+import { isDarkOpeningTheme, useOpeningPhase } from "./noor-arch-gate";
 import { FullArtFrame } from "./invitation-rite";
 
 /**
- * Grand Curtain — the "walk into the film" hero.
- *
- * The section is taller than the viewport and its stage is sticky, so a scroll
- * gesture reads as one continuous camera move: the velvet curtains swing apart
- * in 3D, the scene behind them pushes forward, and the names drift through the
- * proscenium. Everything is CSS transform/opacity, so it stays smooth on a
- * phone and needs no video file. Reduced-motion visitors get a still frame.
+ * Grand Curtain — the "walk into the film" hero, stabilized against background jitter
+ * and styled cleanly in simple dark-brown and goldenish calligraphy.
  */
 export function CurtainStage({
   details,
   backgroundImage,
-  actions,
   scrollTo,
-  entranceDelay,
 }: {
   details: InvitationDetails;
   backgroundImage: string;
@@ -29,9 +23,13 @@ export function CurtainStage({
 }) {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
+  const { revealed, gated, heroVideoLive } = useOpeningPhase();
+  const followUp = heroVideoForTheme(details.theme);
+  const allowMotion = !gated || (heroVideoLive && Boolean(followUp));
+  const copyVisible = !gated || revealed;
+  const darkSurface = isDarkOpeningTheme(details.theme);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
 
-  // 0.5 = draped open far enough to frame the names, 1 = flown off stage.
   const open = useTransform(scrollYProgress, [0, 0.78], [0.5, 1]);
   const leftRotate = useTransform(open, [0.5, 1], ["-38deg", "-104deg"]);
   const rightRotate = useTransform(open, [0.5, 1], ["38deg", "104deg"]);
@@ -39,14 +37,8 @@ export function CurtainStage({
   const rightX = useTransform(open, [0.5, 1], ["14%", "74%"]);
   const panelFade = useTransform(open, [0.86, 1], [1, 0.12]);
 
-  // The camera move: the scene grows and lifts as the guest scrolls in.
-  const sceneScale = useTransform(scrollYProgress, [0, 1], [1.04, 1.5]);
-  const sceneY = useTransform(scrollYProgress, [0, 1], ["0%", "7%"]);
-
-  // Names sit in the window, then fly past the camera at the end of the move.
-  const copyScale = useTransform(scrollYProgress, [0, 0.7, 1], [1, 1, 1.22]);
-  const copyOpacity = useTransform(scrollYProgress, [0, 0.16, 0.78, 0.98], [0, 1, 1, 0]);
-  const copyY = useTransform(scrollYProgress, [0, 1], [0, -46]);
+  const copyOpacity = useTransform(scrollYProgress, [0, 0.78, 0.98], [1, 1, 0]);
+  const copyY = useTransform(scrollYProgress, [0, 1], [0, -32]);
 
   const curtainStyle = reduced ? undefined : { rotateY: leftRotate, x: leftX, opacity: panelFade };
   const curtainRightStyle = reduced
@@ -63,20 +55,40 @@ export function CurtainStage({
       data-theme={details.theme}
     >
       <div className="curtain-sticky">
-        <motion.div
-          className="curtain-scene"
-          style={reduced ? undefined : { scale: sceneScale, y: sceneY }}
-        >
-          <FullArtFrame
-            src={backgroundImage}
-            theme={details.theme}
-            className="curtain-scene-art"
-            priority
-          />
+        <div className="curtain-scene hero-media-lock">
+          {gated && followUp ? (
+            <>
+              <FullArtFrame
+                src={backgroundImage}
+                theme={details.theme}
+                className="curtain-scene-art"
+                priority
+                motion={false}
+              />
+              {heroVideoLive && !reduced && (
+                <video
+                  src={followUp}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  className="theme-loop full-art-video absolute inset-0 h-full w-full object-cover"
+                />
+              )}
+            </>
+          ) : (
+            <FullArtFrame
+              src={backgroundImage}
+              theme={details.theme}
+              className="curtain-scene-art"
+              priority
+              motion={allowMotion}
+            />
+          )}
           <div className="curtain-scene-glow" aria-hidden="true" />
           <div className="curtain-rays" aria-hidden="true" />
-          <div className="curtain-motes" aria-hidden="true" />
-        </motion.div>
+        </div>
 
         <div className="curtain-proscenium" aria-hidden="true">
           <span className="curtain-arch" />
@@ -86,34 +98,38 @@ export function CurtainStage({
 
         <motion.div
           className="curtain-copy"
-          initial={reduced ? undefined : { opacity: 0, y: 26 }}
-          animate={reduced ? undefined : { opacity: 1, y: 0 }}
-          transition={{ duration: 1.1, delay: entranceDelay }}
-          style={reduced ? undefined : { scale: copyScale, opacity: copyOpacity, y: copyY }}
+          style={reduced ? undefined : { opacity: copyOpacity, y: copyY }}
         >
-          <div className="stage-copy">
-            <p className="stage-kicker text-xs font-medium uppercase tracking-[0.36em] text-gold">
-              <Sparkles aria-hidden="true" className="mr-2 inline h-4 w-4" />
-              {details.hosts || "Together with their families"}
-            </p>
-            <p className="stage-overline mt-5 font-serif text-lg italic text-foreground">
-              A storybook celebration
-            </p>
-            <h1 className="stage-names mt-6 font-serif font-medium leading-[0.95]">
-              <span className="stage-name break-words">{details.groomName}</span>
-              <span className="stage-amp text-gold-shimmer font-script font-normal">&amp;</span>
-              <span className="stage-name break-words">{details.brideName}</span>
+          <motion.div
+            initial={gated && !reduced ? { opacity: 0, y: 28, scale: 0.92 } : false}
+            animate={
+              copyVisible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 28, scale: 0.92 }
+            }
+            transition={reduced ? { duration: 0 } : { duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+            className={`stage-copy card-calligraphy-plate mx-auto ${
+              darkSurface ? "is-dark-art" : "is-light-art"
+            }`}
+          >
+            <h1 className="stage-names card-calligraphy-names">
+              <span className="stage-name card-calligraphy-name break-words">
+                {details.groomName}
+              </span>
+              <span className="stage-amp card-calligraphy-amp" aria-hidden="true">
+                &amp;
+              </span>
+              <span className="stage-name card-calligraphy-name break-words">
+                {details.brideName}
+              </span>
             </h1>
-            <p className="stage-date mt-8 font-serif text-2xl italic text-foreground sm:text-3xl">
-              {details.date}
-              {details.time ? ` · ${details.time}` : ""}
-            </p>
-            <p className="stage-location mt-3 text-xs uppercase tracking-[0.22em] text-gold">
-              {details.venue}
-            </p>
-            <CouplePortraits details={details} />
-            <div className="stage-actions mt-9 flex flex-wrap justify-center gap-3">{actions}</div>
-          </div>
+            {(details.date || details.time) && (
+              <>
+                <span className="card-calligraphy-rule" aria-hidden="true" />
+                <p className="stage-date card-calligraphy-date mt-4">
+                  {[details.date, details.time].filter(Boolean).join(" · ")}
+                </p>
+              </>
+            )}
+          </motion.div>
         </motion.div>
 
         <motion.div
@@ -133,8 +149,8 @@ export function CurtainStage({
 
         <div className="curtain-valance" aria-hidden="true" />
 
-        <a href={scrollTo} className="curtain-scroll">
-          <span>Enter the celebration</span>
+        <a href={scrollTo} className="curtain-scroll card-scroll-cue">
+          <span>Scroll</span>
           <ChevronDown className="mx-auto mt-1 h-5 w-5" aria-hidden="true" />
         </a>
       </div>

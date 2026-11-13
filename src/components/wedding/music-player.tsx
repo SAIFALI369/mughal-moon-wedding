@@ -35,19 +35,61 @@ export function MusicToggle() {
         : MUSIC_LIBRARY.find((t) => t.id === current)!.url;
     player.src = source();
     setTrack(current);
+    let priming = false;
     const play = () => {
+      priming = false;
+      player.muted = false;
       void player.play().catch(() => {
         setPlaying(false);
         setExpanded(true);
         toast("Tap Play in the music panel to start the selected track.");
       });
     };
+    const prime = () => {
+      // Unlock audio silently inside the tap gesture so delayed post-video playback succeeds.
+      priming = true;
+      player.muted = true;
+      try {
+        const started = player.play();
+        if (started && typeof started.then === "function") {
+          void started
+            .then(() => {
+              if (!priming) return;
+              player.pause();
+              try {
+                player.currentTime = 0;
+              } catch {
+                // Ignore non-seekable streams.
+              }
+              player.muted = false;
+              priming = false;
+            })
+            .catch(() => {
+              player.muted = false;
+              priming = false;
+            });
+        } else {
+          player.pause();
+          player.muted = false;
+          priming = false;
+        }
+      } catch {
+        player.muted = false;
+        priming = false;
+      }
+    };
     const pause = () => {
+      priming = false;
       player.pause();
     };
-    const onPlay = () => setPlaying(true);
-    const onPause = () => setPlaying(false);
+    const onPlay = () => {
+      if (!priming) setPlaying(true);
+    };
+    const onPause = () => {
+      if (!priming) setPlaying(false);
+    };
     const onError = () => {
+      priming = false;
       setPlaying(false);
       toast("This track couldn't load. Try another track.");
     };
@@ -82,6 +124,7 @@ export function MusicToggle() {
     player.addEventListener("pause", onPause);
     player.addEventListener("error", onError);
     window.addEventListener(MUSIC_EVENT, command);
+    window.addEventListener("wedding:prime-music", prime);
     window.addEventListener("wedding:enter", play);
     window.addEventListener("wedding:enter-silent", pause);
     return () => {
@@ -90,6 +133,7 @@ export function MusicToggle() {
       player.load();
       audio.current = null;
       window.removeEventListener(MUSIC_EVENT, command);
+      window.removeEventListener("wedding:prime-music", prime);
       window.removeEventListener("wedding:enter", play);
       window.removeEventListener("wedding:enter-silent", pause);
       player.removeEventListener("play", onPlay);

@@ -10,8 +10,10 @@ import {
 } from "./concierge-ui";
 import { getInstantConciergeReply, requestConcierge } from "./concierge-client";
 import { getAiVisitorId } from "@/lib/ai-visitor";
-import { FullArtFrame, LivingScene, riteBlessing } from "./invitation-rite";
+import { FullArtFrame, LivingScene } from "./invitation-rite";
 import type { InvitationTheme } from "./invitation-options";
+import { heroVideoForTheme, invitationArtFallback, openingVideoForTheme } from "./invitation-art";
+import { isDarkOpeningTheme, useOpeningPhase } from "./noor-arch-gate";
 import { AnimatePresence, motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
 import confetti from "canvas-confetti";
@@ -25,7 +27,6 @@ import { normalizeGuestName, rsvpSchema } from "./rsvp-schema";
 import { wishesQuery } from "./wishes-query";
 import eidSky from "@/assets/eid-sky.webp";
 import {
-  CalendarHeart,
   CalendarPlus,
   Check,
   ChevronDown,
@@ -50,20 +51,12 @@ import {
   X,
 } from "lucide-react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
-import {
-  Divider,
-  GlimmeringButterflies,
-  Mandala,
-  SectionTitle,
-  Sparkles,
-  fadeUp,
-} from "./ornaments";
+import { Divider, GlimmeringButterflies, Mandala, SectionTitle, fadeUp } from "./ornaments";
 import {
   EVENTS,
   WEDDING_DATE,
   WEDDING_HASHTAG,
   buildGoogleCalendarUrl,
-  downloadIcs,
   getInstagramUrl,
   getWhatsAppUrl,
   type WeddingEventKey,
@@ -83,14 +76,21 @@ const NAV_LINKS = [
 
 export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
   const [dark, setDark] = useState(false);
-  // Auth nav is rendered via lightweight check to avoid circular import; see separate AuthNav component if needed
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [scrolledPastHero, setScrolledPastHero] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("wedding-theme");
     const isDark = saved === "dark";
     setDark(isDark);
     document.documentElement.classList.toggle("dark", isDark);
+  }, []);
+
+  useEffect(() => {
+    const syncScroll = () => setScrolledPastHero(window.scrollY > 80);
+    syncScroll();
+    window.addEventListener("scroll", syncScroll, { passive: true });
+    return () => window.removeEventListener("scroll", syncScroll);
   }, []);
 
   const toggleTheme = () => {
@@ -111,7 +111,13 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
   };
 
   return (
-    <header className="wedding-header fixed inset-x-0 top-0 z-40 px-3 pt-3 sm:px-6">
+    <header
+      className={`wedding-header fixed inset-x-0 top-0 z-40 px-3 pt-3 transition-all duration-300 sm:px-6 ${
+        scrolledPastHero
+          ? "translate-y-0 opacity-100"
+          : "pointer-events-none -translate-y-4 opacity-0"
+      }`}
+    >
       <nav
         aria-label="Wedding sections"
         className="wedding-nav glass-card mx-auto flex max-w-6xl items-center justify-between rounded-full px-4 py-2.5 shadow-gold sm:px-6"
@@ -119,7 +125,7 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
         <a
           href="#"
           aria-label="Mohsin and Simran — back to top"
-          className="wedding-brand font-script text-2xl text-gold transition hover:scale-105 sm:text-3xl"
+          className="wedding-brand font-calligraphy-simple text-2xl transition hover:scale-105 sm:text-3xl"
         >
           <span>M &amp; S</span>
           <span className="wedding-brand-date">22–23 NOV · 2026</span>
@@ -235,9 +241,9 @@ export function Navbar({ onOpenSimran }: { onOpenSimran?: () => void }) {
 export function Preloader({
   onDone,
   onEnter,
+  onPrime,
   groomName = "Mohsin",
   brideName = "Simran",
-  dateLine = "22–23 November 2026 · New Delhi",
   enableMusic = true,
   backgroundImage = eidSky,
   curtain = false,
@@ -245,6 +251,7 @@ export function Preloader({
 }: {
   onDone: () => void;
   onEnter?: () => void;
+  onPrime?: () => void;
   groomName?: string;
   brideName?: string;
   dateLine?: string;
@@ -252,17 +259,26 @@ export function Preloader({
   backgroundImage?: string;
   /** Grand Curtain hosts open onto velvet drapes instead of lacquered doors. */
   curtain?: boolean;
-  /** Drives the tradition's blessing and the living fire/firework layer. */
+  /** Drives the theme video opening. */
   theme?: InvitationTheme;
 }) {
   const [opening, setOpening] = useState(false);
   const [show, setShow] = useState(true);
+  const [videoFallback, setVideoFallback] = useState(false);
+  const [posterFallback, setPosterFallback] = useState(false);
   const enterButton = useRef<HTMLButtonElement>(null);
-  const gateBlessing = theme
-    ? (riteBlessing(theme) ?? (enableMusic ? null : riteBlessing("eid")))
-    : riteBlessing("eid");
+  const videoRef = useRef<HTMLVideoElement>(null);
   const gateReduced =
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const darkSurface = isDarkOpeningTheme(theme);
+  const openingClip = theme ? openingVideoForTheme(theme) : null;
+  const fallbackPoster = theme ? invitationArtFallback[theme] : undefined;
+  const resolvedPoster = posterFallback && fallbackPoster ? fallbackPoster : backgroundImage;
+  const resolvedVideoSrc = openingClip
+    ? videoFallback
+      ? openingClip.fallback
+      : openingClip.src
+    : undefined;
 
   useEffect(() => {
     if (!show) return;
@@ -277,17 +293,38 @@ export function Preloader({
   useEffect(() => {
     if (!opening) return;
     const timer = setTimeout(
-      () => setShow(false),
-      window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 100 : 1900,
+      () => {
+        if (videoRef.current) {
+          try {
+            videoRef.current.pause();
+          } catch {
+            // Ignore non-browser media stubs.
+          }
+        }
+        setShow(false);
+      },
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 80 : 2200,
     );
     return () => clearTimeout(timer);
   }, [opening]);
 
-  function enter(withMusic: boolean) {
+  function enter() {
     if (opening) return;
-    onEnter?.();
+    onPrime?.();
     if (enableMusic) {
-      window.dispatchEvent(new Event(withMusic ? "wedding:enter" : "wedding:enter-silent"));
+      window.dispatchEvent(new Event("wedding:prime-music"));
+    }
+    const v = videoRef.current;
+    if (v && !gateReduced) {
+      try {
+        v.currentTime = 0;
+        const started = v.play();
+        if (started && typeof started.catch === "function") {
+          started.catch(() => undefined);
+        }
+      } catch {
+        // Fallback smoothly using the cover artwork.
+      }
     }
     setOpening(true);
   }
@@ -295,6 +332,10 @@ export function Preloader({
   return (
     <AnimatePresence
       onExitComplete={() => {
+        onEnter?.();
+        if (enableMusic) {
+          window.dispatchEvent(new Event("wedding:enter"));
+        }
         window.dispatchEvent(new Event("wedding:revealed"));
         onDone();
       }}
@@ -305,81 +346,74 @@ export function Preloader({
           aria-modal="true"
           aria-labelledby="gate-title"
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.5 }}
+          transition={{ duration: 0.3 }}
+          onClick={!opening ? enter : undefined}
           className={`heavenly-entrance fixed inset-0 z-[100] overflow-hidden ${opening ? "is-opening" : ""} ${curtain ? "is-curtain" : ""}`}
         >
-          <FullArtFrame
-            src={backgroundImage}
-            theme={theme}
-            className="gate-sky"
-            priority
-            motion={!gateReduced}
+          <div className={`noor-gate-zoom absolute inset-0 ${opening ? "is-zooming" : ""}`}>
+            <img
+              src={resolvedPoster}
+              alt=""
+              aria-hidden="true"
+              onError={() => {
+                if (fallbackPoster && !posterFallback) setPosterFallback(true);
+              }}
+              className="gate-sky absolute inset-0 h-full w-full object-cover"
+            />
+            {openingClip && resolvedVideoSrc && (
+              <video
+                ref={videoRef}
+                src={resolvedVideoSrc}
+                poster={resolvedPoster}
+                muted
+                playsInline
+                preload="auto"
+                onError={() => {
+                  if (!videoFallback && resolvedVideoSrc !== openingClip.fallback) {
+                    setVideoFallback(true);
+                  }
+                }}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            )}
+          </div>
+          <div
+            aria-hidden="true"
+            className={`noor-start-scrim pointer-events-none absolute inset-0 transition-opacity duration-300 ${
+              opening ? "opacity-0" : "opacity-100"
+            }`}
           />
-          <div className="gate-radiance" aria-hidden="true" />
-          {theme && <LivingScene theme={theme} variant="gate" reduce={gateReduced} />}
           <div className="heavenly-gate gate-left" aria-hidden="true">
             <div className="gate-arch" />
           </div>
           <div className="heavenly-gate gate-right" aria-hidden="true">
             <div className="gate-arch" />
           </div>
-          <Sparkles count={45} />
-          <div className="gate-welcome relative z-10 flex h-full flex-col items-center justify-center overflow-y-auto px-6 py-10 text-center text-foreground">
-            {gateBlessing && (
-              <p
-                dir={gateBlessing.script === "arabic" ? "rtl" : "ltr"}
-                className={`${
-                  gateBlessing.script === "arabic" ? "font-arabic" : "font-sanskrit"
-                } text-2xl text-gold-light sm:text-3xl`}
+          <div className="gate-welcome relative z-10 flex h-full flex-col items-center justify-center overflow-y-auto px-6 py-10 text-center">
+            <div
+              className={`card-calligraphy-plate ${darkSurface ? "is-dark-art" : "is-light-art"}`}
+            >
+              <h1 id="gate-title" className="card-calligraphy-names">
+                <span className="card-calligraphy-name">{groomName}</span>
+                <span className="card-calligraphy-amp" aria-hidden="true">
+                  &amp;
+                </span>
+                <span className="card-calligraphy-name">{brideName}</span>
+              </h1>
+              <span className="card-calligraphy-rule" aria-hidden="true" />
+              <button
+                ref={enterButton}
+                type="button"
+                disabled={opening}
+                onClick={(event) => {
+                  event.stopPropagation();
+                  enter();
+                }}
+                className="noor-tap-open mt-6 inline-flex min-h-11 items-center justify-center rounded-full px-8 py-3 text-sm uppercase tracking-[0.18em] transition hover:scale-[1.03] disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#b07f24]"
               >
-                {gateBlessing.text}
-              </p>
-            )}
-            <p className="mt-6 text-[10px] uppercase tracking-[0.3em] text-gold sm:tracking-[0.5em]">
-              Together with their families
-            </p>
-            <h1
-              id="gate-title"
-              className={`mt-6 flex max-w-full flex-col items-center gap-2 font-serif font-medium ${enableMusic ? "text-6xl sm:flex-row sm:gap-6 sm:text-7xl lg:text-8xl" : "text-[clamp(2.75rem,6vw,6rem)] lg:flex-row lg:gap-6"}`}
-            >
-              <span className={`max-w-full break-words ${enableMusic ? "" : "lg:max-w-[38vw]"}`}>
-                {groomName}
-              </span>
-              <span className="text-gold-shimmer shrink-0 font-script text-5xl font-normal sm:text-6xl">
-                weds
-              </span>
-              <span className={`max-w-full break-words ${enableMusic ? "" : "lg:max-w-[38vw]"}`}>
-                {brideName}
-              </span>
-            </h1>
-            <p className="mt-6 font-serif text-xl italic text-foreground sm:text-2xl">
-              Two hearts. One beautiful beginning.
-            </p>
-            <p className="mt-4 max-w-xl text-[10px] uppercase tracking-[0.25em] text-gold">
-              {dateLine}
-            </p>
-            <button
-              ref={enterButton}
-              type="button"
-              disabled={opening}
-              onClick={() => enter(enableMusic)}
-              className="btn-shimmer bg-gold-gradient mt-8 inline-flex min-h-12 items-center gap-3 rounded-full px-8 py-3 text-xs font-medium uppercase tracking-[0.2em] text-burgundy-deep shadow-gold transition hover:scale-105 disabled:cursor-wait focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
-            >
-              <SparklesIcon className="h-4 w-4" /> {opening ? "Welcome inside" : "Open the gates"}
-            </button>
-            {enableMusic && (
-              <>
-                <p className="mt-4 text-xs text-muted-foreground">Enter with music · sound on</p>
-                <button
-                  type="button"
-                  disabled={opening}
-                  onClick={() => enter(false)}
-                  className="mt-2 min-h-11 px-4 text-xs text-foreground underline decoration-gold/50 underline-offset-4 transition hover:text-gold focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-gold"
-                >
-                  Enter quietly
-                </button>
-              </>
-            )}
+                Tap to open
+              </button>
+            </div>
           </div>
         </motion.div>
       )}
@@ -392,14 +426,12 @@ export function Hero({
   guestName = "",
   groomName = "Mohsin",
   brideName = "Simran",
-  dateLine = "Sunday, the Twenty-Second of November, Two Thousand Twenty-Six",
-  actions,
+  dateLine = "22–23 November 2026",
   scrollTo = "#countdown",
-  entranceDelay = 3,
   compactNames = false,
   backgroundImage = eidSky,
-  portraits,
   theme,
+  heroVideoSrc,
 }: {
   guestName?: string;
   groomName?: string;
@@ -411,12 +443,19 @@ export function Hero({
   compactNames?: boolean;
   backgroundImage?: string;
   portraits?: ReactNode;
-  /** Adds the theme's living fire / firework layer above the hero art. */
+  /** Theme identifier for stabilized background artwork & delayed follow-up video. */
   theme?: InvitationTheme;
+  /** Optional follow-up hero video played 2–3s after card text reveal. */
+  heroVideoSrc?: string;
 }) {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
   const [demoTheme, setDemoTheme] = useState<InvitationTheme>("eid");
+  const { revealed, gated, heroVideoLive } = useOpeningPhase();
+  const activeTheme = theme ?? demoTheme;
+  const resolvedFollowUp = heroVideoSrc ?? heroVideoForTheme(activeTheme);
+  const darkSurface = isDarkOpeningTheme(activeTheme);
+
   useEffect(() => {
     if (theme) return;
     const sync = () => setDemoTheme("eid");
@@ -424,27 +463,61 @@ export function Hero({
     window.addEventListener("wedding:theme", sync);
     return () => window.removeEventListener("wedding:theme", sync);
   }, [theme]);
+
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const y = useTransform(scrollYProgress, [0, 1], ["0%", "30%"]);
   const fade = useTransform(scrollYProgress, [0, 0.7], [1, 0]);
+  const copyVisible = !gated || revealed;
+  // When gated, keep the final frame stopped cleanly until a follow-up hero video
+  // activates 2.5s after card text reveal. Preview / non-gated views play stably.
+  const allowBackgroundVideo = !gated || (heroVideoLive && Boolean(resolvedFollowUp));
+
   const hero = (
     <section
       ref={ref}
-      className="eid-hero relative flex min-h-[88svh] items-center justify-center overflow-hidden text-foreground"
+      className="eid-hero relative flex min-h-[100svh] items-center justify-center overflow-hidden text-foreground"
     >
-      <motion.div style={reduced ? undefined : { y }} className="absolute inset-0">
-        <FullArtFrame
-          src={backgroundImage}
-          theme={theme ?? demoTheme}
-          className="eid-hero-art"
-          priority
-          alt={
-            backgroundImage === eidSky
-              ? "Golden crescent moon and stars above luminous Eid clouds"
-              : "Decorative wedding scene"
-          }
-        />
-      </motion.div>
+      <div className="hero-media-lock absolute inset-0">
+        {gated && resolvedFollowUp ? (
+          <>
+            <FullArtFrame
+              src={backgroundImage}
+              theme={activeTheme}
+              className="eid-hero-art"
+              priority
+              motion={false}
+              alt={
+                backgroundImage === eidSky
+                  ? "Golden crescent moon and stars above luminous Eid clouds"
+                  : "Decorative wedding scene"
+              }
+            />
+            {heroVideoLive && !reduced && (
+              <video
+                src={resolvedFollowUp}
+                autoPlay
+                muted
+                loop
+                playsInline
+                preload="auto"
+                className="theme-loop full-art-video absolute inset-0 h-full w-full object-cover"
+              />
+            )}
+          </>
+        ) : (
+          <FullArtFrame
+            src={backgroundImage}
+            theme={activeTheme}
+            className="eid-hero-art"
+            priority
+            motion={allowBackgroundVideo}
+            alt={
+              backgroundImage === eidSky
+                ? "Golden crescent moon and stars above luminous Eid clouds"
+                : "Decorative wedding scene"
+            }
+          />
+        )}
+      </div>
       {theme && (
         <LivingScene
           theme={theme}
@@ -457,97 +530,41 @@ export function Hero({
       )}
       <motion.div
         style={reduced ? undefined : { opacity: fade }}
-        className="cinema-moon-copy relative z-10 px-6 pt-12 text-center"
+        className="cinema-moon-copy relative z-10 px-6 text-center"
       >
-        <motion.p
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: entranceDelay + 0.2, duration: 1 }}
-          dir="rtl"
-          className="font-arabic text-2xl text-gold-light md:text-4xl"
-        >
-          بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ
-        </motion.p>
-
-        {guestName && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: entranceDelay + 0.4, duration: 0.8 }}
-            className="glass-card mx-auto mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2 text-xs uppercase tracking-[0.28em] text-gold shadow-gold"
-          >
-            <span>✦</span> Cordially Inviting {guestName} <span>✦</span>
-          </motion.div>
-        )}
-
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: entranceDelay + 0.6 }}
-          className="mt-8 text-xs uppercase tracking-[0.5em] text-gold md:text-sm"
-        >
-          Together with their families
-        </motion.p>
-        <div
-          className={`mt-8 flex flex-col items-center gap-2 ${compactNames ? "lg:flex-row lg:gap-8" : "md:flex-row md:gap-10"}`}
-        >
-          <motion.h1
-            initial={{ opacity: 0, x: -60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: entranceDelay + 0.8, duration: 1.2 }}
-            className={`font-serif font-medium ${compactNames ? "max-w-full break-words text-[clamp(3.5rem,7vw,7rem)] lg:max-w-[35vw]" : "text-6xl sm:text-7xl md:text-9xl"}`}
-          >
-            {groomName}
-          </motion.h1>
-          <motion.span
-            initial={{ opacity: 0, scale: 0.4 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ delay: entranceDelay + 1.3, duration: 1 }}
-            className="text-gold-shimmer font-script text-6xl md:text-8xl"
-          >
-            weds
-          </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, x: 60 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: entranceDelay + 0.8, duration: 1.2 }}
-            className={`font-serif font-medium ${compactNames ? "max-w-full break-words text-[clamp(3.5rem,7vw,7rem)] lg:max-w-[35vw]" : "text-6xl sm:text-7xl md:text-9xl"}`}
-          >
-            {brideName}
-          </motion.h1>
-        </div>
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: entranceDelay + 1.8, duration: 1 }}
-          className="mx-auto mt-10 max-w-xl font-serif text-lg italic text-foreground md:text-2xl"
-        >
-          {dateLine}
-        </motion.p>
-        {portraits}
         <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: entranceDelay + 2.2 }}
-          className="mt-10 flex flex-wrap items-center justify-center gap-3"
+          initial={gated && !reduced ? { opacity: 0, y: 28, scale: 0.92 } : false}
+          animate={
+            copyVisible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 28, scale: 0.92 }
+          }
+          transition={reduced ? { duration: 0 } : { duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+          className={`card-calligraphy-plate mx-auto ${
+            darkSurface ? "is-dark-art" : "is-light-art"
+          }`}
         >
-          {actions === undefined ? (
+          {guestName && (
+            <p className="card-calligraphy-guest mb-3 text-xs uppercase tracking-[0.26em]">
+              For {guestName}
+            </p>
+          )}
+          <div
+            className={`flex flex-col items-center gap-2 ${
+              compactNames ? "lg:flex-row lg:gap-5" : "md:flex-row md:gap-6"
+            }`}
+          >
+            <h1 className="card-calligraphy-names">
+              <span className="card-calligraphy-name break-words">{groomName}</span>
+              <span className="card-calligraphy-amp" aria-hidden="true">
+                &amp;
+              </span>
+              <span className="card-calligraphy-name break-words">{brideName}</span>
+            </h1>
+          </div>
+          {dateLine && (
             <>
-              <button
-                onClick={downloadIcs}
-                className="btn-shimmer inline-flex items-center gap-2 rounded-full border border-gold px-7 py-3 text-xs uppercase tracking-[0.25em] text-gold-light transition hover:scale-105 hover:bg-gold/10"
-              >
-                <CalendarHeart className="h-4 w-4" /> Save the Date
-              </button>
-              <a
-                href="/ai-concierge"
-                className="btn-shimmer bg-gold-gradient inline-flex items-center gap-2 rounded-full px-7 py-3 text-xs font-medium uppercase tracking-[0.25em] text-burgundy-deep transition hover:scale-105 hover:shadow-gold"
-              >
-                <MessageCircle className="h-4 w-4" /> Ask Simran
-              </a>
+              <span className="card-calligraphy-rule" aria-hidden="true" />
+              <p className="card-calligraphy-date mt-4">{dateLine}</p>
             </>
-          ) : (
-            actions
           )}
         </motion.div>
       </motion.div>
@@ -555,7 +572,7 @@ export function Hero({
         href={scrollTo}
         animate={reduced ? { y: 0 } : { y: [0, 6, 0] }}
         transition={{ repeat: Infinity, duration: 2 }}
-        className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2 text-center text-[10px] uppercase tracking-[0.4em] text-gold"
+        className="card-scroll-cue absolute bottom-8 left-1/2 z-10 -translate-x-1/2 text-center text-[10px] uppercase tracking-[0.35em]"
       >
         Scroll
         <ChevronDown className="mx-auto mt-1 h-5 w-5" />

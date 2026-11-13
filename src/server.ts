@@ -132,6 +132,39 @@ function isH3SwallowedErrorBody(body: string): boolean {
   }
 }
 
+const HOSTED_FALLBACK_THEMES = [
+  "sacred-mandap",
+  "aladin",
+  "haldi-baag",
+  "royal-rajmahal",
+  "lotus-goddess",
+  "calligraphy",
+  "bihari-vibe",
+  "mecca_madinah",
+  "luxury",
+  "futuristic",
+  "fairytale",
+  "ballroom",
+  "diya-utsav",
+  "riad-noor",
+  "kashi-ghat",
+  "mehndi-night",
+  "jharokha-dawn",
+  "vows-in-ink",
+  "chand-bagh",
+  "mela-maidan",
+  "mughal-moon-film",
+  "eid",
+] as const;
+
+export function resolveAssetFallbackTheme(pathname: string): string {
+  const lower = pathname.toLowerCase();
+  for (const theme of HOSTED_FALLBACK_THEMES) {
+    if (lower.includes(theme)) return theme;
+  }
+  return "eid";
+}
+
 export default {
   async fetch(request: Request, env: unknown, ctx: unknown) {
     try {
@@ -149,19 +182,23 @@ export default {
         return Response.redirect(new URL("/og/themes/eid.jpg", url.origin), 302);
       }
 
-      // Proxy Lovable-hosted Noor Arch video/stills when running outside Lovable hosting (e.g. Vercel).
+      // Proxy Lovable-hosted video/stills when running outside Lovable hosting (e.g. Vercel).
       if (
         (request.method === "GET" || request.method === "HEAD") &&
         url.pathname.startsWith("/__l5e/assets-v1/")
       ) {
         const proxied = await fetchUpstreamAsset(request, url.pathname);
         if (proxied) return proxied;
+        const fallbackTheme = resolveAssetFallbackTheme(url.pathname);
         if (url.pathname.endsWith(".mp4")) {
-          const localMp4 = await serveLocalPublicFile("film/eid.mp4", "video/mp4");
+          const localMp4 = await serveLocalPublicFile(`film/${fallbackTheme}.mp4`, "video/mp4");
           if (localMp4) return localMp4;
         }
         if (url.pathname.endsWith(".jpg") || url.pathname.endsWith(".jpeg")) {
-          const localJpg = await serveLocalPublicFile("og/themes/eid.jpg", "image/jpeg");
+          const localJpg = await serveLocalPublicFile(
+            `og/themes/${fallbackTheme}.jpg`,
+            "image/jpeg",
+          );
           if (localJpg) return localJpg;
         }
       }

@@ -2,6 +2,7 @@ import royalRajmahal from "@/assets/themes/royal-rajmahal.webp";
 import lotusGoddess from "@/assets/themes/lotus-goddess.webp";
 import calligraphy from "@/assets/themes/calligraphy.webp";
 import eidSky from "@/assets/eid-sky.webp";
+import noorCover from "@/assets/noor-arch-cover.jpg.asset.json";
 import noorFinal from "@/assets/noor-arch-final.jpg.asset.json";
 import noorGateVideo from "@/assets/noor-arch-gate.mp4.asset.json";
 import aladin from "@/assets/themes/aladin.webp";
@@ -72,6 +73,42 @@ export function themeLoop(theme: InvitationTheme): string {
   if (theme === "aladin") return aladinVideo.url;
   if (theme === "haldi-baag") return haldiBaagVideo.url;
   return `/film/${theme}.mp4`;
+}
+
+/**
+ * Optional follow-up hero video played 2–3 seconds after the opening card
+ * video finishes and the text pops up. Leave empty to stay stopped on the
+ * final frame of the opening video until the full 15 MB video is provided.
+ */
+export const heroFollowUpVideo: Partial<Record<InvitationTheme, string>> = {};
+
+export function heroVideoForTheme(theme: InvitationTheme): string | null {
+  return heroFollowUpVideo[theme] ?? null;
+}
+
+/** First card picture for any theme — always the opening video's frame 0. */
+export function openingCoverForTheme(theme: InvitationTheme): string {
+  if (theme === "eid") return noorCover.url;
+  return invitationArt[theme];
+}
+
+/** Stopped background frame held after the opening video finishes. */
+export function openingStillForTheme(theme: InvitationTheme): string {
+  if (theme === "eid") return noorFinal.url;
+  return invitationArt[theme];
+}
+
+/** Opening video source per theme. Eid plays the full door-opening cut; loop clips play a zoomed opener. */
+export function openingVideoForTheme(theme: InvitationTheme): {
+  src: string;
+  fallback: string;
+  finiteOpening: boolean;
+} {
+  if (theme === "eid") {
+    return { src: noorGateVideo.url, fallback: "/film/eid.mp4", finiteOpening: true };
+  }
+  const url = themeLoop(theme);
+  return { src: url, fallback: `/film/${theme}.mp4`, finiteOpening: false };
 }
 
 export const invitationArtFallback: Partial<Record<InvitationTheme, string>> = {

@@ -252,7 +252,7 @@
 }
 
 .eid-hero {
-  min-height: min(880px, 88svh);
+  min-height: 100svh;
   padding-block: 5rem;
 }
 .eid-hero h1 {
@@ -260,12 +260,12 @@
 }
 @media (max-width: 767px) {
   .eid-hero {
-    min-height: 88svh;
+    min-height: 100svh;
     padding-block: 4rem;
   }
   .eid-hero img {
-    object-position: 72% center;
-    opacity: 0.65;
+    object-position: center;
+    opacity: 1;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2734,9 +2734,13 @@ a:hover .personal-invite-cover[data-framework="cinematic-stage"] .cover-inner {
   object-fit: contain;
   object-position: center;
   pointer-events: none;
-  /* Visible immediately: the first frame is the same picture as the still
-     underneath, so there is nothing to flash. */
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  transition: opacity 0.45s ease;
   opacity: 1;
+}
+.theme-loop[data-ready="false"] {
+  opacity: 0;
 }
 /* The photograph stays underneath as the poster frame, so a card is complete
    before the film lands — and still complete if it never can. */
@@ -14235,58 +14239,21 @@ body:has(.preview-frame-document) {
 .cinema-hero :is(.full-art, .sb-hero-frame) {
   overflow: hidden;
 }
-.cinema-hero :is(.full-art-image, .full-art-fill, .sb-hero-art) {
-  animation: cinema-breathe 30s ease-in-out infinite alternate;
-  transform-origin: 60% 40%;
+.cinema-hero .hero-media-lock :is(.full-art-image, .full-art-fill, .sb-hero-art) {
+  animation: none;
+  transform: translate3d(0, 0, 0);
 }
-@keyframes cinema-breathe {
-  from {
-    transform: scale(1.015);
-  }
-  to {
-    transform: scale(1.065);
-  }
+.cinema-hero :is(.stage-frame, .invite-hero-frame, .sb-hero-visual, .tcine) {
+  translate: none;
 }
-.cinema-hero :is(.stage-frame, .invite-hero-frame) {
-  translate: 0 calc(var(--cinema-depth) * -0.35);
+.cinema-hero .cinema-sheers {
+  display: none;
 }
-.cinema-hero .sb-hero-visual {
-  translate: 0 var(--cinema-depth);
-}
-.cinema-hero :is(.stage-copy, .sb-hero-copy) > :is(p, h1, .stage-actions, .sb-hero-actions) {
-  animation: cinema-copy 0.9s ease both;
-  animation-delay: 0.25s;
-}
-.cinema-hero :is(.stage-copy, .sb-hero-copy) > h1 {
-  animation-delay: 0.45s;
-}
-.cinema-hero :is(.stage-date, .sb-date) {
-  animation-delay: 0.65s;
-}
-.cinema-hero :is(.stage-location, .sb-venue, .sb-address) {
-  animation-delay: 0.8s;
-}
-.cinema-hero :is(.stage-actions, .sb-hero-actions) {
-  animation-delay: 0.95s;
-}
-@keyframes cinema-copy {
-  from {
-    opacity: 0;
-    translate: 0 12px;
-  }
-  to {
-    opacity: 1;
-    translate: 0 0;
-  }
-}
-.cinema-hero[data-revealed="false"] :is(.cinema-sheer, .tcine i, .full-art-image, .full-art-fill, .sb-hero-art, .stage-copy > *, .sb-hero-copy > *) {
+.cinema-hero[data-revealed="false"] :is(.tcine i, .full-art-image, .full-art-fill, .sb-hero-art) {
   animation-play-state: paused;
 }
 .cinema-hero[data-paused="true"] :is(.tcine i, .full-art-image, .full-art-fill, .sb-hero-art) {
   animation-play-state: paused;
-}
-.cinema-hero .tcine {
-  translate: 0 calc(var(--cinema-depth) * 0.55);
 }
 /* Avoid stacking the old butterfly/firework/orbit effects with the new film layer. */
 .cinema-hero :is(.living-scene, .stage-orbit, .stage-light) {
@@ -15663,7 +15630,8 @@ body:has(.preview-frame-document) {
   line-height: 1.1;
 }
 .theme-demo-names em {
-  font-family: var(--font-script);
+  font-family: var(--font-calligraphy-simple);
+  font-style: italic;
   font-size: 16px;
   margin: 0 5px;
   opacity: 0.85;
@@ -16242,7 +16210,7 @@ body:has(.preview-frame-document) {
 .personal-invite[data-theme="sacred-mandap"] .mandap-scene-shade {
   background: color-mix(in oklch, var(--background) 12%, transparent);
 }
-.personal-invite[data-theme="sacred-mandap"] .mandap-card {
+.personal-invite[data-theme="sacred-mandap"] .mandap-card:not(.card-calligraphy-plate) {
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -16832,6 +16800,192 @@ body:has(.preview-frame-document) {
   }
 }
 
+/* ── Unified Card Opening, Zoom Transition & Simple Calligraphy ───────────── */
+:root {
+  --font-calligraphy-simple: "Cormorant Garamond", "Instrument Serif", Georgia, serif;
+  --calligraphy-brown: #3b2214;
+  --calligraphy-brown-soft: #5c3923;
+  --calligraphy-gold: #b07f24;
+  --calligraphy-gold-bright: #c89836;
+}
+
+.font-calligraphy-simple {
+  font-family: var(--font-calligraphy-simple);
+}
+
+.noor-gate-zoom {
+  transform: scale(1) translate3d(0, 0, 0);
+  transform-origin: center center;
+  backface-visibility: hidden;
+  will-change: transform;
+  transition: transform 3.2s cubic-bezier(0.22, 1, 0.36, 1);
+}
+.noor-gate-zoom.is-zooming {
+  transform: scale(1.09) translate3d(0, 0, 0);
+}
+
+.noor-start-scrim {
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    rgba(253, 247, 236, 0.42) 0%,
+    rgba(253, 247, 236, 0.14) 52%,
+    rgba(59, 34, 20, 0.18) 100%
+  );
+}
+
+.hero-media-lock {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+  overflow: hidden;
+}
+.hero-media-lock :is(.full-art-image, .full-art-video, .sb-hero-art, .sb-hero-video) {
+  object-fit: cover;
+  object-position: center;
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
+}
+
+.card-calligraphy-plate {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  max-width: min(36rem, 92vw);
+  margin-inline: auto;
+  padding: clamp(1.5rem, 4vw, 2.5rem) clamp(1.4rem, 4.5vw, 3rem);
+  border-radius: 1.5rem;
+  text-align: center;
+}
+.card-calligraphy-plate.is-light-art {
+  background: radial-gradient(
+    ellipse at center,
+    rgba(253, 247, 236, 0.86) 0%,
+    rgba(253, 247, 236, 0.64) 58%,
+    rgba(253, 247, 236, 0) 92%
+  );
+}
+.card-calligraphy-plate.is-dark-art {
+  background: rgba(252, 246, 235, 0.9);
+  border: 1px solid rgba(176, 127, 36, 0.45);
+  box-shadow:
+    0 22px 60px rgba(0, 0, 0, 0.28),
+    inset 0 0 0 1px rgba(255, 250, 240, 0.55);
+  backdrop-filter: blur(10px);
+}
+
+.card-calligraphy-names,
+.personal-invite .card-calligraphy-names {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.25rem;
+  margin: 0;
+  font-family: var(--font-calligraphy-simple);
+  font-size: clamp(2.5rem, 6.2vw, 4.6rem);
+  font-weight: 500;
+  line-height: 1.06;
+  letter-spacing: 0.02em;
+  color: var(--calligraphy-brown);
+  text-shadow: 0 1px 16px rgba(255, 249, 238, 0.72);
+}
+@media (min-width: 640px) {
+  .card-calligraphy-names,
+  .personal-invite .card-calligraphy-names {
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.65rem;
+  }
+}
+.card-calligraphy-name {
+  color: var(--calligraphy-brown);
+  font-family: var(--font-calligraphy-simple);
+  font-weight: 500;
+}
+.card-calligraphy-amp,
+.personal-invite .card-calligraphy-amp,
+.personal-invite .sb-hero h1 i.card-calligraphy-amp,
+.personal-invite .reel-amp.card-calligraphy-amp {
+  display: inline-block;
+  margin: 0;
+  font-family: var(--font-calligraphy-simple);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.85em;
+  line-height: 1;
+  color: var(--calligraphy-gold);
+  background: none;
+  -webkit-background-clip: border-box;
+  background-clip: border-box;
+}
+
+.card-calligraphy-rule {
+  display: block;
+  width: 3.75rem;
+  height: 1px;
+  margin-top: 1rem;
+  background: linear-gradient(90deg, transparent, var(--calligraphy-gold), transparent);
+}
+.card-calligraphy-date,
+.personal-invite .card-calligraphy-date {
+  margin-bottom: 0;
+  font-family: var(--font-calligraphy-simple);
+  font-size: clamp(1.05rem, 2.2vw, 1.35rem);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  color: var(--calligraphy-brown-soft);
+}
+.card-calligraphy-guest {
+  font-family: var(--font-calligraphy-simple);
+  font-weight: 600;
+  color: var(--calligraphy-gold);
+}
+.card-calligraphy-kicker {
+  font-family: var(--font-calligraphy-simple);
+  font-weight: 600;
+  color: var(--calligraphy-gold);
+}
+.card-calligraphy-body {
+  font-family: var(--font-calligraphy-simple);
+  color: var(--calligraphy-brown-soft);
+}
+
+.noor-tap-open {
+  font-family: var(--font-calligraphy-simple);
+  font-weight: 600;
+  color: var(--calligraphy-brown);
+  background: rgba(253, 248, 238, 0.94);
+  border: 1px solid rgba(176, 127, 36, 0.72);
+  box-shadow:
+    0 10px 28px rgba(59, 34, 20, 0.16),
+    0 0 0 1px rgba(176, 127, 36, 0.2);
+  cursor: pointer;
+}
+.noor-tap-open:hover {
+  background: #fffaf0;
+  border-color: var(--calligraphy-gold);
+}
+
+.card-scroll-cue {
+  color: var(--calligraphy-brown);
+  text-shadow: 0 1px 12px rgba(255, 249, 238, 0.9);
+}
+
+.theme-demo-bar.theme-demo-bar-footer {
+  position: static;
+  border-top: 1px solid #e4e4d6;
+  border-bottom: 1px solid #e4e4d6;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .noor-gate-zoom,
+  .noor-gate-zoom.is-zooming {
+    transform: none;
+    transition: none;
+  }
+}
+
 /* Phones: films fill the whole screen instead of a letterboxed wide strip. */
 @media (max-width: 768px) {
   .theme-loop,
@@ -16852,9 +17006,9 @@ body:has(.preview-frame-document) {
   object-position: center;
 }
 
-/* Mughal Moon polish: moonlit glow, gold-shimmer titles, glass cards */
-.personal-invite[data-theme="mughal-moon-film"] h1,
-.personal-invite[data-theme="mughal-moon-film"] h2 {
+/* Mughal Moon polish: moonlit glow, gold-shimmer section titles, glass cards */
+.personal-invite[data-theme="mughal-moon-film"] h1:not(.card-calligraphy-names),
+.personal-invite[data-theme="mughal-moon-film"] h2:not(.card-calligraphy-names) {
   background: var(--gradient-gold);
   background-size: 200% auto;
   -webkit-background-clip: text;
@@ -16881,5 +17035,7 @@ body:has(.preview-frame-document) {
 }
 @keyframes mm-shimmer { to { background-position: 200% center; } }
 @media (prefers-reduced-motion: reduce) {
-  .personal-invite[data-theme="mughal-moon-film"] :is(h1, h2) { animation: none; }
+  .personal-invite[data-theme="mughal-moon-film"] :is(h1:not(.card-calligraphy-names), h2:not(.card-calligraphy-names)) {
+    animation: none;
+  }
 }

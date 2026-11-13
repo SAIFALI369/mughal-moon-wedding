@@ -1,22 +1,30 @@
 import { useEffect, useRef, useState } from "react";
-import { Sparkles } from "lucide-react";
 import { useReducedMotion } from "framer-motion";
-import { invitationArt } from "../invitation-art";
-import { ThemeLoop } from "../theme-loop";
-import { getInvitationMonogram, type InvitationDetails } from "../invitation-details";
+import {
+  invitationArtFallback,
+  openingCoverForTheme,
+  openingVideoForTheme,
+} from "../invitation-art";
+import { isDarkOpeningTheme } from "../noor-arch-gate";
+import type { InvitationDetails } from "../invitation-details";
 
 export function StorybookEntry({
   details,
   enabled,
+  onPrime,
   onEnter,
 }: {
   details: InvitationDetails;
   enabled: boolean;
+  onPrime?: () => void;
   onEnter?: () => void;
 }) {
   const [opened, setOpened] = useState(!enabled);
   const [opening, setOpening] = useState(false);
+  const [videoFallback, setVideoFallback] = useState(false);
+  const [posterFallback, setPosterFallback] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const enterButton = useRef<HTMLButtonElement>(null);
   const reduce = useReducedMotion();
 
@@ -39,21 +47,60 @@ export function StorybookEntry({
 
   if (opened) return null;
 
-  const monogram = getInvitationMonogram(details);
-  const dateVenueLine = [details.date, details.venue].filter(Boolean).join(" · ");
+  const fallbackImg = invitationArtFallback[details.theme];
+  const cover = posterFallback && fallbackImg ? fallbackImg : openingCoverForTheme(details.theme);
+  const video = openingVideoForTheme(details.theme);
+  const videoSrc = videoFallback ? video.fallback : video.src;
+  const darkSurface = isDarkOpeningTheme(details.theme);
+
+  const complete = () => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
+    if (videoRef.current) {
+      try {
+        videoRef.current.pause();
+      } catch {
+        // Ignore media stubs without pause.
+      }
+    }
+    window.dispatchEvent(new CustomEvent("storybook:opened", { detail: { sound: true } }));
+    window.dispatchEvent(new Event("wedding:revealed"));
+    onEnter?.();
+    setOpened(true);
+    document.getElementById("invitation-top")?.focus();
+  };
 
   const open = () => {
     if (opening) return;
-    onEnter?.();
-    window.dispatchEvent(new CustomEvent("storybook:opened", { detail: { sound: true } }));
+    onPrime?.();
     setOpening(true);
-    timer.current = setTimeout(
-      () => {
-        setOpened(true);
-        document.getElementById("invitation-top")?.focus();
-      },
-      reduce ? 80 : 1250,
-    );
+
+    const v = videoRef.current;
+    if (reduce || !v) {
+      timer.current = setTimeout(complete, 60);
+      return;
+    }
+
+    try {
+      v.currentTime = 0;
+    } catch {
+      // Ignore unseekable stream.
+    }
+    try {
+      const started = v.play();
+      if (!started || typeof started.catch !== "function") {
+        timer.current = setTimeout(complete, 60);
+        return;
+      }
+      started.catch(() => complete());
+    } catch {
+      timer.current = setTimeout(complete, 60);
+      return;
+    }
+
+    timer.current = setTimeout(complete, 2400);
   };
 
   return (
@@ -62,18 +109,43 @@ export function StorybookEntry({
       role="dialog"
       aria-modal="true"
       aria-labelledby="sb-gate-title"
+      onClick={!opening ? open : undefined}
       onKeyDown={(e) => {
-        if (e.key === "Escape") open();
+        if (e.key === "Escape") {
+          if (opening) complete();
+          else open();
+        }
       }}
     >
-      <img
-        src={invitationArt[details.theme]}
-        alt=""
+      <div className={`noor-gate-zoom absolute inset-0 ${opening ? "is-zooming" : ""}`}>
+        <img
+          src={cover}
+          alt=""
+          aria-hidden="true"
+          onError={() => {
+            if (fallbackImg && !posterFallback) setPosterFallback(true);
+          }}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+        <video
+          ref={videoRef}
+          src={videoSrc}
+          poster={cover}
+          muted
+          playsInline
+          preload="auto"
+          onError={() => {
+            if (!videoFallback && videoSrc !== video.fallback) {
+              setVideoFallback(true);
+            }
+          }}
+          className="absolute inset-0 h-full w-full object-cover"
+        />
+      </div>
+      <div
+        className={`noor-start-scrim pointer-events-none absolute inset-0 transition-opacity duration-300 ${opening ? "opacity-0" : "opacity-100"}`}
         aria-hidden="true"
-        className="sb-entry-backdrop"
       />
-      <ThemeLoop theme={details.theme} className="sb-entry-backdrop sb-entry-video" priority />
-      <div className="sb-entry-veil" aria-hidden="true" />
 
       <div className="sb-door sb-door-left" aria-hidden="true">
         <div className="sb-door-panel">
@@ -86,34 +158,32 @@ export function StorybookEntry({
         </div>
       </div>
 
-      <div className="sb-entry-card">
-        <div className="sb-entry-seal" aria-hidden="true">
-          <span>{monogram.left}</span>
-          <i className="sb-entry-seal-amp">&amp;</i>
-          <span>{monogram.right}</span>
-        </div>
-
-        <p className="sb-eyebrow">{details.hosts || "Together with their families"}</p>
-
-        {details.riteLine && <p className="sb-entry-blessing">{details.riteLine}</p>}
-
-        <h2 id="sb-gate-title">
-          <span>{details.groomName}</span>
-          <i>&amp;</i>
-          <span>{details.brideName}</span>
+      <div
+        className={`card-calligraphy-plate relative z-10 max-w-md transition-opacity duration-200 ${
+          darkSurface ? "is-dark-art" : "is-light-art"
+        } ${opening ? "pointer-events-none opacity-0" : "opacity-100"}`}
+      >
+        <h2 id="sb-gate-title" className="card-calligraphy-names">
+          <span className="card-calligraphy-name">{details.groomName}</span>
+          <span className="card-calligraphy-amp" aria-hidden="true">
+            &amp;
+          </span>
+          <span className="card-calligraphy-name">{details.brideName}</span>
         </h2>
 
-        {dateVenueLine && <p className="sb-entry-meta">{dateVenueLine}</p>}
+        <span className="card-calligraphy-rule" aria-hidden="true" />
 
         <button
           ref={enterButton}
           type="button"
           disabled={opening}
-          onClick={open}
-          className="sb-entry-open"
+          onClick={(event) => {
+            event.stopPropagation();
+            open();
+          }}
+          className="noor-tap-open mt-6 inline-flex min-h-11 items-center justify-center rounded-full px-8 py-3 text-sm uppercase tracking-[0.18em]"
         >
-          <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-          <span>{opening ? "Welcome inside" : "Open invitation"}</span>
+          Tap to open
         </button>
       </div>
     </div>

@@ -57,23 +57,39 @@ export const Route = createFileRoute("/theme/$themeId")({
 });
 
 /**
- * One openable demo per theme. The customer scrolls a finished invitation — its
- * film, gallery, ceremony order and YouTube soundtrack — instead of squinting at
- * a colour swatch.
+ * One openable demo per theme. Every theme opens directly onto its first video
+ * frame with simple calligraphy names and "Tap to open", then reveals the
+ * complete invitation below without any toolbar obstructing the card hero.
  */
 function ThemeDemoPage() {
   const { themeId } = Route.useParams();
   const navigate = useNavigate();
   const demo = demoForTheme(themeId);
-  const [gated, setGated] = useState(() => demo.theme === "eid");
+  const [gated, setGated] = useState(true);
 
   useEffect(() => {
-    setGated(demo.theme === "eid");
+    setGated(true);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
   }, [demo.theme]);
 
   return (
     <div className="theme-demo-page">
-      <div className="theme-demo-bar">
+      <PersonalInvitation
+        key={demo.theme}
+        title={demo.title}
+        content={demoContent(demo)}
+        preview={!gated}
+        showGate={gated}
+        demoPhotos={{
+          groom: demo.portraits.groom,
+          bride: demo.portraits.bride,
+          gallery: demo.gallery,
+        }}
+      />
+
+      <div className="theme-demo-bar theme-demo-bar-footer">
         <Link to="/themes" className="theme-demo-bar-back">
           <ArrowLeft size={14} aria-hidden="true" /> All theme demos
         </Link>
@@ -105,7 +121,7 @@ function ThemeDemoPage() {
             type="button"
             aria-pressed={gated}
             onClick={() => setGated((current) => !current)}
-            title="Play the real opening: gates, doors and soundtrack"
+            title="Play the real opening: first frame, zoom-in video and soundtrack"
           >
             <DoorOpen size={13} aria-hidden="true" />
             {gated ? "Opening on" : "See the opening"}
@@ -134,22 +150,10 @@ function ThemeDemoPage() {
         ))}
       </div>
 
-      <PersonalInvitation
-        title={demo.title}
-        content={demoContent(demo)}
-        preview={!gated}
-        showGate={gated}
-        demoPhotos={{
-          groom: demo.portraits.groom,
-          bride: demo.portraits.bride,
-          gallery: demo.gallery,
-        }}
-      />
-
       <p className="theme-demo-page-note">
-        <Sparkles size={11} aria-hidden="true" /> A complete sample card: every element on, the
-        theme&rsquo;s own film looping, {demo.gallery.length} demo gallery photos and a real YouTube
-        soundtrack. {demoDescriptionTail(demo)}
+        <Sparkles size={11} aria-hidden="true" /> A complete sample card: every element on,{" "}
+        {demo.gallery.length} demo gallery photos and a real YouTube soundtrack.{" "}
+        {demoDescriptionTail(demo)}
       </p>
     </div>
   );

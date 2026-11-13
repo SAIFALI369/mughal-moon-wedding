@@ -58,7 +58,13 @@ describe("real hero films for the themes", () => {
   });
 
   it("autoplays the theme's own film behind the invitation: muted, looping, inline", () => {
-    for (const theme of ["royal-rajmahal", "kashi-ghat", "ballroom", "eid", "sacred-mandap"] as const) {
+    for (const theme of [
+      "royal-rajmahal",
+      "kashi-ghat",
+      "ballroom",
+      "eid",
+      "sacred-mandap",
+    ] as const) {
       const page = pageFor(theme);
       expect(page).toContain(`src="${themeLoop(theme)}"`);
       const video = page.match(/<video[^>]*>/)?.[0] ?? "";

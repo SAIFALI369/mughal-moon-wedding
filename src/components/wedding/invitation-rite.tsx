@@ -2,15 +2,14 @@ import { useRef, useState, type ReactNode } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
 import { ChevronDown } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
-import { invitationArtFallback } from "./invitation-art";
-import { CouplePortraits } from "./invitation-stage";
+import { heroVideoForTheme, invitationArtFallback } from "./invitation-art";
+import { isDarkOpeningTheme, useOpeningPhase } from "./noor-arch-gate";
 import type { InvitationTheme } from "./invitation-options";
 import { ThemeLoop } from "./theme-loop";
 
 /**
  * Which tradition a theme belongs to. Hindu themes carry a Sanskrit blessing
- * where the Muslim themes carry the Bismillah, and their opening gate is a
- * diya instead of the heavenly doors.
+ * where the Muslim themes carry the Bismillah.
  */
 export type InvitationRite = "muslim" | "hindu" | "universal";
 
@@ -32,7 +31,7 @@ export const themeRites: Record<InvitationTheme, InvitationRite> = {
   "riad-noor": "muslim",
   "kashi-ghat": "hindu",
   "mehndi-night": "universal",
-  "jharokha-dawn": "muslim",
+  "jharokha-dawn": "universal",
   "haldi-baag": "hindu",
   "vows-in-ink": "universal",
   "chand-bagh": "muslim",
@@ -43,7 +42,7 @@ export function riteForTheme(theme: InvitationTheme): InvitationRite {
   return themeRites[theme] ?? "universal";
 }
 
-/** One short blessing per tradition, shown on the gate and above the names. */
+/** One short blessing per tradition, shown in ceremony sections where relevant. */
 export const riteBlessings: Record<InvitationRite, { text: string; script: string } | null> = {
   muslim: { text: "بِسْمِ اللَّهِ الرَّحْمَنِ الرَّحِيمِ", script: "arabic" },
   universal: null,
@@ -61,7 +60,7 @@ export function FullArtFrame({
   className = "",
   priority = false,
   alt = "",
-  motion = true,
+  motion: enableMotion = true,
 }: {
   src: string;
   /** The card's theme: its own film plays over the still once it is ready. */
@@ -90,8 +89,6 @@ export function FullArtFrame({
           if (fallbackSrc && !fallbackActive) setFailedKey(key);
         }}
       />
-      {/* The photograph is both the poster frame and the fallback: it is on
-          screen before the video, and it stays if the film cannot play. */}
       <img
         src={displaySrc}
         alt={alt}
@@ -104,7 +101,13 @@ export function FullArtFrame({
         }}
       />
       {theme && (
-        <ThemeLoop theme={theme} className="full-art-video" priority={priority} enabled={motion} poster={displaySrc} />
+        <ThemeLoop
+          theme={theme}
+          className="full-art-video"
+          priority={priority}
+          enabled={enableMotion}
+          poster={displaySrc}
+        />
       )}
     </div>
   );
@@ -112,11 +115,6 @@ export function FullArtFrame({
 
 /**
  * A living celebratory scene layered over any theme artwork.
- *
- * Everything is drawn with CSS gradients and animation, so the fire, sparks and
- * fireworks move continuously like a video but the card downloads no media,
- * autoplays no sound and keeps working offline. `reduce` freezes it into a
- * single still frame for visitors who ask for less motion.
  */
 export function LivingScene({
   theme,
@@ -129,11 +127,6 @@ export function LivingScene({
 }) {
   const rite = riteForTheme(theme);
   const hindu = rite === "hindu";
-  /**
-   * The page layer is fixed behind a whole invitation for the immersive
-   * themes: the same lanterns, petals, drapes and river diyas follow the
-   * guest from the hero to the footer instead of stopping after the opening.
-   */
   const page = variant === "page";
   const draped = theme === "riad-noor" || theme === "kashi-ghat" || theme === "mehndi-night";
   const night =
@@ -231,18 +224,13 @@ export function LivingScene({
 }
 
 /**
- * Mandap Aarti — a Hindu ceremony stage with a living havan fire.
- *
- * The section is taller than the viewport and its stage sticky, so scrolling
- * walks the guest under the flower canopy (garlands swing, marigolds drift) and
- * the sacred fire grows. Reduced-motion visitors get the still frame.
+ * Mandap Aarti — Hindu ceremony stage stabilized without vertical background jitter
+ * and styled in simple dark brown and goldenish calligraphy.
  */
 export function MandapStage({
   details,
   backgroundImage,
-  actions,
   scrollTo,
-  entranceDelay,
 }: {
   details: InvitationDetails;
   backgroundImage: string;
@@ -252,12 +240,14 @@ export function MandapStage({
 }) {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
-  const cinematic = details.theme === "sacred-mandap";
+  const { revealed, gated, heroVideoLive } = useOpeningPhase();
+  const followUp = heroVideoForTheme(details.theme);
+  const allowMotion = !gated || (heroVideoLive && Boolean(followUp));
+  const copyVisible = !gated || revealed;
+  const darkSurface = isDarkOpeningTheme(details.theme);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
 
-  const sceneScale = useTransform(scrollYProgress, [0, 1], [1.05, 1.34]);
-  const sceneY = useTransform(scrollYProgress, [0, 1], ["0%", "6%"]);
-  const copyY = useTransform(scrollYProgress, [0, 1], [0, -40]);
+  const copyY = useTransform(scrollYProgress, [0, 1], [0, -32]);
   const canopySwing = useTransform(scrollYProgress, [0, 1], ["-1.4deg", "1.4deg"]);
 
   return (
@@ -270,18 +260,39 @@ export function MandapStage({
       data-reduced={reduced ? "true" : undefined}
     >
       <div className="mandap-sticky">
-        <motion.div
-          className="mandap-scene"
-          style={reduced || cinematic ? undefined : { scale: sceneScale, y: sceneY }}
-        >
-          <FullArtFrame
-            src={backgroundImage}
-            theme={details.theme}
-            className="mandap-scene-art"
-            priority
-          />
+        <div className="mandap-scene hero-media-lock">
+          {gated && followUp ? (
+            <>
+              <FullArtFrame
+                src={backgroundImage}
+                theme={details.theme}
+                className="mandap-scene-art"
+                priority
+                motion={false}
+              />
+              {heroVideoLive && !reduced && (
+                <video
+                  src={followUp}
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  preload="auto"
+                  className="theme-loop full-art-video absolute inset-0 h-full w-full object-cover"
+                />
+              )}
+            </>
+          ) : (
+            <FullArtFrame
+              src={backgroundImage}
+              theme={details.theme}
+              className="mandap-scene-art"
+              priority
+              motion={allowMotion}
+            />
+          )}
           <div className="mandap-scene-shade" aria-hidden="true" />
-        </motion.div>
+        </div>
 
         <LivingScene theme={details.theme} variant="hero" reduce={reduced ?? false} />
 
@@ -292,38 +303,37 @@ export function MandapStage({
           <span className="mandap-bell mandap-bell-right" aria-hidden="true" />
         </motion.div>
 
-        <motion.div
-          className="mandap-copy"
-          initial={reduced ? undefined : { opacity: 0, y: 30 }}
-          animate={reduced ? undefined : { opacity: 1, y: 0 }}
-          transition={{ duration: 1.2, delay: entranceDelay }}
-          style={reduced ? undefined : { y: copyY }}
-        >
-          <div className="stage-copy mandap-card">
-            <p dir="ltr" className="mandap-shloka font-sanskrit text-xl sm:text-2xl">
-              ॥ श्री गणेशाय नमः ॥
-            </p>
-            <p className="stage-kicker text-xs font-medium uppercase tracking-[0.36em] text-gold">
-              {details.hosts || "Together with their families"}
-            </p>
-            <p className="stage-overline mt-5 font-serif text-lg italic text-foreground">
-              {details.riteLine || "A sacred celebration"}
-            </p>
-            <h1 className="stage-names mt-6 font-serif font-medium leading-[0.95]">
-              <span className="stage-name break-words">{details.groomName}</span>
-              <span className="stage-amp text-gold-shimmer font-script font-normal">&amp;</span>
-              <span className="stage-name break-words">{details.brideName}</span>
+        <motion.div className="mandap-copy" style={reduced ? undefined : { y: copyY }}>
+          <motion.div
+            initial={gated && !reduced ? { opacity: 0, y: 28, scale: 0.92 } : false}
+            animate={
+              copyVisible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 28, scale: 0.92 }
+            }
+            transition={reduced ? { duration: 0 } : { duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
+            className={`stage-copy mandap-card card-calligraphy-plate mx-auto ${
+              darkSurface ? "is-dark-art" : "is-light-art"
+            }`}
+          >
+            <h1 className="stage-names card-calligraphy-names">
+              <span className="stage-name card-calligraphy-name break-words">
+                {details.groomName}
+              </span>
+              <span className="stage-amp card-calligraphy-amp" aria-hidden="true">
+                &amp;
+              </span>
+              <span className="stage-name card-calligraphy-name break-words">
+                {details.brideName}
+              </span>
             </h1>
-            <p className="stage-date mt-8 font-serif text-2xl italic text-foreground sm:text-3xl">
-              {details.date}
-              {details.time ? ` · ${details.time}` : ""}
-            </p>
-            <p className="stage-location mt-3 text-xs uppercase tracking-[0.22em] text-gold">
-              {details.venue}
-            </p>
-            <CouplePortraits details={details} />
-            <div className="stage-actions mt-9 flex flex-wrap justify-center gap-3">{actions}</div>
-          </div>
+            {(details.date || details.time) && (
+              <>
+                <span className="card-calligraphy-rule" aria-hidden="true" />
+                <p className="stage-date card-calligraphy-date mt-4">
+                  {[details.date, details.time].filter(Boolean).join(" · ")}
+                </p>
+              </>
+            )}
+          </motion.div>
         </motion.div>
 
         <div className="mandap-havan" aria-hidden="true">
@@ -336,8 +346,8 @@ export function MandapStage({
           <span className="havan-ember havan-ember-c" />
         </div>
 
-        <a href={scrollTo} className="mandap-scroll">
-          <span>Step under the mandap</span>
+        <a href={scrollTo} className="mandap-scroll card-scroll-cue">
+          <span>Scroll</span>
           <ChevronDown className="mx-auto mt-1 h-5 w-5" aria-hidden="true" />
         </a>
       </div>

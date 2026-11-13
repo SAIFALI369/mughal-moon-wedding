@@ -1,20 +1,13 @@
 import { useRef, type ReactNode } from "react";
 import { motion, useReducedMotion, useScroll, useTransform } from "framer-motion";
-import { ChevronDown, Sparkles } from "lucide-react";
+import { ChevronDown } from "lucide-react";
 import type { InvitationDetails } from "./invitation-details";
 import { parseInvitationDate } from "./invitation-details";
+import { heroVideoForTheme } from "./invitation-art";
 import { mascotsForTheme, type InvitationLayout, type InvitationTheme } from "./invitation-options";
+import { isDarkOpeningTheme, useOpeningPhase } from "./noor-arch-gate";
 import { CatMascot, SquirrelMascot } from "./invitation-world";
-import { FullArtFrame, LivingScene, riteBlessing } from "./invitation-rite";
-import { CouplePortraits } from "./invitation-stage";
-
-/**
- * Three signature structures. Each one changes what the opening *is* — a raised
- * balcony at dawn, a marigold courtyard collage, a single inked page — rather
- * than repainting the shared stage. `invitationLayoutFor` makes the theme's
- * layout win over the shared frameworks, so the three themes can never collapse
- * back into the same silhouette. Grand Curtain stays an explicit opt-in.
- */
+import { FullArtFrame, LivingScene } from "./invitation-rite";
 
 type StageProps = {
   details: InvitationDetails;
@@ -43,39 +36,64 @@ function shortDate(value: string) {
   };
 }
 
-function RiteLine({ theme, className }: { theme: InvitationTheme; className: string }) {
-  const blessing = riteBlessing(theme);
-  if (!blessing) return null;
-  const arabic = blessing.script === "arabic";
+function HeroFollowUpLayer({
+  theme,
+  backgroundImage,
+  className,
+}: {
+  theme: InvitationTheme;
+  backgroundImage: string;
+  className: string;
+}) {
+  const reduced = useReducedMotion();
+  const { gated, heroVideoLive } = useOpeningPhase();
+  const followUp = heroVideoForTheme(theme);
+  const allowMotion = !gated || (heroVideoLive && Boolean(followUp));
+
+  if (gated && followUp) {
+    return (
+      <>
+        <FullArtFrame
+          src={backgroundImage}
+          theme={theme}
+          className={className}
+          priority
+          motion={false}
+        />
+        {heroVideoLive && !reduced && (
+          <video
+            src={followUp}
+            autoPlay
+            muted
+            loop
+            playsInline
+            preload="auto"
+            className="theme-loop full-art-video absolute inset-0 h-full w-full object-cover"
+          />
+        )}
+      </>
+    );
+  }
+
   return (
-    <p
-      dir={arabic ? "rtl" : "ltr"}
-      className={`${className} ${arabic ? "font-arabic" : "font-sanskrit"}`}
-    >
-      {blessing.text}
-    </p>
+    <FullArtFrame
+      src={backgroundImage}
+      theme={theme}
+      className={className}
+      priority
+      motion={allowMotion}
+    />
   );
 }
 
 /* ─────────────────────────── 1. Jharokha Dawn ─────────────────────────── */
 
-/**
- * A carved sandstone balcony: the artwork is the view, the names sit inside the
- * cusped window, and the sill closes the frame. Vertical, ceremonial, in rose
- * sandstone and brass — no dark sky, no scroll-stacked arch and no script glyph.
- */
-export function ChhatriDawnStage({
-  details,
-  backgroundImage,
-  actions,
-  scrollTo,
-  entranceDelay,
-}: StageProps) {
+export function ChhatriDawnStage({ details, backgroundImage, scrollTo }: StageProps) {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const artY = useTransform(scrollYProgress, [0, 1], ["0%", "12%"]);
-  const windowLift = useTransform(scrollYProgress, [0, 0.6], [0, -26]);
+  const { revealed, gated } = useOpeningPhase();
+  const copyVisible = !gated || revealed;
+  const darkSurface = isDarkOpeningTheme(details.theme);
   const date = shortDate(details.date);
 
   return (
@@ -87,10 +105,14 @@ export function ChhatriDawnStage({
       data-theme={details.theme}
       data-reduced={reduced ? "true" : undefined}
     >
-      <motion.div className="dawn-sky" style={reduced ? undefined : { y: artY }} aria-hidden="true">
-        <FullArtFrame src={backgroundImage} theme={details.theme} className="dawn-art" priority />
+      <div className="dawn-sky hero-media-lock" aria-hidden="true">
+        <HeroFollowUpLayer
+          theme={details.theme}
+          backgroundImage={backgroundImage}
+          className="dawn-art"
+        />
         <span className="dawn-wash" />
-      </motion.div>
+      </div>
       <LivingScene theme={details.theme} variant="hero" reduce={reduced ?? false} />
       <span className="dawn-petals" aria-hidden="true">
         {Array.from({ length: 7 }, (_, index) => (
@@ -100,39 +122,30 @@ export function ChhatriDawnStage({
 
       <motion.div
         className="dawn-frame"
-        initial={{ opacity: 0, y: 30 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.1, delay: entranceDelay }}
-        style={reduced ? undefined : { y: windowLift }}
+        initial={gated && !reduced ? { opacity: 0, y: 28, scale: 0.92 } : false}
+        animate={copyVisible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 28, scale: 0.92 }}
+        transition={reduced ? { duration: 0 } : { duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
       >
         <span className="dawn-jali dawn-jali-left" aria-hidden="true" />
         <span className="dawn-jali dawn-jali-right" aria-hidden="true" />
-        <div className="dawn-window">
+        <div
+          className={`dawn-window card-calligraphy-plate ${
+            darkSurface ? "is-dark-art" : "is-light-art"
+          }`}
+        >
           <span className="dawn-window-crest" aria-hidden="true" />
-          <RiteLine theme={details.theme} className="dawn-blessing" />
-          <p className="dawn-kicker">{details.hosts || "Together with their families"}</p>
-          <h1 className="dawn-names">
-            <span className="dawn-name">{details.groomName}</span>
-            <span className="dawn-weds">weds</span>
-            <span className="dawn-name">{details.brideName}</span>
+          <h1 className="dawn-names card-calligraphy-names">
+            <span className="dawn-name card-calligraphy-name">{details.groomName}</span>
+            <span className="dawn-weds card-calligraphy-amp" aria-hidden="true">
+              &amp;
+            </span>
+            <span className="dawn-name card-calligraphy-name">{details.brideName}</span>
           </h1>
-          <p className="dawn-date">
-            {date.day && (
-              <span className="dawn-date-day">
-                {date.day} <i>{date.month.slice(0, 3)}</i> {date.year}
-              </span>
-            )}
-            {!date.day && (
-              <span className="dawn-date-day">{details.date || "Date to be announced"}</span>
-            )}
-            {date.weekday && <span className="dawn-weekday">{date.weekday}</span>}
-            {details.time && <span className="dawn-time">{details.time}</span>}
+          <span className="card-calligraphy-rule" aria-hidden="true" />
+          <p className="dawn-date card-calligraphy-date mt-4">
+            {date.day ? `${date.day} ${date.month} ${date.year}` : details.date || "Save the date"}
+            {details.time ? ` · ${details.time}` : ""}
           </p>
-          <p className="dawn-venue">
-            {details.venue || "Venue to be announced"}
-            {details.address && <span>{details.address}</span>}
-          </p>
-          <p className="dawn-event">{details.eventType || details.riteLine || "The wedding"}</p>
         </div>
         <span className="dawn-sill" aria-hidden="true">
           <i />
@@ -142,10 +155,8 @@ export function ChhatriDawnStage({
       </motion.div>
 
       <div className="dawn-lower">
-        <CouplePortraits details={details} compact />
-        <div className="dawn-actions">{actions}</div>
-        <a href={scrollTo} className="dawn-scroll">
-          Enter the celebration
+        <a href={scrollTo} className="dawn-scroll card-scroll-cue">
+          Scroll
           <ChevronDown className="h-4 w-4" aria-hidden="true" />
         </a>
       </div>
@@ -155,24 +166,12 @@ export function ChhatriDawnStage({
 
 /* ─────────────────────────── 2. Haldi Baag ─────────────────────────── */
 
-/**
- * A courtyard collage: a taped, slightly tilted photograph on the left, a stack
- * of warm paper strips on the right, a marigold garland strung across the top.
- * Bold sans names, turmeric yellow and leaf green — a daytime celebration, not a
- * night-time palace.
- */
-export function BaagStage({
-  details,
-  backgroundImage,
-  actions,
-  scrollTo,
-  entranceDelay,
-}: StageProps) {
+export function BaagStage({ details, backgroundImage, scrollTo }: StageProps) {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const artScale = useTransform(scrollYProgress, [0, 1], [1.02, 1.12]);
-  const date = shortDate(details.date);
+  const { revealed, gated } = useOpeningPhase();
+  const copyVisible = !gated || revealed;
+  const darkSurface = isDarkOpeningTheme(details.theme);
 
   return (
     <section
@@ -191,83 +190,50 @@ export function BaagStage({
       <LivingScene theme={details.theme} variant="hero" reduce={reduced ?? false} />
 
       <div className="baag-inner">
-        <motion.figure
-          className="baag-frame"
-          initial={{ opacity: 0, rotate: -3, y: 26 }}
-          animate={{ opacity: 1, rotate: -1.4, y: 0 }}
-          transition={{ duration: 1, delay: entranceDelay }}
-        >
-          <span className="baag-photo">
-            <motion.div
-              className="baag-photo-inner"
-              style={reduced ? undefined : { scale: artScale }}
-              aria-hidden="true"
-            >
-              <FullArtFrame
-                src={backgroundImage}
+        <div className="baag-frame">
+          <span className="baag-photo hero-media-lock">
+            <div className="baag-photo-inner" aria-hidden="true">
+              <HeroFollowUpLayer
                 theme={details.theme}
+                backgroundImage={backgroundImage}
                 className="baag-art"
-                priority
               />
-            </motion.div>
+            </div>
           </span>
           <span className="baag-tape baag-tape-left" aria-hidden="true" />
           <span className="baag-tape baag-tape-right" aria-hidden="true" />
-          <figcaption className="baag-tag">
-            {details.eventType || "Haldi"}
-            <span>
-              {[date.day && `${date.day} ${date.month}`, details.time].filter(Boolean).join(" · ")}
-            </span>
-          </figcaption>
-        </motion.figure>
+        </div>
 
         <motion.div
-          className="baag-copy"
-          initial={{ opacity: 0, x: 28 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1.1, delay: entranceDelay + 0.15 }}
+          className={`baag-copy card-calligraphy-plate ${
+            darkSurface ? "is-dark-art" : "is-light-art"
+          }`}
+          initial={gated && !reduced ? { opacity: 0, y: 28, scale: 0.92 } : false}
+          animate={
+            copyVisible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 28, scale: 0.92 }
+          }
+          transition={reduced ? { duration: 0 } : { duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
         >
-          <p className="baag-eyebrow">
-            <Sparkles className="h-3.5 w-3.5" aria-hidden="true" />
-            {details.hosts || "Together with their families"}
-          </p>
-          <RiteLine theme={details.theme} className="baag-blessing" />
-          <h1 className="baag-names">
-            <span>{details.groomName}</span>
-            <span className="baag-plus" aria-hidden="true">
-              +
+          <h1 className="baag-names card-calligraphy-names">
+            <span className="card-calligraphy-name">{details.groomName}</span>
+            <span className="baag-plus card-calligraphy-amp" aria-hidden="true">
+              &amp;
             </span>
-            <span>{details.brideName}</span>
+            <span className="card-calligraphy-name">{details.brideName}</span>
           </h1>
-          <p className="baag-date">
-            {details.date || "Date to be announced"}
-            {details.time && <span>{details.time}</span>}
-          </p>
-          <p className="baag-venue">
-            {details.venue || "Venue to be announced"}
-            {details.address && <span>{details.address}</span>}
-          </p>
-          <CouplePortraits details={details} compact />
-          <div className="baag-strips">
-            <span>
-              <i>When</i>
-              {date.weekday || "The celebration"}
-            </span>
-            <span>
-              <i>Where</i>
-              {details.venue || "To be announced"}
-            </span>
-            <span>
-              <i>Wear</i>
-              {details.dressCode || "Something yellow"}
-            </span>
-          </div>
-          <div className="baag-actions">{actions}</div>
+          {(details.date || details.time) && (
+            <>
+              <span className="card-calligraphy-rule" aria-hidden="true" />
+              <p className="baag-date card-calligraphy-date mt-4">
+                {[details.date, details.time].filter(Boolean).join(" · ")}
+              </p>
+            </>
+          )}
         </motion.div>
       </div>
 
-      <a href={scrollTo} className="baag-scroll">
-        Walk into the baag
+      <a href={scrollTo} className="baag-scroll card-scroll-cue">
+        Scroll
         <ChevronDown className="h-4 w-4" aria-hidden="true" />
       </a>
     </section>
@@ -276,22 +242,14 @@ export function BaagStage({
 
 /* ─────────────────────────── 3. Vows in Ink ─────────────────────────── */
 
-/**
- * A single printed page: hairline rules, a thin vermilion thread, small caps
- * metadata and a lot of paper. The artwork is a framed print, not a backdrop.
- */
-export function SingleStrokeStage({
-  details,
-  backgroundImage,
-  actions,
-  scrollTo,
-  entranceDelay,
-}: StageProps) {
+export function SingleStrokeStage({ details, backgroundImage, scrollTo }: StageProps) {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
+  const { revealed, gated } = useOpeningPhase();
+  const copyVisible = !gated || revealed;
+  const darkSurface = isDarkOpeningTheme(details.theme);
   const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
   const thread = useTransform(scrollYProgress, [0, 1], [0.18, 1]);
-  const date = shortDate(details.date);
 
   return (
     <section
@@ -309,79 +267,54 @@ export function SingleStrokeStage({
       />
       <div className="ink-inner">
         <motion.div
-          className="ink-copy"
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1, delay: entranceDelay }}
+          className={`ink-copy card-calligraphy-plate ${
+            darkSurface ? "is-dark-art" : "is-light-art"
+          }`}
+          initial={gated && !reduced ? { opacity: 0, y: 28, scale: 0.92 } : false}
+          animate={
+            copyVisible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 28, scale: 0.92 }
+          }
+          transition={reduced ? { duration: 0 } : { duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
         >
-          <p className="ink-overline">
-            <span>Nº 01</span> The wedding of
-          </p>
-          <RiteLine theme={details.theme} className="ink-blessing" />
-          <h1 className="ink-names">
-            <span>{details.groomName}</span>
-            <em aria-hidden="true">&amp;</em>
-            <span>{details.brideName}</span>
+          <h1 className="ink-names card-calligraphy-names">
+            <span className="card-calligraphy-name">{details.groomName}</span>
+            <em className="card-calligraphy-amp" aria-hidden="true">
+              &amp;
+            </em>
+            <span className="card-calligraphy-name">{details.brideName}</span>
           </h1>
-          <dl className="ink-facts">
-            <div>
-              <dt>When</dt>
-              <dd>
-                {details.date || "To be announced"}
-                {details.time && <span>{details.time}</span>}
-              </dd>
-            </div>
-            <div>
-              <dt>Where</dt>
-              <dd>
-                {details.venue || "To be announced"}
-                {details.address && <span>{details.address}</span>}
-              </dd>
-            </div>
-            <div>
-              <dt>Occasion</dt>
-              <dd>{details.eventType || "The wedding"}</dd>
-            </div>
-          </dl>
-          <CouplePortraits details={details} compact />
-          <div className="ink-actions">{actions}</div>
-          <a href={scrollTo} className="ink-scroll">
-            Read on
+          {(details.date || details.time) && (
+            <>
+              <span className="card-calligraphy-rule" aria-hidden="true" />
+              <p className="card-calligraphy-date mt-4">
+                {[details.date, details.time].filter(Boolean).join(" · ")}
+              </p>
+            </>
+          )}
+          <a href={scrollTo} className="ink-scroll card-scroll-cue mt-6">
+            Scroll
             <span aria-hidden="true">↓</span>
           </a>
         </motion.div>
 
-        <motion.figure
-          className="ink-art"
-          initial={{ opacity: 0, x: 24 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 1.2, delay: entranceDelay + 0.2 }}
-        >
-          <span className="ink-art-mat">
-            <FullArtFrame
-              src={backgroundImage}
+        <figure className="ink-art">
+          <span className="ink-art-mat hero-media-lock">
+            <HeroFollowUpLayer
               theme={details.theme}
+              backgroundImage={backgroundImage}
               className="ink-art-frame"
-              priority
             />
           </span>
-          <figcaption>
-            <span>Handmade paper, one stroke</span>
-            <i aria-hidden="true" />
-          </figcaption>
           <span className="ink-seal" aria-hidden="true">
             <i />
           </span>
-        </motion.figure>
+        </figure>
       </div>
-      <span className="ink-folio" aria-hidden="true">
-        {date.year || "—"} · {details.venue || "The celebration"}
-      </span>
     </section>
   );
 }
 
-/* ─────────────────────── Covers, in the same three tongues ─────────────────────── */
+/* ─────────────────────── Covers, simple calligraphy ─────────────────────── */
 
 function coverDate(details: InvitationDetails) {
   const parts = shortDate(details.date);
@@ -396,24 +329,13 @@ export function ChhatriDawnCover({ details }: { details: InvitationDetails }) {
   return (
     <div className="cover-inner dawn-cover">
       <span className="dawn-cover-jali" aria-hidden="true" />
-      <RiteLine theme={details.theme} className="dawn-cover-blessing" />
-      <p className="dawn-cover-kicker">{details.hosts || "Together with their families"}</p>
-      <h3 className="dawn-cover-names">
-        <span>{details.groomName}</span>
-        <span className="dawn-cover-weds">weds</span>
-        <span>{details.brideName}</span>
+      <h3 className="dawn-cover-names card-calligraphy-names">
+        <span className="card-calligraphy-name">{details.groomName}</span>
+        <span className="dawn-cover-weds card-calligraphy-amp">&amp;</span>
+        <span className="card-calligraphy-name">{details.brideName}</span>
       </h3>
-      <div className="dawn-cover-plate">
-        <span className="dawn-cover-day">{date.day || "—"}</span>
-        <span className="dawn-cover-copy">
-          <b>
-            {date.month || "Date"} {date.year}
-          </b>
-          {details.time && <i>{details.time}</i>}
-          {!date.day && <i>{details.date || "To be announced"}</i>}
-        </span>
-      </div>
-      {details.venue && <p className="dawn-cover-venue">{details.venue}</p>}
+      <span className="card-calligraphy-rule" aria-hidden="true" />
+      <p className="card-calligraphy-date mt-3">{date.line || details.date}</p>
       <span className="dawn-cover-sill" aria-hidden="true" />
     </div>
   );
@@ -428,18 +350,15 @@ export function BaagCover({ details }: { details: InvitationDetails }) {
           <span className={`baag-bloom baag-bloom-${index % 5}`} key={index} />
         ))}
       </div>
-      <p className="baag-cover-kicker">{details.hosts || "Together with their families"}</p>
-      <h3 className="baag-cover-names">
-        <span>{details.groomName}</span>
-        <span aria-hidden="true">+</span>
-        <span>{details.brideName}</span>
+      <h3 className="baag-cover-names card-calligraphy-names">
+        <span className="card-calligraphy-name">{details.groomName}</span>
+        <span className="card-calligraphy-amp" aria-hidden="true">
+          &amp;
+        </span>
+        <span className="card-calligraphy-name">{details.brideName}</span>
       </h3>
-      <p className="baag-cover-date">
-        {date.line || "Date to be announced"}
-        {details.time && <span>{details.time}</span>}
-      </p>
-      {details.venue && <p className="baag-cover-venue">{details.venue}</p>}
-      <span className="baag-cover-tag">{details.eventType || "Haldi"}</span>
+      <span className="card-calligraphy-rule" aria-hidden="true" />
+      <p className="baag-cover-date card-calligraphy-date mt-3">{date.line || details.date}</p>
     </div>
   );
 }
@@ -449,14 +368,15 @@ export function InkCover({ details }: { details: InvitationDetails }) {
   return (
     <div className="cover-inner ink-cover">
       <span className="ink-cover-rule" aria-hidden="true" />
-      <p className="ink-cover-overline">The wedding of</p>
-      <h3 className="ink-cover-names">
-        <span>{details.groomName}</span>
-        <em aria-hidden="true">&amp;</em>
-        <span>{details.brideName}</span>
+      <h3 className="ink-cover-names card-calligraphy-names">
+        <span className="card-calligraphy-name">{details.groomName}</span>
+        <em className="card-calligraphy-amp" aria-hidden="true">
+          &amp;
+        </em>
+        <span className="card-calligraphy-name">{details.brideName}</span>
       </h3>
-      <p className="ink-cover-date">{date.line || "Date to be announced"}</p>
-      {details.venue && <p className="ink-cover-venue">{details.venue}</p>}
+      <span className="card-calligraphy-rule" aria-hidden="true" />
+      <p className="ink-cover-date card-calligraphy-date mt-3">{date.line || details.date}</p>
       <span className="ink-cover-seal" aria-hidden="true">
         <i />
       </span>
@@ -466,10 +386,6 @@ export function InkCover({ details }: { details: InvitationDetails }) {
 
 /* ───────────────────────────── Between the sections ───────────────────────────── */
 
-/**
- * One structural band carries each signature past the hero, so the page never
- * relaxes into the same stacked-section scroll.
- */
 export function LayoutInterlude({
   layout,
   details,
@@ -512,24 +428,13 @@ export function LayoutInterlude({
 }
 
 /* ─────────────────────────── 4. Chand Bagh ─────────────────────────── */
-/**
- * A moonlit garden: the artwork is the whole sky, the names sit on a night
- * plaque, and the cat waits on the wall with an invitation of its own. The
- * layout is single-column by design, so nothing can squeeze on a phone.
- */
-export function ChandBaghStage({
-  details,
-  backgroundImage,
-  actions,
-  scrollTo,
-  entranceDelay,
-}: StageProps) {
+
+export function ChandBaghStage({ details, backgroundImage, scrollTo }: StageProps) {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const sky = useTransform(scrollYProgress, [0, 1], ["0%", "14%"]);
-  const glow = useTransform(scrollYProgress, [0, 1], [1, 1.18]);
-  const date = shortDate(details.date);
+  const { revealed, gated } = useOpeningPhase();
+  const copyVisible = !gated || revealed;
+  const darkSurface = isDarkOpeningTheme(details.theme);
   const mascot = mascotsForTheme(details.theme);
 
   return (
@@ -541,11 +446,14 @@ export function ChandBaghStage({
       data-theme={details.theme}
       data-reduced={reduced ? "true" : undefined}
     >
-      <motion.div className="chand-sky" style={reduced ? undefined : { y: sky }} aria-hidden="true">
-        <FullArtFrame src={backgroundImage} theme={details.theme} className="chand-art" priority />
+      <div className="chand-sky hero-media-lock" aria-hidden="true">
+        <HeroFollowUpLayer
+          theme={details.theme}
+          backgroundImage={backgroundImage}
+          className="chand-art"
+        />
         <span className="chand-veil" />
-        <motion.span className="chand-moon-glow" style={reduced ? undefined : { scale: glow }} />
-      </motion.div>
+      </div>
       <LivingScene theme={details.theme} variant="hero" reduce={reduced ?? false} />
       <span className="chand-constellation" aria-hidden="true">
         {Array.from({ length: 14 }, (_, index) => (
@@ -559,32 +467,28 @@ export function ChandBaghStage({
       </span>
 
       <motion.div
-        className="chand-inner"
-        initial={{ opacity: 0, y: 28 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 1.2, delay: entranceDelay }}
+        className={`chand-inner card-calligraphy-plate ${
+          darkSurface ? "is-dark-art" : "is-light-art"
+        }`}
+        initial={gated && !reduced ? { opacity: 0, y: 28, scale: 0.92 } : false}
+        animate={copyVisible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 28, scale: 0.92 }}
+        transition={reduced ? { duration: 0 } : { duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
       >
-        <p className="chand-kicker">{details.hosts || "Together with their families"}</p>
-        <h1 className="chand-names">
-          <span>{details.groomName}</span>
-          <i aria-hidden="true">&amp;</i>
-          <span>{details.brideName}</span>
+        <h1 className="chand-names card-calligraphy-names">
+          <span className="card-calligraphy-name">{details.groomName}</span>
+          <i className="card-calligraphy-amp" aria-hidden="true">
+            &amp;
+          </i>
+          <span className="card-calligraphy-name">{details.brideName}</span>
         </h1>
-        <p className="chand-date">
-          {date.weekday && <span className="chand-weekday">{date.weekday}</span>}
-          <span className="chand-day">
-            {date.day
-              ? `${date.day} ${date.month} ${date.year}`
-              : details.date || "Date to be announced"}
-          </span>
-          {details.time && <span className="chand-time">{details.time}</span>}
-        </p>
-        <p className="chand-venue">
-          {details.venue || "Venue to be announced"}
-          {details.address && <span>{details.address}</span>}
-        </p>
-        <CouplePortraits details={details} compact />
-        <div className="chand-actions">{actions}</div>
+        {(details.date || details.time) && (
+          <>
+            <span className="card-calligraphy-rule" aria-hidden="true" />
+            <p className="chand-date card-calligraphy-date mt-4">
+              {[details.date, details.time].filter(Boolean).join(" · ")}
+            </p>
+          </>
+        )}
       </motion.div>
 
       <div className="chand-wall">
@@ -596,8 +500,8 @@ export function ChandBaghStage({
           {mascot?.cat ?? "Noor"} the cat is expecting you. Tap the gold stars as you wander —{" "}
           {mascot?.squirrel ?? "Gul"} is counting them.
         </p>
-        <a href={scrollTo} className="chand-scroll">
-          Follow the fireflies
+        <a href={scrollTo} className="chand-scroll card-scroll-cue">
+          Scroll
           <ChevronDown className="h-4 w-4" aria-hidden="true" />
         </a>
       </div>
@@ -606,22 +510,13 @@ export function ChandBaghStage({
 }
 
 /* ─────────────────────────── 5. Mela Maidan ─────────────────────────── */
-/**
- * A fairground: bunting, kites and a ticket for a name plate, with the drum
- * and its two residents closing the hero. Bright, playful, and stacked for
- * small screens.
- */
-export function MelaMaidanStage({
-  details,
-  backgroundImage,
-  actions,
-  scrollTo,
-  entranceDelay,
-}: StageProps) {
+
+export function MelaMaidanStage({ details, backgroundImage, scrollTo }: StageProps) {
   const ref = useRef<HTMLElement>(null);
   const reduced = useReducedMotion();
-  const { scrollYProgress } = useScroll({ target: ref, offset: ["start start", "end start"] });
-  const sky = useTransform(scrollYProgress, [0, 1], ["0%", "10%"]);
+  const { revealed, gated } = useOpeningPhase();
+  const copyVisible = !gated || revealed;
+  const darkSurface = isDarkOpeningTheme(details.theme);
   const date = shortDate(details.date);
   const mascot = mascotsForTheme(details.theme);
 
@@ -634,10 +529,14 @@ export function MelaMaidanStage({
       data-theme={details.theme}
       data-reduced={reduced ? "true" : undefined}
     >
-      <motion.div className="mela-sky" style={reduced ? undefined : { y: sky }} aria-hidden="true">
-        <FullArtFrame src={backgroundImage} theme={details.theme} className="mela-art" priority />
+      <div className="mela-sky hero-media-lock" aria-hidden="true">
+        <HeroFollowUpLayer
+          theme={details.theme}
+          backgroundImage={backgroundImage}
+          className="mela-art"
+        />
         <span className="mela-veil" />
-      </motion.div>
+      </div>
       <LivingScene theme={details.theme} variant="hero" reduce={reduced ?? false} />
 
       <span className="mela-bunting" aria-hidden="true">
@@ -653,38 +552,38 @@ export function MelaMaidanStage({
 
       <motion.div
         className="mela-inner"
-        initial={{ opacity: 0, y: 30, rotate: -0.6 }}
-        animate={{ opacity: 1, y: 0, rotate: 0 }}
-        transition={{ duration: 1.1, delay: entranceDelay }}
+        initial={gated && !reduced ? { opacity: 0, y: 28, scale: 0.92 } : false}
+        animate={copyVisible ? { opacity: 1, y: 0, scale: 1 } : { opacity: 0, y: 28, scale: 0.92 }}
+        transition={reduced ? { duration: 0 } : { duration: 0.36, ease: [0.16, 1, 0.3, 1] }}
       >
-        <p className="mela-kicker">{details.hosts || "Together with their families"}</p>
-        <div className="mela-ticket">
+        <div
+          className={`mela-ticket card-calligraphy-plate ${
+            darkSurface ? "is-dark-art" : "is-light-art"
+          }`}
+        >
           <span className="mela-ticket-stub" aria-hidden="true">
             <b>{date.day || "•"}</b>
             <i>{date.month.slice(0, 3) || "day"}</i>
           </span>
           <div className="mela-ticket-body">
-            <p className="mela-ticket-label">Admit two · one wedding</p>
-            <h1 className="mela-names">
-              <span>{details.groomName}</span>
-              <i aria-hidden="true">&amp;</i>
-              <span>{details.brideName}</span>
+            <h1 className="mela-names card-calligraphy-names">
+              <span className="card-calligraphy-name">{details.groomName}</span>
+              <i className="card-calligraphy-amp" aria-hidden="true">
+                &amp;
+              </i>
+              <span className="card-calligraphy-name">{details.brideName}</span>
             </h1>
-            <p className="mela-ticket-meta">
-              {date.day
-                ? `${date.day} ${date.month} ${date.year}`
-                : details.date || "Date to be announced"}
-              {details.time ? ` · ${details.time}` : ""}
-            </p>
-            <p className="mela-ticket-venue">
-              {details.venue || "Venue to be announced"}
-              {details.address && <span>{details.address}</span>}
-            </p>
+            {(details.date || details.time) && (
+              <>
+                <span className="card-calligraphy-rule" aria-hidden="true" />
+                <p className="mela-ticket-meta card-calligraphy-date mt-3">
+                  {[details.date, details.time].filter(Boolean).join(" · ")}
+                </p>
+              </>
+            )}
           </div>
           <span className="mela-ticket-notch" aria-hidden="true" />
         </div>
-        <CouplePortraits details={details} compact />
-        <div className="mela-actions">{actions}</div>
       </motion.div>
 
       <div className="mela-drum-row">
@@ -700,8 +599,8 @@ export function MelaMaidanStage({
           {mascot?.cat ?? "Mithai"} has your ticket, {mascot?.squirrel ?? "Chintu"} has the games.
           Nine stars are hiding between the sections.
         </p>
-        <a href={scrollTo} className="mela-scroll">
-          Step into the mela
+        <a href={scrollTo} className="mela-scroll card-scroll-cue">
+          Scroll
           <ChevronDown className="h-4 w-4" aria-hidden="true" />
         </a>
       </div>
@@ -721,15 +620,15 @@ export function ChandBaghCover({ details }: { details: InvitationDetails }) {
         ))}
       </span>
       <span className="chand-cover-moon" aria-hidden="true" />
-      <p className="chand-cover-kicker">{details.hosts || "Together with their families"}</p>
-      <h3 className="chand-cover-names">
-        <span>{details.groomName}</span>
-        <i aria-hidden="true">&amp;</i>
-        <span>{details.brideName}</span>
+      <h3 className="chand-cover-names card-calligraphy-names">
+        <span className="card-calligraphy-name">{details.groomName}</span>
+        <i className="card-calligraphy-amp" aria-hidden="true">
+          &amp;
+        </i>
+        <span className="card-calligraphy-name">{details.brideName}</span>
       </h3>
-      <p className="chand-cover-date">{date.line || "Date to be announced"}</p>
-      {details.time && <p className="chand-cover-time">{details.time}</p>}
-      {details.venue && <p className="chand-cover-venue">{details.venue}</p>}
+      <span className="card-calligraphy-rule" aria-hidden="true" />
+      <p className="chand-cover-date card-calligraphy-date mt-3">{date.line || details.date}</p>
       <CatMascot className="chand-cover-cat" />
     </div>
   );
@@ -744,14 +643,15 @@ export function MelaCover({ details }: { details: InvitationDetails }) {
           <i key={index} className={`bunting-flag flag-${index % 4}`} />
         ))}
       </span>
-      <p className="mela-cover-kicker">{details.hosts || "Together with their families"}</p>
-      <h3 className="mela-cover-names">
-        <span>{details.groomName}</span>
-        <i aria-hidden="true">&amp;</i>
-        <span>{details.brideName}</span>
+      <h3 className="mela-cover-names card-calligraphy-names">
+        <span className="card-calligraphy-name">{details.groomName}</span>
+        <i className="card-calligraphy-amp" aria-hidden="true">
+          &amp;
+        </i>
+        <span className="card-calligraphy-name">{details.brideName}</span>
       </h3>
-      <p className="mela-cover-date">{date.line || "Date to be announced"}</p>
-      {details.venue && <p className="mela-cover-venue">{details.venue}</p>}
+      <span className="card-calligraphy-rule" aria-hidden="true" />
+      <p className="mela-cover-date card-calligraphy-date mt-3">{date.line || details.date}</p>
       <span className="mela-cover-stamp" aria-hidden="true">
         <CatMascot className="mela-cover-cat" mood="day" />
       </span>

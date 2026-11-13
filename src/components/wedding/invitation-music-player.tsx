@@ -111,17 +111,20 @@ export function InvitationMusicPlayer({
 
   const indexRef = useRef(0);
   const playingRef = useRef(false);
+  const primingRef = useRef(false);
   const volumeRef = useRef(0.45);
   const songsRef = useRef(songs);
   songsRef.current = songs;
   const handlerRef = useRef<(command: InvitationMusicCommand) => void>(() => {});
 
   function updatePlaying(next: boolean) {
+    if (primingRef.current) return;
     playingRef.current = next;
     setPlaying(next);
   }
 
   function stopHtmlAudio() {
+    primingRef.current = false;
     try {
       audioRef.current?.pause();
     } catch {
@@ -269,6 +272,8 @@ export function InvitationMusicPlayer({
         audio.dataset["clip"] = `${bounded}:${clip.start}`;
       }
       if (autoplay) {
+        primingRef.current = false;
+        audio.muted = false;
         void audio
           .play()
           .then(() => updatePlaying(true))
@@ -325,6 +330,60 @@ export function InvitationMusicPlayer({
     }
   }
 
+  function primeIndex(nextIndex: number) {
+    if (!songs.length) return;
+    const bounded = ((nextIndex % songs.length) + songs.length) % songs.length;
+    const nextSong = songs[bounded]!;
+    const source = resolveSongSource(nextSong.url);
+
+    if (!source || source.kind === "audio") {
+      const audio = ensureAudio();
+      const targetSrc = source ? source.src : nextSong.url;
+      if (audio.dataset["track"] !== `${bounded}:${targetSrc}`) {
+        audio.src = targetSrc;
+        audio.dataset["track"] = `${bounded}:${targetSrc}`;
+      }
+      primingRef.current = true;
+      audio.muted = true;
+      try {
+        const started = audio.play();
+        if (started && typeof started.then === "function") {
+          void started
+            .then(() => {
+              if (!primingRef.current) return;
+              audio.pause();
+              try {
+                audio.currentTime = source?.kind === "audio" ? songClip(nextSong).start : 0;
+              } catch {
+                // Ignore non-seekable media elements.
+              }
+              audio.muted = false;
+              primingRef.current = false;
+            })
+            .catch(() => {
+              audio.muted = false;
+              primingRef.current = false;
+            });
+        } else {
+          audio.pause();
+          audio.muted = false;
+          primingRef.current = false;
+        }
+      } catch {
+        audio.muted = false;
+        primingRef.current = false;
+      }
+      return;
+    }
+
+    if (source.kind === "spotify" && spotifyControllerRef.current) {
+      if (spotifyLoadedUriRef.current !== source.spotifyUri) {
+        spotifyLoadedUriRef.current = source.spotifyUri;
+        spotifyControllerRef.current.loadUri(source.spotifyUri);
+      }
+    }
+  }
+
   function pauseCurrent() {
     const currentSong = songs[indexRef.current];
     const source = currentSong ? resolveSongSource(currentSong.url) : null;
@@ -352,6 +411,10 @@ export function InvitationMusicPlayer({
   }
 
   handlerRef.current = (command) => {
+    if (command.action === "prime") {
+      primeIndex(command.index ?? indexRef.current);
+      return;
+    }
     if (command.action === "pause") {
       pauseCurrent();
       return;
