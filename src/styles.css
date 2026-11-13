@@ -16831,3 +16831,13 @@ body:has(.preview-frame-document) {
     font-size: 8px;
   }
 }
+
+/* Phones: films fill the whole screen instead of a letterboxed wide strip. */
+@media (max-width: 768px) {
+  .theme-loop,
+  .full-art-video,
+  .full-art-image {
+    object-fit: cover;
+    object-position: center;
+  }
+}
