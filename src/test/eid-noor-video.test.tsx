@@ -2,10 +2,17 @@
 import { readFileSync } from "node:fs";
 import { act, cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { renderToStaticMarkup } from "react-dom/server";
 import { NoorArchExperience, noorArchStill } from "@/components/wedding/noor-arch-gate";
 import { Footer, Hero } from "@/components/wedding/sections";
-import { demoPoster } from "@/config/theme-demos";
-import { invitationArt } from "@/components/wedding/invitation-art";
+import { PersonalInvitation } from "@/components/wedding/invitation-template";
+import { demoContent, demoForTheme, demoPoster } from "@/config/theme-demos";
+import {
+  invitationArt,
+  openingCoverForTheme,
+  openingVideoForTheme,
+} from "@/components/wedding/invitation-art";
+import { resolveAssetFallbackTheme } from "@/server";
 
 afterEach(() => {
   cleanup();
@@ -144,5 +151,38 @@ describe("Unified Tap-to-open card video experience across themes & demos", () =
     const url = decodeURIComponent(String(openSpy.mock.calls[0]?.[0] ?? ""));
     expect(url).toContain("/demo?guest=Uncle");
     expect(url).not.toContain("lovable.app");
+  });
+
+  it("aligns aladin/sacred-mandap/haldi-baag opening assets, keeps jharokha-dawn free of Bismillah, and resolves theme-specific proxy fallbacks", () => {
+    expect(openingCoverForTheme("aladin")).toContain("aladin-poster.jpg");
+    expect(openingVideoForTheme("aladin")).toMatchObject({
+      fallback: "/film/aladin.mp4",
+      finiteOpening: false,
+    });
+    expect(openingVideoForTheme("aladin").src).toContain("aladin-silent.mp4");
+
+    expect(openingCoverForTheme("sacred-mandap")).toContain("sacred-mandap-poster.jpg");
+    expect(openingVideoForTheme("sacred-mandap").src).toContain("sacred-mandap-silent.mp4");
+    expect(openingVideoForTheme("haldi-baag").src).toContain("haldi-baag-cinema.mp4");
+
+    const jharokhaDemo = demoForTheme("jharokha-dawn");
+    const jharokhaHtml = renderToStaticMarkup(
+      <PersonalInvitation
+        title={jharokhaDemo.title}
+        content={demoContent(jharokhaDemo)}
+        preview
+        showGate={false}
+      />,
+    );
+    expect(jharokhaHtml).not.toContain("بِسْمِ");
+
+    expect(resolveAssetFallbackTheme("/__l5e/assets-v1/abc/sacred-mandap-silent.mp4")).toBe(
+      "sacred-mandap",
+    );
+    expect(resolveAssetFallbackTheme("/__l5e/assets-v1/abc/aladin-poster.jpg")).toBe("aladin");
+    expect(resolveAssetFallbackTheme("/__l5e/assets-v1/abc/haldi-baag-cinema.mp4")).toBe(
+      "haldi-baag",
+    );
+    expect(resolveAssetFallbackTheme("/__l5e/assets-v1/abc/noor-arch-gate.mp4")).toBe("eid");
   });
 });

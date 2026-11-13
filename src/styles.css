@@ -16198,6 +16198,25 @@ body:has(.preview-frame-document) {
 .personal-invite[data-theme="fairytale"] { --background: oklch(0.96 0.03 320); }
 .personal-invite[data-theme="ballroom"] { --background: oklch(0.965 0.025 90); }
 .personal-invite[data-theme="sacred-mandap"] { --background: oklch(0.96 0.03 25); }
+.personal-invite[data-theme="sacred-mandap"] .mandap-scene {
+  inset: 0;
+}
+.personal-invite[data-theme="sacred-mandap"] :is(.full-art-video, .full-art-image) {
+  object-fit: cover;
+}
+.personal-invite[data-theme="sacred-mandap"] :is(.mandap-canopy, .mandap-havan, .living-hero, .tcine, .cinema-sheers) {
+  display: none;
+}
+.personal-invite[data-theme="sacred-mandap"] .mandap-scene-shade {
+  background: color-mix(in oklch, var(--background) 12%, transparent);
+}
+.personal-invite[data-theme="sacred-mandap"] .mandap-card:not(.card-calligraphy-plate) {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  text-shadow: 0 1px 12px var(--background);
+}
 .personal-invite[data-theme="jharokha-dawn"] { --background: oklch(0.95 0.035 50); }
 .personal-invite[data-theme="haldi-baag"] { --background: oklch(0.96 0.07 98); }
 .personal-invite[data-theme="vows-in-ink"] { --background: oklch(0.95 0.008 240); }
@@ -16967,3 +16986,56 @@ body:has(.preview-frame-document) {
   }
 }
 
+/* Phones: films fill the whole screen instead of a letterboxed wide strip. */
+@media (max-width: 768px) {
+  .theme-loop,
+  .full-art-video,
+  .full-art-image {
+    object-fit: cover;
+    object-position: center;
+  }
+}
+
+/* Full-screen video for Eid Light and Sacred Mandap on every screen size */
+.personal-invite[data-theme="eid"] :is(.eid-hero, .gate-sky),
+.personal-invite[data-theme="sacred-mandap"] :is(.gate-sky, .mandap-scene, .invitation-stage) {
+  min-height: 100svh;
+}
+.personal-invite:is([data-theme="eid"], [data-theme="sacred-mandap"]) :is(.theme-loop, .full-art-video, .full-art-image) {
+  object-fit: cover;
+  object-position: center;
+}
+
+/* Mughal Moon polish: moonlit glow, gold-shimmer section titles, glass cards */
+.personal-invite[data-theme="mughal-moon-film"] h1:not(.card-calligraphy-names),
+.personal-invite[data-theme="mughal-moon-film"] h2:not(.card-calligraphy-names) {
+  background: var(--gradient-gold);
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  animation: mm-shimmer 9s linear infinite;
+  text-shadow: none;
+  filter: drop-shadow(0 2px 18px oklch(0.82 0.105 82 / 0.28));
+}
+.personal-invite[data-theme="mughal-moon-film"]::before {
+  content: "";
+  position: fixed;
+  inset: -10% -10% auto auto;
+  width: 60vmin;
+  height: 60vmin;
+  border-radius: 50%;
+  background: radial-gradient(circle, oklch(0.95 0.04 88 / 0.18), transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+.personal-invite[data-theme="mughal-moon-film"] :is(.card, [class*="rounded-"][class*="border"]) {
+  backdrop-filter: blur(14px) saturate(1.1);
+  box-shadow: var(--shadow-gold), inset 0 1px 0 oklch(0.92 0.07 88 / 0.18);
+}
+@keyframes mm-shimmer { to { background-position: 200% center; } }
+@media (prefers-reduced-motion: reduce) {
+  .personal-invite[data-theme="mughal-moon-film"] :is(h1:not(.card-calligraphy-names), h2:not(.card-calligraphy-names)) {
+    animation: none;
+  }
+}

@@ -69,11 +69,15 @@ function ThemeDemoPage() {
 
   useEffect(() => {
     setGated(true);
+    if (typeof window !== "undefined") {
+      window.scrollTo({ top: 0, behavior: "auto" });
+    }
   }, [demo.theme]);
 
   return (
     <div className="theme-demo-page">
       <PersonalInvitation
+        key={demo.theme}
         title={demo.title}
         content={demoContent(demo)}
         preview={!gated}

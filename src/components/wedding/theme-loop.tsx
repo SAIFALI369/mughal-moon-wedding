@@ -133,6 +133,9 @@ export const ThemeLoop = memo(function ThemeLoop({
           ref={ref}
           className={`theme-loop ${className}`.trim()}
           src={videoSrc}
+          poster={poster ?? undefined}
+          // `autoPlay` matters when active: the browser starts the muted film itself,
+          // without waiting for hydration or a script. The effect above is the backup.
           autoPlay={active}
           muted
           loop

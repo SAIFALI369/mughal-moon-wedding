@@ -8,12 +8,12 @@ import {
   type ReactNode,
 } from "react";
 import { motion } from "framer-motion";
-import eidSky from "@/assets/eid-sky.webp";
 import finalFrame from "@/assets/noor-arch-final.jpg.asset.json";
 import coverFrame from "@/assets/noor-arch-cover.jpg.asset.json";
 import type { InvitationTheme } from "./invitation-options";
 import {
   heroVideoForTheme,
+  invitationArtFallback,
   openingCoverForTheme,
   openingStillForTheme,
   openingVideoForTheme,
@@ -115,13 +115,29 @@ export function NoorArchExperience({
   const [posterFallback, setPosterFallback] = useState(false);
 
   const openingVideo = openingVideoForTheme(theme);
+  const fallbackArtwork = invitationArtFallback[theme];
   const isFiniteOpening = Boolean(videoSrc) || (openingVideo.finiteOpening && !videoFallback);
   const resolvedCover =
-    coverImage ?? (theme === "eid" && posterFallback ? eidSky : openingCoverForTheme(theme));
+    coverImage ??
+    (posterFallback && fallbackArtwork ? fallbackArtwork : openingCoverForTheme(theme));
   const resolvedStill =
-    stillImage ?? (theme === "eid" && posterFallback ? eidSky : openingStillForTheme(theme));
+    stillImage ??
+    (posterFallback && fallbackArtwork ? fallbackArtwork : openingStillForTheme(theme));
   const resolvedVideoSrc = videoFallback ? openingVideo.fallback : (videoSrc ?? openingVideo.src);
   const resolvedHeroVideo = heroVideoSrc ?? heroVideoForTheme(theme);
+
+  useEffect(() => {
+    finishedRef.current = false;
+    if (loopTimerRef.current !== null && typeof window !== "undefined") {
+      window.clearTimeout(loopTimerRef.current);
+      loopTimerRef.current = null;
+    }
+    setPhase("closed");
+    setOverlayCleared(false);
+    setHeroVideoLive(false);
+    setVideoFallback(false);
+    setPosterFallback(false);
+  }, [theme]);
 
   const finish = useCallback(() => {
     if (finishedRef.current) return;
@@ -277,7 +293,7 @@ export function NoorArchExperience({
                 alt=""
                 aria-hidden="true"
                 onError={() => {
-                  if (theme === "eid") setPosterFallback(true);
+                  if (fallbackArtwork && !posterFallback) setPosterFallback(true);
                 }}
                 className="absolute inset-0 h-full w-full object-cover"
               />
@@ -350,7 +366,7 @@ export function NoorArchExperience({
                 src={resolvedStill}
                 alt=""
                 onError={() => {
-                  if (theme === "eid") setPosterFallback(true);
+                  if (fallbackArtwork && !posterFallback) setPosterFallback(true);
                 }}
                 className="noor-gate-zoom is-zooming absolute inset-0 h-full w-full object-cover"
               />

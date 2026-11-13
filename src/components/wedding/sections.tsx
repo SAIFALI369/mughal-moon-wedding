@@ -12,7 +12,7 @@ import { getInstantConciergeReply, requestConcierge } from "./concierge-client";
 import { getAiVisitorId } from "@/lib/ai-visitor";
 import { FullArtFrame, LivingScene } from "./invitation-rite";
 import type { InvitationTheme } from "./invitation-options";
-import { heroVideoForTheme, openingVideoForTheme } from "./invitation-art";
+import { heroVideoForTheme, invitationArtFallback, openingVideoForTheme } from "./invitation-art";
 import { isDarkOpeningTheme, useOpeningPhase } from "./noor-arch-gate";
 import { AnimatePresence, motion, useScroll, useTransform, useReducedMotion } from "framer-motion";
 import { useEffect, useRef, useState, type FormEvent, type ReactNode } from "react";
@@ -264,12 +264,21 @@ export function Preloader({
 }) {
   const [opening, setOpening] = useState(false);
   const [show, setShow] = useState(true);
+  const [videoFallback, setVideoFallback] = useState(false);
+  const [posterFallback, setPosterFallback] = useState(false);
   const enterButton = useRef<HTMLButtonElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const gateReduced =
     typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   const darkSurface = isDarkOpeningTheme(theme);
   const openingClip = theme ? openingVideoForTheme(theme) : null;
+  const fallbackPoster = theme ? invitationArtFallback[theme] : undefined;
+  const resolvedPoster = posterFallback && fallbackPoster ? fallbackPoster : backgroundImage;
+  const resolvedVideoSrc = openingClip
+    ? videoFallback
+      ? openingClip.fallback
+      : openingClip.src
+    : undefined;
 
   useEffect(() => {
     if (!show) return;
@@ -343,19 +352,27 @@ export function Preloader({
         >
           <div className={`noor-gate-zoom absolute inset-0 ${opening ? "is-zooming" : ""}`}>
             <img
-              src={backgroundImage}
+              src={resolvedPoster}
               alt=""
               aria-hidden="true"
+              onError={() => {
+                if (fallbackPoster && !posterFallback) setPosterFallback(true);
+              }}
               className="gate-sky absolute inset-0 h-full w-full object-cover"
             />
-            {openingClip && (
+            {openingClip && resolvedVideoSrc && (
               <video
                 ref={videoRef}
-                src={openingClip.src}
-                poster={backgroundImage}
+                src={resolvedVideoSrc}
+                poster={resolvedPoster}
                 muted
                 playsInline
                 preload="auto"
+                onError={() => {
+                  if (!videoFallback && resolvedVideoSrc !== openingClip.fallback) {
+                    setVideoFallback(true);
+                  }
+                }}
                 className="absolute inset-0 h-full w-full object-cover"
               />
             )}

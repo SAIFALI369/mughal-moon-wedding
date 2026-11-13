@@ -67,8 +67,9 @@ describe("creator invitation design and input", () => {
         else if (theme === "vows-in-ink") expect(page).toContain("ink-stage");
         else if (theme === "chand-bagh") expect(page).toContain("chand-stage");
         else if (theme === "mela-maidan") expect(page).toContain("mela-stage");
+        else if (theme === "sacred-mandap") expect(page).toContain("mandap-stage");
         else if (framework === "moonlit") expect(page).toContain("eid-hero");
-        else if (theme === "diya-utsav" || theme === "sacred-mandap" || theme === "kashi-ghat")
+        else if (theme === "diya-utsav" || theme === "kashi-ghat")
           expect(page).toContain("mandap-stage");
         else expect(page).toContain("invitation-stage");
       }

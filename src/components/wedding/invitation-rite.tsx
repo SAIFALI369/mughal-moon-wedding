@@ -31,7 +31,7 @@ export const themeRites: Record<InvitationTheme, InvitationRite> = {
   "riad-noor": "muslim",
   "kashi-ghat": "hindu",
   "mehndi-night": "universal",
-  "jharokha-dawn": "muslim",
+  "jharokha-dawn": "universal",
   "haldi-baag": "hindu",
   "vows-in-ink": "universal",
   "chand-bagh": "muslim",
@@ -106,6 +106,7 @@ export function FullArtFrame({
           className="full-art-video"
           priority={priority}
           enabled={enableMotion}
+          poster={displaySrc}
         />
       )}
     </div>

@@ -6,6 +6,9 @@ import noorCover from "@/assets/noor-arch-cover.jpg.asset.json";
 import noorFinal from "@/assets/noor-arch-final.jpg.asset.json";
 import noorGateVideo from "@/assets/noor-arch-gate.mp4.asset.json";
 import aladin from "@/assets/themes/aladin.webp";
+import aladinPoster from "@/assets/aladin-poster.jpg.asset.json";
+import aladinVideo from "@/assets/aladin-silent.mp4.asset.json";
+import haldiBaagVideo from "@/assets/haldi-baag-cinema.mp4.asset.json";
 import bihariVibe from "@/assets/themes/bihari-vibe.webp";
 import meccaMadinah from "@/assets/themes/mecca-madinah.webp";
 import luxury from "@/assets/themes/luxury.webp";
@@ -14,6 +17,8 @@ import fairytale from "@/assets/themes/fairytale.webp";
 import ballroom from "@/assets/themes/ballroom.webp";
 import diyaUtsav from "@/assets/themes/diya-utsav.webp";
 import sacredMandap from "@/assets/themes/sacred-mandap.webp";
+import sacredMandapPoster from "@/assets/sacred-mandap-poster.jpg.asset.json";
+import sacredMandapVideo from "@/assets/sacred-mandap-silent.mp4.asset.json";
 import riadNoor from "@/assets/themes/riad-noor.webp";
 import kashiGhat from "@/assets/themes/kashi-ghat.webp";
 import mehndiNight from "@/assets/themes/mehndi-night.webp";
@@ -32,7 +37,7 @@ export const invitationArt: Record<InvitationTheme, string> = {
   "lotus-goddess": lotusGoddess,
   calligraphy,
   eid: noorFinal.url,
-  aladin,
+  aladin: aladinPoster.url,
   "bihari-vibe": bihariVibe,
   mecca_madinah: meccaMadinah,
   luxury,
@@ -40,7 +45,7 @@ export const invitationArt: Record<InvitationTheme, string> = {
   fairytale,
   ballroom,
   "diya-utsav": diyaUtsav,
-  "sacred-mandap": sacredMandap,
+  "sacred-mandap": sacredMandapPoster.url,
   "riad-noor": riadNoor,
   "kashi-ghat": kashiGhat,
   "mehndi-night": mehndiNight,
@@ -62,7 +67,11 @@ export const invitationArt: Record<InvitationTheme, string> = {
  * seconds of the same scene, built by `scripts/build-theme-loops.mjs`.
  */
 export function themeLoop(theme: InvitationTheme): string {
-  if (theme === "eid") return noorGateVideo.url;
+  // Eid hero/cards loop the calm moonlit scene; the door-opening film plays once, only at the gate.
+  if (theme === "eid") return "/film/eid.mp4";
+  if (theme === "sacred-mandap") return sacredMandapVideo.url;
+  if (theme === "aladin") return aladinVideo.url;
+  if (theme === "haldi-baag") return haldiBaagVideo.url;
   return `/film/${theme}.mp4`;
 }
 
@@ -98,12 +107,14 @@ export function openingVideoForTheme(theme: InvitationTheme): {
   if (theme === "eid") {
     return { src: noorGateVideo.url, fallback: "/film/eid.mp4", finiteOpening: true };
   }
-  const url = `/film/${theme}.mp4`;
-  return { src: url, fallback: url, finiteOpening: false };
+  const url = themeLoop(theme);
+  return { src: url, fallback: `/film/${theme}.mp4`, finiteOpening: false };
 }
 
 export const invitationArtFallback: Partial<Record<InvitationTheme, string>> = {
   eid: eidSky,
+  "sacred-mandap": sacredMandap,
+  aladin,
 };
 
 export const invitationFilmArt = {

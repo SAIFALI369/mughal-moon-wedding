@@ -1,6 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import { useReducedMotion } from "framer-motion";
-import { openingCoverForTheme, openingVideoForTheme } from "../invitation-art";
+import {
+  invitationArtFallback,
+  openingCoverForTheme,
+  openingVideoForTheme,
+} from "../invitation-art";
 import { isDarkOpeningTheme } from "../noor-arch-gate";
 import type { InvitationDetails } from "../invitation-details";
 
@@ -17,6 +21,8 @@ export function StorybookEntry({
 }) {
   const [opened, setOpened] = useState(!enabled);
   const [opening, setOpening] = useState(false);
+  const [videoFallback, setVideoFallback] = useState(false);
+  const [posterFallback, setPosterFallback] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const enterButton = useRef<HTMLButtonElement>(null);
@@ -41,11 +47,17 @@ export function StorybookEntry({
 
   if (opened) return null;
 
-  const cover = openingCoverForTheme(details.theme);
+  const fallbackImg = invitationArtFallback[details.theme];
+  const cover = posterFallback && fallbackImg ? fallbackImg : openingCoverForTheme(details.theme);
   const video = openingVideoForTheme(details.theme);
+  const videoSrc = videoFallback ? video.fallback : video.src;
   const darkSurface = isDarkOpeningTheme(details.theme);
 
   const complete = () => {
+    if (timer.current) {
+      clearTimeout(timer.current);
+      timer.current = null;
+    }
     if (videoRef.current) {
       try {
         videoRef.current.pause();
@@ -99,7 +111,10 @@ export function StorybookEntry({
       aria-labelledby="sb-gate-title"
       onClick={!opening ? open : undefined}
       onKeyDown={(e) => {
-        if (e.key === "Escape") open();
+        if (e.key === "Escape") {
+          if (opening) complete();
+          else open();
+        }
       }}
     >
       <div className={`noor-gate-zoom absolute inset-0 ${opening ? "is-zooming" : ""}`}>
@@ -107,15 +122,23 @@ export function StorybookEntry({
           src={cover}
           alt=""
           aria-hidden="true"
+          onError={() => {
+            if (fallbackImg && !posterFallback) setPosterFallback(true);
+          }}
           className="absolute inset-0 h-full w-full object-cover"
         />
         <video
           ref={videoRef}
-          src={video.src}
+          src={videoSrc}
           poster={cover}
           muted
           playsInline
           preload="auto"
+          onError={() => {
+            if (!videoFallback && videoSrc !== video.fallback) {
+              setVideoFallback(true);
+            }
+          }}
           className="absolute inset-0 h-full w-full object-cover"
         />
       </div>

@@ -316,7 +316,10 @@ export function PersonalInvitation({
   const mapUrl = details.mapUrl || directionsUrl(details.venue, details.address);
   const dateLine = [details.date, details.time].filter(Boolean).join(" · ");
   const art = invitationArt[details.theme];
-  const layout = invitationLayoutFor(details.theme, details.framework);
+  const layout =
+    details.theme === "sacred-mandap" && details.framework !== "curtain-call"
+      ? "mandap"
+      : invitationLayoutFor(details.theme, details.framework);
   const interactive = isInteractiveLayout(layout);
   const storybook = isStorybook(details.theme);
   const hasSongs = details.songs.length > 0;
