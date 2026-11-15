@@ -26,6 +26,7 @@ import jharokhaDawn from "@/assets/themes/jharokha-dawn.webp";
 import haldiBaag from "@/assets/themes/haldi-baag.webp";
 import vowsInInk from "@/assets/themes/vows-in-ink.webp";
 import chandBagh from "@/assets/themes/chand-bagh.webp";
+import chandBaghVideo from "@/assets/chand-bagh-cinema.mp4.asset.json";
 import melaMaidan from "@/assets/themes/mela-maidan.webp";
 import filmPalace from "@/assets/themes/film-palace.webp";
 import filmArch from "@/assets/themes/film-arch.webp";
@@ -72,6 +73,7 @@ export function themeLoop(theme: InvitationTheme): string {
   if (theme === "sacred-mandap") return sacredMandapVideo.url;
   if (theme === "aladin") return aladinVideo.url;
   if (theme === "haldi-baag") return haldiBaagVideo.url;
+  if (theme === "chand-bagh") return chandBaghVideo.url;
   return `/film/${theme}.mp4`;
 }
 
