@@ -140,7 +140,7 @@ describe("Mandap stage", () => {
     const gate = renderToStaticMarkup(<Preloader onDone={() => {}} theme="diya-utsav" />);
     expect(gate).toContain("Tap to open");
     expect(gate).toContain("card-calligraphy-names");
-    expect(gate).toContain("diya-utsav.mp4");
+    expect(gate).toContain("universal-opening.mp4");
     expect(gate).not.toContain("Open the gates");
     expect(gate).not.toContain("بِسْمِ");
   });

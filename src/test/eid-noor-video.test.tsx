@@ -93,7 +93,7 @@ describe("Unified Tap-to-open card video experience across themes & demos", () =
     );
 
     const openingVideo = container.querySelector("video")!;
-    expect(openingVideo.getAttribute("src")).toBe("/film/diya-utsav.mp4");
+    expect(openingVideo.getAttribute("src")).toContain("universal-opening.mp4");
     expect(openingVideo.getAttribute("poster")).toBe(invitationArt["diya-utsav"]);
 
     fireEvent.click(screen.getByRole("button", { name: /^Tap to open$/i }));
