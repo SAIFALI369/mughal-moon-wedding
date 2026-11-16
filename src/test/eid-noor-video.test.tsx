@@ -97,6 +97,7 @@ describe("Unified Tap-to-open card video experience across themes & demos", () =
     expect(openingVideo.getAttribute("poster")).toBe(invitationArt["diya-utsav"]);
 
     fireEvent.click(screen.getByRole("button", { name: /^Tap to open$/i }));
+    fireEvent.ended(openingVideo);
     act(() => vi.advanceTimersByTime(2600));
     expect(container.querySelectorAll(".eid-hero video")).toHaveLength(0);
 
