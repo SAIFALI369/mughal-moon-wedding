@@ -1,3 +1,4 @@
+import universalOpening from "@/assets/universal-opening.mp4.asset.json";
 import royalRajmahal from "@/assets/themes/royal-rajmahal.webp";
 import lotusGoddess from "@/assets/themes/lotus-goddess.webp";
 import calligraphy from "@/assets/themes/calligraphy.webp";
@@ -100,6 +101,9 @@ export function openingStillForTheme(theme: InvitationTheme): string {
   return invitationArt[theme];
 }
 
+/** Themes with their own generated opening film; every other theme opens with the shared envelope film. */
+const OWN_OPENING_FILMS = new Set<InvitationTheme>(["sacred-mandap", "aladin", "haldi-baag", "chand-bagh"]);
+
 /** Opening video source per theme. Eid plays the full door-opening cut; loop clips play a zoomed opener. */
 export function openingVideoForTheme(theme: InvitationTheme): {
   src: string;
@@ -110,6 +114,9 @@ export function openingVideoForTheme(theme: InvitationTheme): {
     return { src: noorGateVideo.url, fallback: "/film/eid.mp4", finiteOpening: true };
   }
   const url = themeLoop(theme);
+  if (!OWN_OPENING_FILMS.has(theme)) {
+    return { src: universalOpening.url, fallback: url, finiteOpening: true };
+  }
   return { src: url, fallback: `/film/${theme}.mp4`, finiteOpening: false };
 }
 

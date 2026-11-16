@@ -93,11 +93,12 @@ describe("Unified Tap-to-open card video experience across themes & demos", () =
     );
 
     const openingVideo = container.querySelector("video")!;
-    expect(openingVideo.getAttribute("src")).toBe("/film/diya-utsav.mp4");
+    expect(openingVideo.getAttribute("src")).toContain("universal-opening.mp4");
     expect(openingVideo.getAttribute("poster")).toBe(invitationArt["diya-utsav"]);
 
     fireEvent.click(screen.getByRole("button", { name: /^Tap to open$/i }));
-    act(() => vi.advanceTimersByTime(2600));
+    fireEvent.ended(openingVideo);
+    act(() => vi.advanceTimersByTime(0));
     expect(container.querySelectorAll(".eid-hero video")).toHaveLength(0);
 
     // 2.5 seconds after the card text pops up, the stabilized follow-up hero video fades in.
