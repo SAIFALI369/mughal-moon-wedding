@@ -134,7 +134,7 @@ function Hub() {
                   <div className="flex items-center gap-2">
                     <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${c.status === "published" ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"}`}>{c.status}</span>
                     {c.status === "published" && (
-                      <a href={`/i/${c.slug}`} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground" aria-label="Open"><ExternalLink size={16} /></a>
+                      <a href={`/invite/${c.slug}`} target="_blank" rel="noreferrer" className="text-muted-foreground hover:text-foreground" aria-label="Open"><ExternalLink size={16} /></a>
                     )}
                   </div>
                 </div>
